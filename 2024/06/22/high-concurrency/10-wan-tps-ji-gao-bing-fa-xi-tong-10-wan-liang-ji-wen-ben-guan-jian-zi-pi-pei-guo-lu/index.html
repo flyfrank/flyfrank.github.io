@@ -1,0 +1,603 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>10万TPS级高并发系统——10万量级文本关键字匹配过滤 | 逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="一、背景简介消息发送管控平台中有个很重要的能力就是文本关键字检测，比如检测一段话中是否含有法轮功等敏感字段，这就涉及到关键字匹配算法。在该项目中每条消息都要经过关键词过滤，通过后才能下发。关键字匹配有两种形式，分为单一关键字和逻辑关键字。 1.1 单一关键字单一关键字指单个单词，如：法轮功，炸金花，"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/2024/06/22/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-10-wan-liang-ji-wen-ben-guan-jian-zi-pi-pei-guo-lu/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=4.14.0-b2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.35/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>(()=>{
+      const saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+      
+      window.btf = {
+        saveToLocal: saveToLocal,
+        getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+          const script = document.createElement('script')
+          script.src = url
+          script.async = true
+          script.onerror = reject
+          script.onload = script.onreadystatechange = function() {
+            const loadState = this.readyState
+            if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+            script.onload = script.onreadystatechange = null
+            resolve()
+          }
+
+          Object.keys(attr).forEach(key => {
+            script.setAttribute(key, attr[key])
+          })
+
+          document.head.appendChild(script)
+        }),
+
+        getCSS: (url, id = false) => new Promise((resolve, reject) => {
+          const link = document.createElement('link')
+          link.rel = 'stylesheet'
+          link.href = url
+          if (id) link.id = id
+          link.onerror = reject
+          link.onload = link.onreadystatechange = function() {
+            const loadState = this.readyState
+            if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+            link.onload = link.onreadystatechange = null
+            resolve()
+          }
+          document.head.appendChild(link)
+        }),
+
+        addGlobalFn: (key, fn, name = false, parent = window) => {
+          const pjaxEnable = false
+          if (!pjaxEnable && key.startsWith('pjax')) return
+
+          const globalFn = parent.globalFn || {}
+          const keyObj = globalFn[key] || {}
+    
+          if (name && keyObj[name]) return
+    
+          name = name || Object.keys(keyObj).length
+          keyObj[name] = fn
+          globalFn[key] = keyObj
+          parent.globalFn = globalFn
+        }
+      }
+    
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+      
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })()</script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '10万TPS级高并发系统——10万量级文本关键字匹配过滤',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-09-08 13:54:35'
+}</script><meta name="generator" content="Hexo 5.4.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/images/theme/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">93</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">128</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">16</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="逐光の博客"><span class="site-name">逐光の博客</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">10万TPS级高并发系统——10万量级文本关键字匹配过滤</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-06-21T16:00:00.000Z" title="发表于 2024-06-22 00:00:00">2024-06-22</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-09-08T05:54:35.099Z" title="更新于 2024-09-08 13:54:35">2024-09-08</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">4.3k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>15分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="10万TPS级高并发系统——10万量级文本关键字匹配过滤"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><h1 id="一、背景简介"><a href="#一、背景简介" class="headerlink" title="一、背景简介"></a>一、背景简介</h1><p><a href="https://www.mpoom.cn/2024/06/01/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-jia-gou-she-ji-yu-xiang-mu-luo-di-shi-jian/">消息发送管控平台</a>中有个很重要的能力就是文本关键字检测，比如检测一段话中是否含有<code>法轮功</code>等敏感字段，这就涉及到关键字匹配算法。在该项目中每条消息都要经过关键词过滤，通过后才能下发。关键字匹配有两种形式，分为<code>单一关键字</code>和<code>逻辑关键字</code>。</p>
+<h2 id="1-1-单一关键字"><a href="#1-1-单一关键字" class="headerlink" title="1.1 单一关键字"></a>1.1 单一关键字</h2><p>单一关键字指单个单词，如：<code>法轮功</code>，<code>炸金花</code>，<code>一条龙服务</code>等涉恐、涉赌、涉黄等关键字，单个的关键字在系统数据库中的数量在9万+，消息下发时需要检测文本中是否包含数据库中单个关键字。</p>
+<h2 id="1-2-逻辑关键字"><a href="#1-2-逻辑关键字" class="headerlink" title="1.2 逻辑关键字"></a>1.2 逻辑关键字</h2><p>逻辑关键字由多个单一关键字组合<code>&amp;&amp;</code>、<code>||</code>、<code>!</code>逻辑运算符，即匹配到的关键字满足逻辑关键字中的逻辑运算逻辑才进行管控。<br><img src="/2024/06/22/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-10-wan-liang-ji-wen-ben-guan-jian-zi-pi-pei-guo-lu/%E9%80%BB%E8%BE%91%E5%85%B3%E9%94%AE%E5%AD%97.png" alt="逻辑关键字"></p>
+<div class="note success no-icon flat"><p>例如：逻辑关键字<code>点击&amp;&amp;登录&amp;&amp;!验证码</code>, 表示内容包含<code>点击</code>、<code>登录</code>关键字并且不包含<code>验证码</code>关键字，如果文本中包含的内容符合该逻辑，则进行拦截管控。</p>
+</div>
+
+<h1 id="二、性能要求"><a href="#二、性能要求" class="headerlink" title="二、性能要求"></a>二、性能要求</h1><p>消息发送管控平台关键字整体数据规模为10万量级，其中单一关键字数量为9万，逻辑关键字数量为1万。消息管控平台的安全审核接口整体的平均响应时间为<code>50ms</code>。</p>
+<h1 id="三、方案预研"><a href="#三、方案预研" class="headerlink" title="三、方案预研"></a>三、方案预研</h1><p>我们先分析梳理常用的关键词匹配算法，再根据上述业务需求及平台性能要求，进行方案设计及落地实现。常用的关键词匹配算法有：暴力匹配算法、KMP算法、Boyer-Moore算法、双数组Trie、AC自动机、基于双数组Trie的AC自动机等。下面我们结合各个算法的优缺点、性能、及适用场景进行选择分析。</p>
+<h2 id="3-1-算法对比分析"><a href="#3-1-算法对比分析" class="headerlink" title="3.1 算法对比分析"></a>3.1 算法对比分析</h2><p>各个算法原理相见:<a href>常见的关键字匹配算法</a></p>
+<table>
+<thead>
+<tr>
+<th>算法名称</th>
+<th>适用场景</th>
+<th>性能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>暴力匹配算法（Brute Force）</td>
+<td>小规模数据或者模式串较短的简单匹配场景</td>
+<td>在规模较小的情况下能够工作，但随着数据规模增大，性能迅速下降。</td>
+</tr>
+<tr>
+<td>KMP算法（Knuth-Morris-Pratt算法）</td>
+<td>需要处理长模式串或者大量数据的字符串匹配任务</td>
+<td>对于大规模数据和长模式串有较好的性能表现，常用于实际应用中。</td>
+</tr>
+<tr>
+<td>Boyer-Moore算法</td>
+<td>处理长模式串和大规模数据，尤其适用于多次匹配的情况</td>
+<td>在实际应用中，通常能提供较好的性能表现，特别是在模式串相对较长时</td>
+</tr>
+<tr>
+<td>Trie树</td>
+<td>需要快速存储和检索字符串集合的应用，如字典、自动完成、拼写检查等。</td>
+<td>在处理字符串集合和前缀匹配任务时，能够提供稳定和高效的性能表现。</td>
+</tr>
+<tr>
+<td>双数组Trie（Double-Array Trie，DAT）</td>
+<td>需要高效存储和查询大规模字符串集合的场景，特别是需要频繁进行前缀匹配或者完全匹配的应用。</td>
+<td>在大规模数据和长字符串的存储和查询中，双数组Trie能够显著提升性能，特别是在内存使用和查询速度上。</td>
+</tr>
+<tr>
+<td>AC自动机（Aho-Corasick自动机</td>
+<td>需要在大规模文本中同时匹配多个模式串的高效搜索应用场景，如关键字过滤、文本搜索引擎、网络安全等领域。</td>
+<td>在处理多模式匹配问题时，AC自动机通常能够提供优秀的性能表现，特别是在模式串数量较多或文本规模较大时。</td>
+</tr>
+<tr>
+<td>基于双数组Trie的AC自动机</td>
+<td>需要在大规模文本中同时匹配多个模式串的高效搜索应用场景。</td>
+<td>在处理多模式匹配问题时，基于双数组Trie的AC自动机通常能够提供优秀的性能表现，特别是在模式串较多或文本较大时。</td>
+</tr>
+</tbody></table>
+<p>根据管控平台关键字管控的业务要求，关键字匹配算法需要支持两大特点：大规模数据、多模式串匹配，才能在单一关键字和逻辑关键字匹配上有较好的性能表现，根据上述算法的特点及性能，基于双数组Trie的AC自动机算法符合我们的业务需求。</p>
+<h2 id="3-2-基于双数组Trie的AC自动机"><a href="#3-2-基于双数组Trie的AC自动机" class="headerlink" title="3.2 基于双数组Trie的AC自动机"></a>3.2 基于双数组Trie的AC自动机</h2><div class="note success no-icon flat"><p>预备知识的图解请参考：《<a target="_blank" rel="noopener" href="https://www.hankcs.com/program/algorithm/implementation-and-analysis-of-aho-corasick-algorithm-in-java.html">Aho-Corasick算法的Java实现与分析</a>》《<a target="_blank" rel="noopener" href="https://www.hankcs.com/program/java/triedoublearraytriejava.html">双数组Trie树(DoubleArrayTrie)Java实现</a>》。</p>
+<p>基于双数组Trie的AC自动机的实现参考：《<a target="_blank" rel="noopener" href="https://www.hankcs.com/program/algorithm/aho-corasick-double-array-trie.html">Aho Corasick自动机结合DoubleArrayTrie极速多模式匹配</a>》</p>
+</div>
+
+<h1 id="四、方案设计"><a href="#四、方案设计" class="headerlink" title="四、方案设计"></a>四、方案设计</h1><p>根据业务要求我们需要实现消息内容的<code>单一关键字</code>和<code>逻辑关键字</code>的匹配，下面为关键字匹配算法代码实现及使用示例。</p>
+<h2 id="4-1-单一关键字匹配"><a href="#4-1-单一关键字匹配" class="headerlink" title="4.1 单一关键字匹配"></a>4.1 单一关键字匹配</h2><p>单一关键字匹配可以直接使用AhoCorasickDoubleArrayTrie实现，算法如下：</p>
+<h3 id="4-1-1-引入Maven依赖"><a href="#4-1-1-引入Maven依赖" class="headerlink" title="4.1.1 引入Maven依赖"></a>4.1.1 引入Maven依赖</h3><pre class="line-numbers language-xml" data-language="xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>com.hankcs<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>aho-corasick-double-array-trie<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>1.2.3<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="4-1-2-封装AhoCorasickDoubleArrayTrie"><a href="#4-1-2-封装AhoCorasickDoubleArrayTrie" class="headerlink" title="4.1.2 封装AhoCorasickDoubleArrayTrie"></a>4.1.2 封装AhoCorasickDoubleArrayTrie</h3><pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token comment">/**
+ * AhoCorasickDoubleArrayTrie 算法包装类
+ */</span>
+<span class="token keyword">private</span> <span class="token keyword">class</span> <span class="token class-name">AhoCorasickEntry</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">private</span> <span class="token class-name">Map</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">,</span> <span class="token class-name">String</span><span class="token punctuation">></span></span> map <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ConcurrentHashMap</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token class-name">AhoCorasickDoubleArrayTrie</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> trie <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AhoCorasickDoubleArrayTrie</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">addKeyword</span><span class="token punctuation">(</span><span class="token class-name">String</span> keyword<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>map<span class="token punctuation">.</span><span class="token function">containsKey</span><span class="token punctuation">(</span>keyword<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        map<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>keyword<span class="token punctuation">,</span> keyword<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        trie<span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span>map<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">public</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">AhoCorasickDoubleArrayTrie<span class="token punctuation">.</span>Hit</span><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span><span class="token punctuation">></span></span> <span class="token function">parseText</span><span class="token punctuation">(</span><span class="token class-name">String</span> content<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> trie<span class="token punctuation">.</span><span class="token function">parseText</span><span class="token punctuation">(</span>content<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="4-1-3-初始化及使用AhoCorasickDoubleArrayTrie"><a href="#4-1-3-初始化及使用AhoCorasickDoubleArrayTrie" class="headerlink" title="4.1.3 初始化及使用AhoCorasickDoubleArrayTrie"></a>4.1.3 初始化及使用AhoCorasickDoubleArrayTrie</h3><p>下面是一个基于AhoCorasickDoubleArrayTrie的初始化及使用案例：</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">KeywordHandler</span> <span class="token punctuation">&#123;</span>
+    <span class="token class-name">AhoCorasickEntry</span> ahoCorasickEntry <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AhoCorasickEntry</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/**
+     * 初始化AhoCorasickDoubleArrayTrie
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">initAhoCorasickEntry</span><span class="token punctuation">(</span><span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> keywordList<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        keywordList<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>keyword <span class="token operator">-></span> ahoCorasickEntry<span class="token punctuation">.</span><span class="token function">addKeyword</span><span class="token punctuation">(</span>keyword<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        ahoCorasickEntry<span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/**
+     * 获取消息内容中匹配到的关键字集合
+     */</span>
+    <span class="token keyword">public</span> <span class="token class-name">Set</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> <span class="token function">getMatchedKeywordSet</span><span class="token punctuation">(</span><span class="token class-name">String</span> msgContent<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">AhoCorasickDoubleArrayTrie<span class="token punctuation">.</span>Hit</span><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span><span class="token punctuation">></span></span> wordList <span class="token operator">=</span> ahoCorasickEntry<span class="token punctuation">.</span><span class="token function">parseText</span><span class="token punctuation">(</span>msgContent<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token class-name">CollectionUtils</span><span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>wordList<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">return</span> <span class="token class-name">Collections</span><span class="token punctuation">.</span><span class="token function">emptySet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">return</span> wordList<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span>hit <span class="token operator">-></span> hit<span class="token punctuation">.</span>value<span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span><span class="token class-name">Collectors</span><span class="token punctuation">.</span><span class="token function">toSet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="4-2-逻辑关键字匹配"><a href="#4-2-逻辑关键字匹配" class="headerlink" title="4.2 逻辑关键字匹配"></a>4.2 逻辑关键字匹配</h2><p>逻辑关键字的匹配包括两个步骤：第一步匹配逻辑关键字中每个单一关键字，第二部根据第一步匹配到结果再进行逻辑运算。关键字的逻辑运算我们使用开源的高性能表达式引擎AviatorScript。</p>
+<h3 id="4-2-1-AviatorScript简介"><a href="#4-2-1-AviatorScript简介" class="headerlink" title="4.2.1 AviatorScript简介"></a>4.2.1 AviatorScript简介</h3><p><a target="_blank" rel="noopener" href="https://github.com/killme2008/aviatorscript">AviatorScript</a> 是一门高性能、轻量级寄宿于 JVM （包括 Android 平台）之上的脚本语言。</p>
+<div class="note success no-icon flat"><p>Aviator 的基本过程是将表达式直接翻译成对应的 java 字节码执行，特点：</p>
+<ul>
+<li>高性能</li>
+<li>轻量级</li>
+<li>一些比较有特色的特点：<ul>
+<li>支持运算符重载</li>
+<li>原生支持大整数和 BigDecimal 类型及运算，并且通过运算符重载和一般数字类型保持一致的运算方式。</li>
+<li>原生支持正则表达式类型及匹配运算符 =~ </li>
+<li>类 clojure 的 seq 库及 lambda 支持，可以灵活地处理各种集合</li>
+</ul>
+</li>
+<li>开放能力：包括自定义函数接入以及各种定制选项</li>
+</ul>
+</div>
+
+<h3 id="4-2-2-引入AviatorScript依赖"><a href="#4-2-2-引入AviatorScript依赖" class="headerlink" title="4.2.2 引入AviatorScript依赖"></a>4.2.2 引入AviatorScript依赖</h3><pre class="line-numbers language-xml" data-language="xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>com.googlecode.aviator<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>aviator<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>&#123;version&#125;<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="4-2-3-逻辑关键字匹配实现"><a href="#4-2-3-逻辑关键字匹配实现" class="headerlink" title="4.2.3 逻辑关键字匹配实现"></a>4.2.3 逻辑关键字匹配实现</h3><p>前面讲到逻辑关键字的匹配分为两个步骤，第一步先是根据逻辑运算符将逻辑关键字拆分为单一关键字，将所有的拆分后的逻辑关键字构建一个AhoCorasickDoubleArrayTrie进行关键字匹配。</p>
+<div class="note success no-icon flat"><p>基于AhoCorasickDoubleArrayTrie关键匹配代码实现参见上面<code>单一关键字匹配</code>，匹配成功后会返回匹配到的关键字集合<code>matchedKeywordSet</code>，然后进行逻辑关键字的逻辑运算。</p>
+</div>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">ComplexKeyword</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">/**
+     * 逻辑关键字
+     */</span>
+    <span class="token keyword">private</span> <span class="token class-name">String</span> expression<span class="token punctuation">;</span>
+
+    <span class="token comment">/**
+     * 编译后的逻辑关键字
+     */</span>
+    <span class="token keyword">private</span> <span class="token class-name">Expression</span> compiledExpression<span class="token punctuation">;</span>
+
+    <span class="token keyword">private</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> keywordList<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token class-name">ComplexKeyword</span><span class="token punctuation">(</span><span class="token class-name">String</span> expression<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>expression <span class="token operator">=</span> expression<span class="token punctuation">.</span><span class="token function">toLowerCase</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>compiledExpression <span class="token operator">=</span> <span class="token class-name">AviatorEvaluator</span><span class="token punctuation">.</span><span class="token function">compile</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>expression<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 逻辑关键字表达式拆词</span>
+        <span class="token class-name">String</span><span class="token punctuation">[</span><span class="token punctuation">]</span> keywords <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>expression<span class="token punctuation">.</span><span class="token function">split</span><span class="token punctuation">(</span><span class="token string">"[| &amp; ( ) !]"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        keywordList <span class="token operator">=</span> <span class="token function">filterBlankAndSort</span><span class="token punctuation">(</span>keywords<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">public</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> <span class="token function">filterBlankAndSort</span><span class="token punctuation">(</span><span class="token class-name">String</span><span class="token punctuation">[</span><span class="token punctuation">]</span> keywords<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">Set</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> keywordSet <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashSet</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token class-name">Arrays</span><span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span>keywords<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        keywordSet<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span><span class="token string">""</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> keyList <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span>keywordSet<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        keyList<span class="token punctuation">.</span><span class="token function">sort</span><span class="token punctuation">(</span><span class="token punctuation">(</span>keyword1<span class="token punctuation">,</span> keyword2<span class="token punctuation">)</span> <span class="token operator">-></span> keyword2<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> keyword1<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> keyList<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/**
+     * 获取逻辑关键字运算参数Map
+     */</span>
+    <span class="token keyword">private</span> <span class="token class-name">Map</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">,</span> <span class="token class-name">Object</span><span class="token punctuation">></span></span> <span class="token function">getEnvMap</span><span class="token punctuation">(</span><span class="token class-name">Set</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> matchedKeywordSet<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> keywordList<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span><span class="token class-name">Collectors</span><span class="token punctuation">.</span><span class="token function">toMap</span><span class="token punctuation">(</span>
+                        keyword <span class="token operator">-></span> keyword<span class="token punctuation">,</span>
+                        matchedKeywordSet<span class="token operator">::</span><span class="token function">contains</span><span class="token punctuation">,</span>
+                        <span class="token punctuation">(</span>left<span class="token punctuation">,</span> right<span class="token punctuation">)</span> <span class="token operator">-></span> right
+                <span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">private</span> <span class="token class-name">String</span> <span class="token function">getTargetExpression</span><span class="token punctuation">(</span><span class="token class-name">Set</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> matchedKeywordSet<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">Map</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">,</span> <span class="token class-name">String</span><span class="token punctuation">></span></span> env <span class="token operator">=</span> keywordList<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span><span class="token class-name">Collectors</span><span class="token punctuation">.</span><span class="token function">toMap</span><span class="token punctuation">(</span>
+                        keyword <span class="token operator">-></span> keyword<span class="token punctuation">,</span>
+                        keyword <span class="token operator">-></span> <span class="token class-name">String</span><span class="token punctuation">.</span><span class="token function">valueOf</span><span class="token punctuation">(</span>matchedKeywordSet<span class="token punctuation">.</span><span class="token function">contains</span><span class="token punctuation">(</span>keyword<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                        <span class="token punctuation">(</span>left<span class="token punctuation">,</span> right<span class="token punctuation">)</span> <span class="token operator">-></span> right
+                <span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 排序后的keywordList，目的是在替换时先替换长度较大的关键字，避免相同前缀的短关键字被先替换</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token class-name">String</span> key <span class="token operator">:</span> keywordList<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            expression <span class="token operator">=</span> expression<span class="token punctuation">.</span><span class="token function">replaceAll</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> env<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">return</span> expression<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/**
+     * 执行逻辑关键字表达式运算
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">execute</span><span class="token punctuation">(</span><span class="token class-name">Set</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> matchedKeywordSet<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+            <span class="token comment">// 优先使用预编译的表达式传入参数进行逻辑运算（性能高）</span>
+            <span class="token keyword">return</span> compiledExpression<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token function">getEnvMap</span><span class="token punctuation">(</span>matchedKeywordSet<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token comment">// 表达式执行失败，则根据关键字匹配结果获取匹配结果的表达式（性能低于预编译）</span>
+            <span class="token keyword">return</span> <span class="token class-name">AviatorEvaluator</span><span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token function">getTargetExpression</span><span class="token punctuation">(</span>matchedKeywordSet<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">public</span> <span class="token class-name">String</span> <span class="token function">getExpression</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> expression<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>下面为遍历逻辑关键字列表，检测是否有匹配的逻辑关键字：</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token class-name">Optional</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> <span class="token function">matchComplexKeyword</span><span class="token punctuation">(</span><span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">ComplexKeyword</span><span class="token punctuation">></span></span> complexKeywords<span class="token punctuation">,</span> <span class="token class-name">Set</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> matchedKeywordSet<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token class-name">CollectionUtils</span><span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>complexKeywords<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token class-name">Optional</span><span class="token punctuation">.</span><span class="token function">empty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    complexKeywords<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>complexKeyword <span class="token operator">-></span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>complexKeyword<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span>matchedKeywordSet<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">return</span> complexKeyword<span class="token punctuation">.</span><span class="token function">getExpression</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token class-name">Optional</span><span class="token punctuation">.</span><span class="token function">empty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="4-3-性能验证"><a href="#4-3-性能验证" class="headerlink" title="4.3 性能验证"></a>4.3 性能验证</h2><p>下面结合实际业务场景的数据量测试单一关键字和逻辑关键字匹配中两个核心处理步骤<code>AhoCorasickDoubleArrayTrie</code>和<code>AviatorScript</code>的性能表现。</p>
+<h3 id="4-3-1-AhoCorasickDoubleArrayTrie性能测试"><a href="#4-3-1-AhoCorasickDoubleArrayTrie性能测试" class="headerlink" title="4.3.1 AhoCorasickDoubleArrayTrie性能测试"></a>4.3.1 AhoCorasickDoubleArrayTrie性能测试</h3><div class="note success no-icon flat"><p>使用AhoCorasickDoubleArrayTrie项目源码中的<a target="_blank" rel="noopener" href="https://github.com/hankcs/AhoCorasickDoubleArrayTrie/blob/master/src/test/resources/cn/dictionary.txt">dictionary.txt</a>文件作为关键字库，该文件内容为单词，总行数有15万+。</p>
+</div>
+
+<p>选取10个消息模板进行测试,消息模板内容如下：</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java">【xx商场】亲爱的会员，你好！國庆节马上到来，针对新老用户我们特推出<span class="token number">5.5</span>折优惠活动，只要到场凭会员卡可领取精美小礼物一件，数量有限先到先得！退订回<span class="token class-name">T</span>
+【xx教育】高一升高二暑期补习班开课了，开设数学、物理、化学、英语等四科。开课时间<span class="token number">7</span>月<span class="token number">15</span>日。地点：xx<span class="token punctuation">.</span>有意咨询或回复短信，汪老师：xx 退订回<span class="token class-name">T</span>
+一个节日思念无数，一条短信祝福万千。端午节到了，祝你节日安康，同时祝你健健康康地，快安康乐地，和和美美地，顺顺利利地过好生命中的每一天。
+xx大药房】积分当钱花，好礼送不停<span class="token operator">!</span>xx药店年中大促暨积分兑换开始啦<span class="token operator">!</span>丰富礼品等你来。<span class="token number">24</span><span class="token operator">-</span><span class="token number">31</span>日进店销费送xx、xx、xx等。钙片仅<span class="token number">1</span>元<span class="token operator">!</span>退订回<span class="token class-name">T</span>
+【xx】您好，xx经理打扰您！邀约您参与xx举办的xx展会，相信通过此次展会您能够收获到更多的商业朋友，为自己的企业创造更多的新机遇！ x月x日是参展日，望届时与会参观交流，期待您的光临！咨询电话：xx，退订回<span class="token class-name">T</span>
+【xx游泳馆】绿道，全家的选择。带上家里的小朋友一起体验不一样的水世界<span class="token operator">!</span>地址：xx<span class="token punctuation">,</span>电话xx<span class="token punctuation">.</span>退订回<span class="token class-name">T</span>
+【xx银行】鉴于您信誉良好，诚邀您办理<span class="token number">2</span>万元信用卡，点击即可办理https<span class="token operator">:</span><span class="token operator">/</span><span class="token operator">/</span>xx，退订回TD
+【xx装饰】尊敬的xx先生您好！首先感谢您相信xx装饰！希望我们的设计师能给您带来关于装修想要设计方案，有其他咨询可随时联系xx。祝您生活愉快！
+【xx管理局】紧急通知：因近日有大到暴雨，造成降雨量较大，现在应因地制宜排水晾田，尤其是低洼地块更应及时排水，防止倒灌发生，希望引起重视。
+【xx市】尊敬的市民朋友们，<span class="token number">2020</span>年春节即将到来<span class="token punctuation">,</span>让我们众志成城，严守禁放新规维护城市环境、为了美好生活！祝您节日快乐阖家幸福万事如意！<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>测试代码如下：</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">AhoCorasickDoubleArrayTrieTest</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token class-name">String</span><span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">IOException</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">KeywordHandler</span> keywordHandler <span class="token operator">=</span> <span class="token function">getKeywordHandle</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> contents <span class="token operator">=</span> <span class="token class-name">Files</span><span class="token punctuation">.</span><span class="token function">readAllLines</span><span class="token punctuation">(</span><span class="token class-name">Paths</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token string">"content.txt"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">long</span> startTime <span class="token operator">=</span> <span class="token class-name">System</span><span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        contents<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>content <span class="token operator">-></span>  <span class="token function">matchKeyword</span><span class="token punctuation">(</span>keywordHandler<span class="token punctuation">,</span> content<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">long</span> times <span class="token operator">=</span> <span class="token class-name">System</span><span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> startTime<span class="token punctuation">;</span>
+        <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"总耗时:"</span> <span class="token operator">+</span> times <span class="token operator">+</span> <span class="token string">"，平均耗时："</span> <span class="token operator">+</span> times <span class="token operator">/</span> contents<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">"ms"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">matchKeyword</span><span class="token punctuation">(</span><span class="token class-name">KeywordHandler</span> keywordHandler<span class="token punctuation">,</span> <span class="token class-name">String</span> content<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">long</span> startTime <span class="token operator">=</span> <span class="token class-name">System</span><span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">Set</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> matchedKeywordSet <span class="token operator">=</span> keywordHandler<span class="token punctuation">.</span><span class="token function">getMatchedKeywordSet</span><span class="token punctuation">(</span>content<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"单条文本关键字匹配耗时："</span> <span class="token operator">+</span> <span class="token punctuation">(</span><span class="token class-name">System</span><span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> startTime<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">"ms"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// matchedKeywordSet.forEach(System.out::println);</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token class-name">KeywordHandler</span> <span class="token function">getKeywordHandle</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">IOException</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">KeywordHandler</span> keywordHandler <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">KeywordHandler</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 文件路径：https://github.com/hankcs/AhoCorasickDoubleArrayTrie/blob/master/src/test/resources/cn/dictionary.txt</span>
+        keywordHandler<span class="token punctuation">.</span><span class="token function">initAhoCorasickEntry</span><span class="token punctuation">(</span><span class="token function">getKeywordListForTest</span><span class="token punctuation">(</span><span class="token string">"dictionary.txt"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> keywordHandler<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/**
+     * 读取本地字典文件作为关键字，文件有15万行
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> <span class="token function">getKeywordListForTest</span><span class="token punctuation">(</span><span class="token class-name">String</span> filePath<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">IOException</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">Path</span> path <span class="token operator">=</span> <span class="token class-name">Paths</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>filePath<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token class-name">Files</span><span class="token punctuation">.</span><span class="token function">readAllLines</span><span class="token punctuation">(</span>path<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>执行结果如下：</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java">单条文本关键字匹配耗时：<span class="token number">6</span>ms
+单条文本关键字匹配耗时：<span class="token number">1</span>ms
+单条文本关键字匹配耗时：<span class="token number">0</span>ms
+单条文本关键字匹配耗时：<span class="token number">0</span>ms
+单条文本关键字匹配耗时：<span class="token number">0</span>ms
+单条文本关键字匹配耗时：<span class="token number">0</span>ms
+单条文本关键字匹配耗时：<span class="token number">0</span>ms
+单条文本关键字匹配耗时：<span class="token number">0</span>ms
+单条文本关键字匹配耗时：<span class="token number">0</span>ms
+单条文本关键字匹配耗时：<span class="token number">0</span>ms
+总耗时<span class="token operator">:</span><span class="token number">8</span>，平均耗时：<span class="token number">0</span>ms<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>根据测试结果来看，在15万级的关键字匹配中，消息内容关键字匹配耗时仅在初次耗时较高，整体的平均耗时小于1ms, 该性能满足系统接口整体性能要求。</p>
+<h3 id="4-3-2-AviatorScript性能测试"><a href="#4-3-2-AviatorScript性能测试" class="headerlink" title="4.3.2 AviatorScript性能测试"></a>4.3.2 AviatorScript性能测试</h3><div class="note success no-icon flat"><p>逻辑关键字匹配性能主要测试AviatorScript对表达式结果运算的性能，我们使用<code>1万条</code>逻辑关键字，每个逻辑关键字至少包含<code>2个</code>逻辑运算符。</p>
+</div>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">AviatorScriptTest</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token class-name">String</span><span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">IOException</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">ComplexKeyword</span><span class="token punctuation">></span></span> compiledKeywords <span class="token operator">=</span> <span class="token function">buildComplexKeyword</span><span class="token punctuation">(</span><span class="token function">getComplexKeywords</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">int</span> count <span class="token operator">=</span> <span class="token number">10</span><span class="token punctuation">;</span>
+        <span class="token keyword">long</span> startTime <span class="token operator">=</span> <span class="token class-name">System</span><span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> count<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token class-name">Set</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> matchedKeywordSet <span class="token operator">=</span> <span class="token function">getMatchedKeywordSet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token function">matchComplexKeywords</span><span class="token punctuation">(</span>compiledKeywords<span class="token punctuation">,</span> matchedKeywordSet<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">long</span> times <span class="token operator">=</span> <span class="token class-name">System</span><span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> startTime<span class="token punctuation">;</span>
+        <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"总耗时:"</span> <span class="token operator">+</span> times <span class="token operator">+</span> <span class="token string">"ms, 平均耗时："</span> <span class="token operator">+</span> times <span class="token operator">/</span> count <span class="token operator">+</span> <span class="token string">"ms"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">matchComplexKeywords</span><span class="token punctuation">(</span><span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">ComplexKeyword</span><span class="token punctuation">></span></span> compiledKeywords<span class="token punctuation">,</span> <span class="token class-name">Set</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> matchedKeywordSet<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">long</span> startTime <span class="token operator">=</span> <span class="token class-name">System</span><span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        compiledKeywords<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>complexKeyword <span class="token operator">-></span> complexKeyword<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span>matchedKeywordSet<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"单条内容的逻辑关键字运算耗时:"</span> <span class="token operator">+</span> <span class="token punctuation">(</span><span class="token class-name">System</span><span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> startTime<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">"ms"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">ComplexKeyword</span><span class="token punctuation">></span></span> <span class="token function">buildComplexKeyword</span><span class="token punctuation">(</span><span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> keywordExpression<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> keywordExpression<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span>expression <span class="token operator">-></span> <span class="token punctuation">&#123;</span>
+                    <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+                        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">ComplexKeyword</span><span class="token punctuation">(</span>expression<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                        <span class="token keyword">return</span> <span class="token keyword">null</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">&#125;</span>
+                <span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span><span class="token class-name">Objects</span><span class="token operator">::</span><span class="token function">nonNull</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span><span class="token class-name">Collectors</span><span class="token punctuation">.</span><span class="token function">toList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token class-name">Set</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> <span class="token function">getMatchedKeywordSet</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">Set</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> matchedKeywordSet <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashSet</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">Random</span> rand <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Random</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        matchedKeywordSet<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"关键字"</span> <span class="token operator">+</span> rand<span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span><span class="token number">1000</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        matchedKeywordSet<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"关键字"</span> <span class="token operator">+</span> rand<span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span><span class="token number">1000</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        matchedKeywordSet<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"关键字"</span> <span class="token operator">+</span> rand<span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span><span class="token number">1000</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> matchedKeywordSet<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/**
+     * 根据字典文件生成1万个包含两个逻辑运算符的逻辑关键字
+     *
+     * @return 返回逻辑关键字表达式
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> <span class="token function">getComplexKeywords</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">IOException</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> dictionary <span class="token operator">=</span> <span class="token class-name">Files</span><span class="token punctuation">.</span><span class="token function">readAllLines</span><span class="token punctuation">(</span><span class="token class-name">Paths</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token string">"dictionary.txt"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">int</span> complexKeywordSize <span class="token operator">=</span> <span class="token number">10</span> <span class="token operator">*</span> <span class="token number">1000</span><span class="token punctuation">;</span>
+        <span class="token keyword">int</span> index <span class="token operator">=</span> <span class="token number">10</span><span class="token punctuation">;</span>
+        <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> complexKeywords <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span>complexKeywordSize<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span>complexKeywords<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span> complexKeywordSize<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token class-name">String</span> keyword1 <span class="token operator">=</span> dictionary<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>index<span class="token operator">++</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">String</span> keyword2 <span class="token operator">=</span> dictionary<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>index<span class="token operator">++</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">String</span> keyword3 <span class="token operator">=</span> dictionary<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>index<span class="token operator">++</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">String</span> complexKeyword <span class="token operator">=</span> keyword1 <span class="token operator">+</span> <span class="token function">getRandomOperator</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> keyword2 <span class="token operator">+</span> <span class="token function">getRandomOperator</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> keyword3<span class="token punctuation">;</span>
+            complexKeywords<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>complexKeyword<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">return</span> complexKeywords<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/**
+     * 随机返回一个逻辑运算符
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token class-name">String</span> <span class="token function">getRandomOperator</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 创建包含特定字符串元素的List</span>
+        <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> elements <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        elements<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"&amp;&amp;"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        elements<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"||"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        elements<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"&amp;&amp;!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        elements<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"||!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 使用Random类生成一个随机索引</span>
+        <span class="token class-name">Random</span> random <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Random</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">int</span> randomIndex <span class="token operator">=</span> random<span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span>elements<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 根据随机索引获取列表中的元素</span>
+        <span class="token keyword">return</span> elements<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>randomIndex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>执行结果如下：</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java">单条内容的逻辑关键字运算耗时<span class="token operator">:</span><span class="token number">69</span>ms
+单条内容的逻辑关键字运算耗时<span class="token operator">:</span><span class="token number">10</span>ms
+单条内容的逻辑关键字运算耗时<span class="token operator">:</span><span class="token number">8</span>ms
+单条内容的逻辑关键字运算耗时<span class="token operator">:</span><span class="token number">8</span>ms
+单条内容的逻辑关键字运算耗时<span class="token operator">:</span><span class="token number">9</span>ms
+单条内容的逻辑关键字运算耗时<span class="token operator">:</span><span class="token number">7</span>ms
+单条内容的逻辑关键字运算耗时<span class="token operator">:</span><span class="token number">8</span>ms
+单条内容的逻辑关键字运算耗时<span class="token operator">:</span><span class="token number">7</span>ms
+单条内容的逻辑关键字运算耗时<span class="token operator">:</span><span class="token number">7</span>ms
+单条内容的逻辑关键字运算耗时<span class="token operator">:</span><span class="token number">7</span>ms
+总耗时<span class="token operator">:</span><span class="token number">140</span>ms<span class="token punctuation">,</span> 平均耗时：<span class="token number">14</span>ms<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>根据测试结果来看，<code>1万量级</code>的逻辑关键字运算中，仅在初次耗时较高，整体的平均耗时为<code>14ms</code>, 系统接口整体平均响应时长为<code>50ms</code>，可以满足性能要求。</p>
+<h1 id="五、总结"><a href="#五、总结" class="headerlink" title="五、总结"></a>五、总结</h1><p>本文主要根据业务系统对关键字匹配的要求，设计方案实现单一关键字和逻辑关键字的匹配方案，技术方案及性能数据如下：</p>
+<table>
+<thead>
+<tr>
+<th>关键字类型</th>
+<th>数据量级</th>
+<th>技术方案</th>
+<th>处理平均时长</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>单一关键字</td>
+<td>15万+</td>
+<td>AhoCorasickDoubleArrayTrie多模式匹配</td>
+<td>&lt;1ms</td>
+</tr>
+<tr>
+<td>逻辑关键字</td>
+<td>1万</td>
+<td>1.先用AhoCorasickDoubleArrayTrie匹配出关键字<br> 2.再用AviatorScript进行逻辑运算</td>
+<td>14ms</td>
+</tr>
+</tbody></table>
+<p>以上为10万量级文本关键字匹配过滤方案，同时满足系统接口平均响应时长小于<code>50ms</code>的性能要求。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn">逐光</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn/2024/06/22/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-10-wan-liang-ji-wen-ben-guan-jian-zi-pi-pei-guo-lu/">https://www.mpoom.cn/2024/06/22/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-10-wan-liang-ji-wen-ben-guan-jian-zi-pi-pei-guo-lu/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.mpoom.cn" target="_blank">逐光の博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/">高并发</a><a class="post-meta__tags" href="/tags/10%E4%B8%87TPS/">10万TPS</a><a class="post-meta__tags" href="/tags/%E5%85%B3%E9%94%AE%E5%AD%97%E5%8C%B9%E9%85%8D/">关键字匹配</a><a class="post-meta__tags" href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/">AC自动机</a><a class="post-meta__tags" href="/tags/%E5%8F%8C%E6%95%B0%E7%BB%84Trie/">双数组Trie</a></div><div class="post_share"><div class="social-share" data-image="/images/feature/8.jpeg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/07/13/thought/mu-biao-yu-ji-hua-guan-li/" title="目标与计划管理"><img class="cover" src="/images/feature/15.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">目标与计划管理</div></div></a></div><div class="next-post pull-right"><a href="/2024/06/21/high-concurrency/chang-yong-de-guan-jian-zi-pi-pei-suan-fa/" title="常用的关键字匹配算法"><img class="cover" src="/images/feature/12.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">常用的关键字匹配算法</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/06/21/high-concurrency/chang-yong-de-guan-jian-zi-pi-pei-suan-fa/" title="常用的关键字匹配算法"><img class="cover" src="/images/feature/12.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-21</div><div class="title">常用的关键字匹配算法</div></div></a></div><div><a href="/2024/06/08/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-2-yi-ji-hei-ming-dan-guo-lu/" title="10万TPS级高并发系统——2亿级黑名单过滤"><img class="cover" src="/images/feature/23.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-08</div><div class="title">10万TPS级高并发系统——2亿级黑名单过滤</div></div></a></div><div><a href="/2024/06/15/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-30-yi-ji-fa-song-liang-pin-ci-guan-kong/" title="10万TPS级高并发系统——30亿级发送量频次管控（一）"><img class="cover" src="/images/feature/2.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-15</div><div class="title">10万TPS级高并发系统——30亿级发送量频次管控（一）</div></div></a></div><div><a href="/2024/06/08/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-xing-neng-ya-ce-yu-you-hua/" title="10万TPS级高并发系统——性能压测与优化"><img class="cover" src="/images/feature/19.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-08</div><div class="title">10万TPS级高并发系统——性能压测与优化</div></div></a></div><div><a href="/2024/06/01/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-jia-gou-she-ji-yu-xiang-mu-luo-di-shi-jian/" title="10万TPS级消息发送管控平台架构设计与项目落地实践"><img class="cover" src="/images/feature/23.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-01</div><div class="title">10万TPS级消息发送管控平台架构设计与项目落地实践</div></div></a></div><div><a href="/2024/06/08/distributed/si-chong-jing-dian-de-xian-liu-suan-fa/" title="四种经典的限流算法"><img class="cover" src="/images/feature/9.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-08</div><div class="title">四种经典的限流算法</div></div></a></div></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E8%83%8C%E6%99%AF%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">一、背景简介</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%8D%95%E4%B8%80%E5%85%B3%E9%94%AE%E5%AD%97"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 单一关键字</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E9%80%BB%E8%BE%91%E5%85%B3%E9%94%AE%E5%AD%97"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 逻辑关键字</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%80%A7%E8%83%BD%E8%A6%81%E6%B1%82"><span class="toc-number">2.</span> <span class="toc-text">二、性能要求</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%96%B9%E6%A1%88%E9%A2%84%E7%A0%94"><span class="toc-number">3.</span> <span class="toc-text">三、方案预研</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E7%AE%97%E6%B3%95%E5%AF%B9%E6%AF%94%E5%88%86%E6%9E%90"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 算法对比分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%9F%BA%E4%BA%8E%E5%8F%8C%E6%95%B0%E7%BB%84Trie%E7%9A%84AC%E8%87%AA%E5%8A%A8%E6%9C%BA"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 基于双数组Trie的AC自动机</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%96%B9%E6%A1%88%E8%AE%BE%E8%AE%A1"><span class="toc-number">4.</span> <span class="toc-text">四、方案设计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%8D%95%E4%B8%80%E5%85%B3%E9%94%AE%E5%AD%97%E5%8C%B9%E9%85%8D"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 单一关键字匹配</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-1-%E5%BC%95%E5%85%A5Maven%E4%BE%9D%E8%B5%96"><span class="toc-number">4.1.1.</span> <span class="toc-text">4.1.1 引入Maven依赖</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-2-%E5%B0%81%E8%A3%85AhoCorasickDoubleArrayTrie"><span class="toc-number">4.1.2.</span> <span class="toc-text">4.1.2 封装AhoCorasickDoubleArrayTrie</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-3-%E5%88%9D%E5%A7%8B%E5%8C%96%E5%8F%8A%E4%BD%BF%E7%94%A8AhoCorasickDoubleArrayTrie"><span class="toc-number">4.1.3.</span> <span class="toc-text">4.1.3 初始化及使用AhoCorasickDoubleArrayTrie</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E9%80%BB%E8%BE%91%E5%85%B3%E9%94%AE%E5%AD%97%E5%8C%B9%E9%85%8D"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 逻辑关键字匹配</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-1-AviatorScript%E7%AE%80%E4%BB%8B"><span class="toc-number">4.2.1.</span> <span class="toc-text">4.2.1 AviatorScript简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-2-%E5%BC%95%E5%85%A5AviatorScript%E4%BE%9D%E8%B5%96"><span class="toc-number">4.2.2.</span> <span class="toc-text">4.2.2 引入AviatorScript依赖</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-3-%E9%80%BB%E8%BE%91%E5%85%B3%E9%94%AE%E5%AD%97%E5%8C%B9%E9%85%8D%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.2.3.</span> <span class="toc-text">4.2.3 逻辑关键字匹配实现</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E6%80%A7%E8%83%BD%E9%AA%8C%E8%AF%81"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 性能验证</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-1-AhoCorasickDoubleArrayTrie%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95"><span class="toc-number">4.3.1.</span> <span class="toc-text">4.3.1 AhoCorasickDoubleArrayTrie性能测试</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-2-AviatorScript%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95"><span class="toc-number">4.3.2.</span> <span class="toc-text">4.3.2 AviatorScript性能测试</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%80%BB%E7%BB%93"><span class="toc-number">5.</span> <span class="toc-text">五、总结</span></a></li></ol></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2024 By 逐光</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.14.0-b2"></script><script src="/js/main.js?v=4.14.0-b2"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.35/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"><script>(() => {
+  const initValine = () => {
+    const valine = new Valine(Object.assign({
+      el: '#vcomment',
+      appId: 'f5WSKiyRgMriw1qIicgn1Dbu-gzGzoHsz',
+      appKey: 'c9Jx92rNNJ0RzzaxLNCqu4rR',
+      avatar: 'monsterid',
+      serverURLs: '',
+      emojiMaps: "",
+      path: window.location.pathname,
+      visitor: false
+    }, null))
+  }
+
+  const loadValine = async () => {
+    if (typeof Valine === 'function') initValine()
+    else {
+      await btf.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js')
+      initValine()
+    }
+  }
+
+  if ('Valine' === 'Valine' || !true) {
+    if (true) btf.loadComment(document.getElementById('vcomment'),loadValine)
+    else setTimeout(loadValine, 0)
+  } else {
+    window.loadOtherComment = loadValine
+  }
+})()</script></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=4.14.0-b2"></script></div></div></body></html>

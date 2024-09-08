@@ -1,0 +1,534 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>《金字塔原理》 | 逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="麦肯锡40年经典培训教材。思考、表达和解决问题的逻辑 —— 【美】芭芭拉·明托  写在前面的话这是一本讲“金字塔原理”的书籍，其中的思想对我们思考、表达有很深的指导意义。本书的核心思想不是很多，但由于是书籍载体的形式，而且书中存在大量案例，所以内容略显啰嗦，读起来有点乏味。如果只是想了解什么是“"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/2022/08/20/book/jin-zi-ta-yuan-li/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=4.14.0-b2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.35/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>(()=>{
+      const saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+      
+      window.btf = {
+        saveToLocal: saveToLocal,
+        getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+          const script = document.createElement('script')
+          script.src = url
+          script.async = true
+          script.onerror = reject
+          script.onload = script.onreadystatechange = function() {
+            const loadState = this.readyState
+            if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+            script.onload = script.onreadystatechange = null
+            resolve()
+          }
+
+          Object.keys(attr).forEach(key => {
+            script.setAttribute(key, attr[key])
+          })
+
+          document.head.appendChild(script)
+        }),
+
+        getCSS: (url, id = false) => new Promise((resolve, reject) => {
+          const link = document.createElement('link')
+          link.rel = 'stylesheet'
+          link.href = url
+          if (id) link.id = id
+          link.onerror = reject
+          link.onload = link.onreadystatechange = function() {
+            const loadState = this.readyState
+            if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+            link.onload = link.onreadystatechange = null
+            resolve()
+          }
+          document.head.appendChild(link)
+        }),
+
+        addGlobalFn: (key, fn, name = false, parent = window) => {
+          const pjaxEnable = false
+          if (!pjaxEnable && key.startsWith('pjax')) return
+
+          const globalFn = parent.globalFn || {}
+          const keyObj = globalFn[key] || {}
+    
+          if (name && keyObj[name]) return
+    
+          name = name || Object.keys(keyObj).length
+          keyObj[name] = fn
+          globalFn[key] = keyObj
+          parent.globalFn = globalFn
+        }
+      }
+    
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+      
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })()</script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '《金字塔原理》',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-09-08 13:54:35'
+}</script><meta name="generator" content="Hexo 5.4.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/images/theme/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">93</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">128</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">16</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="逐光の博客"><span class="site-name">逐光の博客</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">《金字塔原理》</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2022-08-19T16:00:00.000Z" title="发表于 2022-08-20 00:00:00">2022-08-20</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-09-08T05:54:35.212Z" title="更新于 2024-09-08 13:54:35">2024-09-08</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/book/">book</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">6.6k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>19分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="《金字塔原理》"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><p><img src="/images/book/%E9%87%91%E5%AD%97%E5%A1%94%E5%8E%9F%E7%90%86.jpeg" alt="金字塔原理"></p>
+<blockquote>
+<p>麦肯锡40年经典培训教材。思考、表达和解决问题的逻辑 —— 【美】芭芭拉·明托</p>
+</blockquote>
+<h1 id="写在前面的话"><a href="#写在前面的话" class="headerlink" title="写在前面的话"></a>写在前面的话</h1><p>这是一本讲“金字塔原理”的书籍，其中的思想对我们思考、表达有很深的指导意义。本书的核心思想不是很多，但由于是书籍载体的形式，而且书中存在大量案例，所以内容略显啰嗦，读起来有点乏味。如果只是想了解什么是“金字塔原理”，则阅读这本书的序言部分即可，这本书的序言对本书中的内容做了全面和高度的总结。如果你还想了解金字塔原理的一些方式方法，请继续向下阅读。</p>
+<p>使用金字塔原理的最终想要达到的目的是“逻辑清晰”，或许我们没有读过这本书，但是在学习和工作中我们或多或少已经使用过一些方式方法。下面脑图是这本书的主要的目录结构：<br><img src="/2022/08/20/book/jin-zi-ta-yuan-li/%E9%87%91%E5%AD%97%E5%A1%94%E5%8E%9F%E7%90%86%E8%84%91%E5%9B%BE.png" alt="金字塔原理脑图"></p>
+<blockquote>
+<h1 id="序言"><a href="#序言" class="headerlink" title="序言"></a>序言</h1><p>“想清楚，说明白，知道说什么、怎么说”，是我们希望达到的境界。当我们与人沟通时，需要想清楚3件事：谁是我的听众？他们想听什么？他们想怎样听？</p>
+<p>《金字塔原理》介绍了一种能清晰地展现思路的有效方法。掌握了金字塔原理，就能重点突出，逻辑清晰。不管是在政界、商界、学界，还是在企事业单位，所有高、中、基层职场人士，只要你需要思考和沟通，就会从金字塔原理受益。金字塔结构思考力是领导力的必要素质，本书是训练思考、使表达呈现逻辑性的实用宝典。</p>
+<h2 id="为什么要学习金字塔原理"><a href="#为什么要学习金字塔原理" class="headerlink" title="为什么要学习金字塔原理"></a>为什么要学习金字塔原理</h2><p>我们都希望在思考、沟通交流、管理下属和解决问题时，重点突出，思路清晰，层次分明。我们评价人时，有一个标准是逻辑思维能力，而逻辑思维能力的标准又是什么？我们指导别人“要逻辑清晰、条理分明”，可怎样才能做到“逻辑清晰”？怎样才能提高思考能力，养成良好的思维习惯？</p>
+<p>我们希望在表达（写作、讲话和培训）时“，能说到点子上，正面回答受众（读者、听众和学员）的问题。那么你知道如何搭建框架结构、组织语句的顺序，用最短时间讲清观点，让受众有兴趣、能理解、记得住？</p>
+<p>我们还希望，组织中的全体成员能用统一的逻辑、结构和方式交流，快速产生共鸣，达成共识，那么是否有规范可寻？</p>
+<p>答案就是——使用逻辑清晰的金字塔结构！</p>
+<h2 id="金字塔原理的基本概念"><a href="#金字塔原理的基本概念" class="headerlink" title="金字塔原理的基本概念"></a>金字塔原理的基本概念</h2><p>● 金字塔原理是一种重点突出、逻辑清晰、层次分明、简单易懂的思考方式、沟通方式、规范动作。</p>
+<p>● 金字塔原理的基本结构是：结论先行，以上统下，归类分组，逻辑递进。先重要后次要，先总结后具体，先框架后细节，先结论后原因，先结果后过程，先论点后论据。</p>
+<p>● 金字塔原理训练表达者：关注、挖掘受众的意图、需求点、利益点、关注点和兴趣点，想清说什么（内容），怎么说（思路、结构），掌握沟通的标准结构、规范动作。</p>
+<p>● 金字塔能够达到的沟通效果：观点鲜明、重点突出、思路清晰、层次分明、简单易懂，让受众有兴趣，能理解，记得住。</p>
+<p>● 搭建金字塔结构的具体做法是：自上而下表达，自下而上思考，纵向总结概括，横向归类分组，序言讲故事，标题提炼思想精华。</p>
+<h2 id="金字塔原理能够帮助你解决哪些问题"><a href="#金字塔原理能够帮助你解决哪些问题" class="headerlink" title="金字塔原理能够帮助你解决哪些问题"></a>金字塔原理能够帮助你解决哪些问题</h2><p>学习金字塔原理课程，会使用金字塔结构思考、表达、管理下属和解决问题，提高逻辑性、条理性，准确高效阐述思想。掌握规范动作，组织中所有人用相同思路和表达方式交流，沟通效果好、效率高。</p>
+<p>● 思考：学会用右脑、左脑全脑思维，提高结构化思维能力，思考全、准、快。</p>
+<p>● 书面表达、公文写作：会挖掘读者的关注点、兴趣点、需求点、利益点，能使用金字塔的4个原则，搭建逻辑清晰的常用公文框架结构（通知、请示、工作计划、工作总结、会议纪要、报道），掌握写序言的四要素、归类分组的MECE原则，能够重点突出、逻辑清晰、简明扼要，让人看得懂、愿意看、记得住。快速写文章，缩短写作时间，减少修改次数。</p>
+<p>● 口头表达：说话、演讲、讲课，能够使用金字塔的基本原则，回答听众最常有的4类疑问：“是什么？为什么？如何做？好不好？”表达时重点突出、条理清晰，让人愿意听、听得懂、记得住，成为思路清晰、言简意赅的人。</p>
+<p>● 管理下属：能够运用金字塔原理，考虑全面、周到、严谨，分配任务、设计流程不重叠无遗漏。</p>
+<p>● 培训师开发课程和讲课：会使用金字塔搭建框架结构、组织素材、重点突出、逻辑清晰、通俗易懂。</p>
+</blockquote>
+<center><h1>第1篇：表达的逻辑</h1></center>
+
+<h1 id="一、为什么要用金字塔结构"><a href="#一、为什么要用金字塔结构" class="headerlink" title="一、为什么要用金字塔结构"></a>一、为什么要用金字塔结构</h1><p>当我们试图通过文章、演讲或培训向受众传达我们对问题的观点时，那么他将面临一项复杂的任务。因为即使你的文章篇幅很短，比如只有两页纸，文章也会包括大约100个句子，读者必须阅读理解每一句话，并且寻找每一句话之间的联系，前前后后反复思考。如果你的文章结构呈金字塔形，文章的思路自顶部逐渐向下展开则会比较易读。这一现象体现了人类思维的基本规律：</p>
+<blockquote>
+<ul>
+<li>大脑自动将信息归纳到金字塔结构的各组中，以便于理解和记忆</li>
+<li>预先归纳到金字塔结构中的沟通内容，都更容易被人理解和记忆</li>
+<li>你应有意识的将沟通内容组织成金字塔结构，包括口头表达和书面表达</li>
+</ul>
+</blockquote>
+<h2 id="1-1-如何将思想组织成金字塔"><a href="#1-1-如何将思想组织成金字塔" class="headerlink" title="1.1 如何将思想组织成金字塔"></a>1.1 如何将思想组织成金字塔</h2><h3 id="奇妙的数字“7”"><a href="#奇妙的数字“7”" class="headerlink" title="奇妙的数字“7”"></a>奇妙的数字“7”</h3><p>论文《奇妙的数字7±2》提出大脑的短期记忆无法一次容纳7个以上的记忆项目。有的人可能一次能记住9个项目，有的人则只能记住5个。大脑比较容易记住的是3个项目，当然最容易记住的是一个项目。当大脑发现需要处理的记忆项目超过4个或5个时，就会开始将其归类到不同的逻辑范畴中，以便于记忆。</p>
+<h3 id="搭建金字塔结构的两个步骤"><a href="#搭建金字塔结构的两个步骤" class="headerlink" title="搭建金字塔结构的两个步骤"></a>搭建金字塔结构的两个步骤</h3><ul>
+<li>归类分组： 根据逻辑将思想或概念分组</li>
+<li>抽象概括： 找出分组后的逻辑关系，提高一个抽象层次</li>
+</ul>
+<h2 id="1-2-自上而下表达，结论先行"><a href="#1-2-自上而下表达，结论先行" class="headerlink" title="1.2 自上而下表达，结论先行"></a>1.2 自上而下表达，结论先行</h2><blockquote>
+<p>研究发现，最有效的表达方式是：先提出总的概念，再列出具体项目，即要自上而下的表达思想。</p>
+</blockquote>
+<h3 id="非结构化表达存在的问题？"><a href="#非结构化表达存在的问题？" class="headerlink" title="非结构化表达存在的问题？"></a>非结构化表达存在的问题？</h3><ul>
+<li>受众需要逐句理解你要表达的思想，并自动从中寻找共同点，造成理解困难</li>
+<li>由于用户无法提前知道你的核心思想，可能会造成错误推论，造成误解</li>
+</ul>
+<blockquote>
+<p>读者在接受信息时，总是在寻找一种能够将所摄入信息联系起来的结构。为保证读者找到你希望的结构，你必须提前把这种结构告诉他。</p>
+</blockquote>
+<h2 id="1-3-自下而上思考，总结概括"><a href="#1-3-自下而上思考，总结概括" class="headerlink" title="1.3 自下而上思考，总结概括"></a>1.3 自下而上思考，总结概括</h2><p>将信息进行归类分组、抽象概括，并以自上而下的方式表达出来，那么结构如下图所示，中间每一个深色方框代表你想表达的一个思想。<br><img src="/2022/08/20/book/jin-zi-ta-yuan-li/%E9%87%91%E5%AD%97%E5%A1%94%E7%BB%93%E6%9E%84.png" alt="金字塔结构"></p>
+<center>文章中的思想应组成单一思想统领下的金字塔结构</center>
+从上图中可以看出，我们是自上而下的表达的，但是仔细想一想，我们在写作时的实际思考过程中会发现，在总结主要思想时使用的是自下而上的方式。
+在金字塔结构的最底层，对每一个单一思想进行分组然后分析逻辑关系进行抽象概括，形成高一层的单一思想。
+
+<h3 id="金字塔中的思想3中相互关联的方式"><a href="#金字塔中的思想3中相互关联的方式" class="headerlink" title="金字塔中的思想3中相互关联的方式"></a>金字塔中的思想3中相互关联的方式</h3><p>金字塔中的思想以3种方式项目关联————向上、向下、横向。位于一组思想的上一个层次的思想是对这一组思想的概括，这一组思想是对其上一层次思想的解释和支持。</p>
+<p>文章中的思想必须符合以下规则：</p>
+<ul>
+<li>纵向： 文章用任一层次上的思想必须是其下一层次思想的概括</li>
+<li>横向： 每组中的思想必须属于同一逻辑范畴</li>
+<li>横向： 每组中的思想必须按照逻辑顺序组织</li>
+</ul>
+<h1 id="二、金字塔内部的结构"><a href="#二、金字塔内部的结构" class="headerlink" title="二、金字塔内部的结构"></a>二、金字塔内部的结构</h1><p>如果在写作之前你已经完全清楚了你想表达的思想，你可以很容易的将要表达的思想组成规范的金字塔结构。但是很多时候，我们刚开始写作时，可能对自己想要表达的思想还只有模糊的想法，甚至感觉无从下笔。<br>我们是无法做到一下子就将思想组成金字塔，因此我们先必须梳理你想要表达的思想。</p>
+<blockquote>
+<h3 id="金字塔中的字结构"><a href="#金字塔中的字结构" class="headerlink" title="金字塔中的字结构"></a>金字塔中的字结构</h3><p>金字塔中的字结构能够加快你梳理思想的过程：</p>
+<ul>
+<li>主题与子主题之间的纵向关系</li>
+<li>各子主题之间的横向关系</li>
+<li>序言的叙述方式</li>
+</ul>
+</blockquote>
+<h2 id="2-1-纵向关系"><a href="#2-1-纵向关系" class="headerlink" title="2.1 纵向关系"></a>2.1 纵向关系</h2><p>文章中的大主题下的思想都同时与文章中的其它思想发生成纵向或横向的联系。纵向关系能够很好的吸引读者注意力，通过纵向关系可以引导一种疑问/回答式的对话，从而使读者带着极大的兴趣了解你的思路进展。<br><img src="/2022/08/20/book/jin-zi-ta-yuan-li/%E7%BA%B5%E5%90%91%E5%85%B3%E7%B3%BB%E6%A1%88%E4%BE%8B.png" alt="金字塔纵向关系案例"></p>
+<center>纵向关系案例————具有疑问/回答式对话结构</center>
+金字塔结构巨大的价值在于迫使你在理清思路时，从视觉上使用纵向的疑问/回答式对话关系清晰化。每一个表述都应当引起读者的疑问，而你也必须在这一表述下的横向结构层次上逐个回答读者的疑问。
+
+<h2 id="2-2-横向关系"><a href="#2-2-横向关系" class="headerlink" title="2.2 横向关系"></a>2.2 横向关系</h2><p>在考虑下一结构层次如何表述时，必须保证你的表述能够回答在其上一层次上的表述引起的疑问，同时保证表述必须符合逻辑。所以表述必须具有明确的归纳或演绎关系。</p>
+<ul>
+<li>演绎关系： 演绎性思想组合是由几个承前启后的论述组成的。第一个思想是对当今世界上某种现象的表述；第二个思想是对该句子的主语或谓语所做的表述；第三个思想则说明了以上两种表述同时在世界存在时所具有的隐含意义。演绎关系案例：<ul>
+<li>所有的人都会死。</li>
+<li>苏格拉底是一个人。</li>
+<li>因此苏格拉底会死。</li>
+</ul>
+</li>
+<li>归纳关系：归纳性思想组合中的思想互相关联，你可以用同一个名次表示组中所有思想，如支持的原因、返回的原因、步骤、问题，等等。归纳关系案例：<ul>
+<li>法国坦克已抵达波兰边境</li>
+<li>德国坦克已抵达波兰边境</li>
+<li>俄国坦克已抵达波兰边境</li>
+</ul>
+</li>
+</ul>
+<p>提高一个抽象层次，根据以上案例的共同点，可以得出一个推论：“波兰将受到坦克入侵”或类似的思想。</p>
+<h1 id="三、如何构建金字塔"><a href="#三、如何构建金字塔" class="headerlink" title="三、如何构建金字塔"></a>三、如何构建金字塔</h1><p>可以通过自上而下或自下而上地构建文章的金字塔结构，自上而下的方法通常比自下而上的方法更容易。</p>
+<h2 id="3-1-自上而下法"><a href="#3-1-自上而下法" class="headerlink" title="3.1 自上而下法"></a>3.1 自上而下法</h2><h3 id="自上而下法构建金字塔的步骤："><a href="#自上而下法构建金字塔的步骤：" class="headerlink" title="自上而下法构建金字塔的步骤："></a>自上而下法构建金字塔的步骤：</h3><ul>
+<li>提出主题思想</li>
+<li>设想受众的主要疑问</li>
+<li>写序言：背景-冲突——疑问-回答。</li>
+<li>与受众进行疑问/回答式对话</li>
+<li>对受众的新疑问，重复进行疑问/回答式对话。</li>
+</ul>
+<h2 id="3-2-自下而上法"><a href="#3-2-自下而上法" class="headerlink" title="3.2 自下而上法"></a>3.2 自下而上法</h2><h3 id="自下而上思考："><a href="#自下而上思考：" class="headerlink" title="自下而上思考："></a>自下而上思考：</h3><ul>
+<li>列出你想表达的所有思想要点。</li>
+<li>找出各要点之间的逻辑关系。</li>
+<li>得出结论。</li>
+</ul>
+<h2 id="3-3-初学者注意事项"><a href="#3-3-初学者注意事项" class="headerlink" title="3.3 初学者注意事项"></a>3.3 初学者注意事项</h2><ul>
+<li>一定先搭结构，先尝试自上而下法</li>
+<li>序言先写背景，将背景作为序言的起点</li>
+<li>先多花时间思考序言，不要省略</li>
+<li>将历史背景放在序言中</li>
+<li>序言仅设计读者不会对其真实性提出质疑的内容</li>
+<li>在关键句层次上，更宜选择规划推理法而非演绎推理法（归纳法更容易被人理解）</li>
+</ul>
+<h1 id="四、序言的具体写法"><a href="#四、序言的具体写法" class="headerlink" title="四、序言的具体写法"></a>四、序言的具体写法</h1><p>文章的序言（前言、引言、导言）概述读者已知的信息，并将这些信息与文章将要回答的疑问建立联系，然后作者就可以将全部精力放在解答疑问上。文章的序言必须用讲故事的结构，先介绍背景，再说明冲突，由此引发读者的疑问，然后针对该“疑问”给出“答案”。</p>
+<blockquote>
+<p>序言要用讲故事的形式，是为了让读者抛开复杂的思想，专注于你的话题。激发读者兴趣，吸引注意力：新奇、悬念、与读者本人相关。</p>
+</blockquote>
+<h2 id="4-1-常见的4种疑问形式"><a href="#4-1-常见的4种疑问形式" class="headerlink" title="4.1 常见的4种疑问形式"></a>4.1 常见的4种疑问形式</h2><table>
+<thead>
+<tr>
+<th>背景（关于文章主题的公认事实）</th>
+<th>冲突（推动情节发展并引发读者提出疑问的因素）</th>
+<th>读者的疑问</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>需要完成某项任务</td>
+<td>发生了妨碍完成该任务的事情</td>
+<td>我们应该怎么做？</td>
+</tr>
+<tr>
+<td>存在某个问题</td>
+<td>知道解决问题的方案</td>
+<td>如何实施解决方案？</td>
+</tr>
+<tr>
+<td>存在某个问题</td>
+<td>有人提出了一个解决方案</td>
+<td>改方案是否正确？</td>
+</tr>
+<tr>
+<td>采取了某项行动</td>
+<td>行动未达到预期效果</td>
+<td>为什么没有达到预期效果？</td>
+</tr>
+</tbody></table>
+<h2 id="4-2-常见序言结构顺序"><a href="#4-2-常见序言结构顺序" class="headerlink" title="4.2 常见序言结构顺序"></a>4.2 常见序言结构顺序</h2><p>序言必须采用“背景-冲突-疑问-解决方案”的结构，但是各部分的额顺序可以有所变化。</p>
+<ul>
+<li>标准式：背景——冲突——答案</li>
+<li>开门见山式： 答案——背景——冲突</li>
+<li>突出忧虑式：冲突——背景——答案</li>
+<li>突出信心式：疑问——背景——冲突——答案</li>
+</ul>
+<h2 id="4-3-关键句要点"><a href="#4-3-关键句要点" class="headerlink" title="4.3 关键句要点"></a>4.3 关键句要点</h2><p>关键句要点（或称要点、核心观点、一级结论、一级论点、重要结论），不仅要会发由文章主题引起的受众的疑问，还要呈现文章的框架结构。<br>列出关键句要点可以让读者在开始阅读的最初30秒就能了解你的全部思路。</p>
+<h2 id="4-4-序言的常见模式"><a href="#4-4-序言的常见模式" class="headerlink" title="4.4 序言的常见模式"></a>4.4 序言的常见模式</h2><ul>
+<li>发出指示式</li>
+<li>请求支持式</li>
+<li>解释做法式</li>
+<li>比较选择式</li>
+</ul>
+<h2 id="4-5-序言4要素SCQA"><a href="#4-5-序言4要素SCQA" class="headerlink" title="4.5 序言4要素SCQA"></a>4.5 序言4要素SCQA</h2><ul>
+<li>介绍背景（S，Situation）</li>
+<li>指出冲突（C，Complication）</li>
+<li>引发疑问（Q， Question）</li>
+<li>给出答案（A，Answer）</li>
+</ul>
+<h1 id="五、演绎推理与归纳推理"><a href="#五、演绎推理与归纳推理" class="headerlink" title="五、演绎推理与归纳推理"></a>五、演绎推理与归纳推理</h1><h2 id="5-1-演绎推理的3个步骤"><a href="#5-1-演绎推理的3个步骤" class="headerlink" title="5.1 演绎推理的3个步骤"></a>5.1 演绎推理的3个步骤</h2><ul>
+<li>出现的问题或存在现象</li>
+<li>产生问题的根源、原因</li>
+<li>解决问题的方案</li>
+</ul>
+<blockquote>
+<p>演绎推理如果非常简单直接，则用演绎推理。金字塔结构的关键句层次尽量用归纳法组织，将演绎推理放在金字塔结构中较低的层次上，减少推理过程中插入其它干扰信息。<br>某个段落中使用演绎法式合适的，读者也很容易理解。但是在较高的层次上，归纳法总是比演绎法更容易理解。</p>
+</blockquote>
+<h2 id="5-2-归纳推理的2个步骤"><a href="#5-2-归纳推理的2个步骤" class="headerlink" title="5.2 归纳推理的2个步骤"></a>5.2 归纳推理的2个步骤</h2><ul>
+<li>正确定义该组思想，找到一个能够表示该组所有思想共同点的名词。</li>
+<li>比别并剔除该组思想中与其它思想不相称的思想。</li>
+</ul>
+<h2 id="5-3-演绎推理与归纳推理的区别："><a href="#5-3-演绎推理与归纳推理的区别：" class="headerlink" title="5.3 演绎推理与归纳推理的区别："></a>5.3 演绎推理与归纳推理的区别：</h2><ul>
+<li>演绎推理：第二点是对第一点主语或谓语的论述。</li>
+<li>归纳推理： 同组中的思想具有类似的主语或谓语。</li>
+</ul>
+<center><h1>第2篇：思考的逻辑</h1></center>
+
+<h1 id="六、应用逻辑顺序"><a href="#六、应用逻辑顺序" class="headerlink" title="六、应用逻辑顺序"></a>六、应用逻辑顺序</h1><p>在归纳性的思想中，我们必须掌握选择逻辑的顺序。</p>
+<h2 id="6-1-三种逻辑顺序"><a href="#6-1-三种逻辑顺序" class="headerlink" title="6.1 三种逻辑顺序"></a>6.1 三种逻辑顺序</h2><ul>
+<li>时间顺序：按照采取行动的顺序（第一步、第二步、第三步）依次表述达到某一结果必须采取的行动。</li>
+<li>结构顺序：使用示意图、地图、图画或照片想象某事物时的顺序，如组织结构图、关键成功要素示意图等。</li>
+<li>重要性顺序：明确指明每组的思想具有共同特性，确保将所有具有该特性的思想列入该组。在每组中，根据各个问题所具有特性的强弱、主次顺序进行排序。</li>
+</ul>
+<h2 id="6-2-MECE原则"><a href="#6-2-MECE原则" class="headerlink" title="6.2 MECE原则"></a>6.2 MECE原则</h2><p>分组的MECE原则保证划分后的各部分符合以下要求：</p>
+<ul>
+<li>各部分之间相互独立（mutually exclusive），相互排斥，没有重叠。</li>
+<li>所有部分完全穷尽（collectively exhaustive），没有遗漏。</li>
+</ul>
+<h1 id="七、概括各组思想"><a href="#七、概括各组思想" class="headerlink" title="七、概括各组思想"></a>七、概括各组思想</h1><p>金字塔原理的规则：位于金字塔结构每一个层次上的思想，都必须是对下面一个层次思想的提炼、概括，</p>
+<h2 id="7-1-概括各组思想的方法"><a href="#7-1-概括各组思想的方法" class="headerlink" title="7.1 概括各组思想的方法"></a>7.1 概括各组思想的方法</h2><ul>
+<li>总结句避免使用“缺乏思想”的句子</li>
+<li>总结句要说明行动产生的结果/目标</li>
+<li>总结句要使用明确的词汇/语句</li>
+<li>区分行动步骤的层次</li>
+<li>直接概括行动的结果</li>
+<li>找出各结论之间的共性</li>
+<li>找出结构上的共性</li>
+<li>寻找更密切的关系</li>
+<li>完成提炼总结概括的完成思考过程</li>
+</ul>
+<center><h1>第3篇：解决问题的逻辑</h1></center>
+
+<h1 id="八、界定问题"><a href="#八、界定问题" class="headerlink" title="八、界定问题"></a>八、界定问题</h1><h2 id="8-1-界定问题的框架"><a href="#8-1-界定问题的框架" class="headerlink" title="8.1 界定问题的框架"></a>8.1 界定问题的框架</h2><p>问题是指你已有的（现状）与你想要的（目标）之间存在的差距，这种差距是自某一背景下一系列特定条件下产生的。了解问题的发展历史对我们分析差距非常重要。</p>
+<ul>
+<li>展开说明框架中的各要素</li>
+<li>把“界定的问题”写成序言</li>
+</ul>
+<p>界定问题的框架是解决问题的第一步，也是建立金字塔结构、交流解决方案的第一步。</p>
+<h2 id="8-2-展开问题的各要素"><a href="#8-2-展开问题的各要素" class="headerlink" title="8.2 展开问题的各要素"></a>8.2 展开问题的各要素</h2><p>界定问题的4个要素：</p>
+<ul>
+<li>切入点/序幕（Starting Point/Opening Sene）</li>
+<li>困扰/困惑（Disturbing Event）</li>
+<li>现状，非期望结果（R1， Undesired Result）</li>
+<li>目标，期望结果（R2， Desired Result）</li>
+</ul>
+<h1 id="九、结构化分析问题"><a href="#九、结构化分析问题" class="headerlink" title="九、结构化分析问题"></a>九、结构化分析问题</h1><p>分析问题的标准流程是：</p>
+<blockquote>
+<p>收集信息 ——&gt; 描述发现 ——&gt; 得出结论 ——&gt; 提出方案</p>
+</blockquote>
+<p>从信息资料入手，获取完成数据，设计诊断框架进行分析。</p>
+<h2 id="9-1-设计诊断框架"><a href="#9-1-设计诊断框架" class="headerlink" title="9.1 设计诊断框架"></a>9.1 设计诊断框架</h2><p>使用诊断框架可以揭示分析应该关注的要素或领域，帮助我们快速界定问题。</p>
+<h2 id="9-2-结构化分析的3种方法"><a href="#9-2-结构化分析的3种方法" class="headerlink" title="9.2 结构化分析的3种方法"></a>9.2 结构化分析的3种方法</h2><ul>
+<li>呈现有形的结构</li>
+<li>寻找因果关系</li>
+<li>归类分组</li>
+</ul>
+<h2 id="9-3-建立逻辑树"><a href="#9-3-建立逻辑树" class="headerlink" title="9.3 建立逻辑树"></a>9.3 建立逻辑树</h2><p> 逻辑树的作用：</p>
+<ul>
+<li>寻找解决方案：从逻辑上找出解决问题的方案。</li>
+<li>寻找各组的思想缺陷：找出各个组的观点的缺陷。</li>
+</ul>
+<center><h1>第4篇：演示的逻辑</h1></center>
+
+<h1 id="十、在书面上呈现金字塔"><a href="#十、在书面上呈现金字塔" class="headerlink" title="十、在书面上呈现金字塔"></a>十、在书面上呈现金字塔</h1><p>理想的文章，应该让读者在30秒内理解作者的整体思维架构，包括序言、中心思想和关键句要点。</p>
+<h2 id="10-1-突出显示文章的框架结构"><a href="#10-1-突出显示文章的框架结构" class="headerlink" title="10.1 突出显示文章的框架结构"></a>10.1 突出显示文章的框架结构</h2><p>长篇文章在页面上呈现金字塔层级的常见方法：</p>
+<ul>
+<li>多级标题法</li>
+<li>下划线法</li>
+<li>数字标号法</li>
+<li>行首缩进法</li>
+<li>项目符号法</li>
+</ul>
+<p>无论采用哪种格式，目的都是便于读者理解文章的主要观点，以及所有各种类型的支持性观点。</p>
+<h3 id="10-1-1-使用标题注意点"><a href="#10-1-1-使用标题注意点" class="headerlink" title="10.1.1 使用标题注意点"></a>10.1.1 使用标题注意点</h3><ul>
+<li>每一层级的标题不可能只有一个</li>
+<li>相同的思想应使用相同的句型</li>
+<li>标题用词应提炼思想的精髓（标题的作用是提示，而不是统领下文）</li>
+<li>标题与正文应分开考虑（标题更多是为眼球而写，而不是为头脑而写）</li>
+<li>每组标题应提前集中介绍（在大标题下应有一段话，集中介绍标题的主要内容）</li>
+<li>不要滥用标题</li>
+</ul>
+<h2 id="10-2-上下文之间要有过渡"><a href="#10-2-上下文之间要有过渡" class="headerlink" title="10.2 上下文之间要有过渡"></a>10.2 上下文之间要有过渡</h2><p>在每一章或节的开始，可以采用讲故事或承上启下的方法做铺垫。常用过渡方式：</p>
+<ul>
+<li>讲故事</li>
+<li>承上启下</li>
+<li>总结各部分内容</li>
+<li>得出完整结论说明下一步行动</li>
+</ul>
+<h1 id="十一、在PPT演示文稿中呈现金字塔"><a href="#十一、在PPT演示文稿中呈现金字塔" class="headerlink" title="十一、在PPT演示文稿中呈现金字塔"></a>十一、在PPT演示文稿中呈现金字塔</h1><p>设计PPT演示文稿必须了解和掌握的基本规则：</p>
+<ul>
+<li>文字幻灯片应只包含最重要的、经过适当分组和总结的思想，叙述时应尽量简洁；</li>
+<li>演示文稿应图文并茂，使用各种图表相配合；</li>
+<li>演示文稿应呈现经过深思熟虑后的额故事梗概和剧本</li>
+</ul>
+<p>演示文稿包括两类幻灯片——文字和图表，理想的比例是图表占90%，文字占10%，其各自的作用：</p>
+<ul>
+<li>文字幻灯片：<ul>
+<li>说明演示文稿的框架结构</li>
+<li>强调重要的思想、观点、结论、论点、建议或要采取的措施等</li>
+</ul>
+</li>
+<li>图表幻灯片： 阐明文字难以说清楚的数据、关系</li>
+</ul>
+<h2 id="11-1-设计文字PPT幻灯片"><a href="#11-1-设计文字PPT幻灯片" class="headerlink" title="11.1 设计文字PPT幻灯片"></a>11.1 设计文字PPT幻灯片</h2><h3 id="清楚你要说的内容"><a href="#清楚你要说的内容" class="headerlink" title="清楚你要说的内容"></a>清楚你要说的内容</h3><p>举例说明实际演讲稿和文字幻灯片的差别，“实际讲稿如下：</p>
+<blockquote>
+<h4 id="现状"><a href="#现状" class="headerlink" title="现状"></a>现状</h4><p>杰克逊食品公司的未交订货的数量一直非常高。在PMG业务领域，不能完全按订单供货，将不可避免地导致市场份额下降。</p>
+<ul>
+<li>生产问题是造成目前状况的原因之一。</li>
+<li>供应链流程不连贯和管理不善，使生产问题更加复杂。</li>
+<li>供应链和生产流程缺乏紧密配合，难以解决未交订货问题，也不能集中保证重点客户和重点产品。</li>
+</ul>
+</blockquote>
+<p>文字幻灯片如下：</p>
+<blockquote>
+<h4 id="现状-1"><a href="#现状-1" class="headerlink" title="现状"></a>现状</h4><p>尚未交付的订货相当多</p>
+<ul>
+<li>生产存在问题</li>
+<li>供应链流程不合理</li>
+<li>生产/供应链缺乏配合</li>
+</ul>
+</blockquote>
+<h3 id="清楚你要演示的内容"><a href="#清楚你要演示的内容" class="headerlink" title="清楚你要演示的内容"></a>清楚你要演示的内容</h3><ul>
+<li>每次只演示和说明一个论点</li>
+<li>论点应使用完成的陈述句，而不是标题性语言</li>
+<li>文字尽量简短</li>
+<li>使用简单的词汇和数字</li>
+<li>字号应足够大</li>
+<li>注意幻灯片的趣味性</li>
+<li>用逐级展开呈现，提高趣味性</li>
+</ul>
+<h2 id="11-2-设计图表PPT幻灯片"><a href="#11-2-设计图表PPT幻灯片" class="headerlink" title="11.2 设计图表PPT幻灯片"></a>11.2 设计图表PPT幻灯片</h2><p>图表幻灯片采用视觉关系可以用来向观众介绍大量的数据和单凭文字无法传达的复杂关系。图表幻灯片传递的信息应该尽量简单易懂，因为观众没有太多时间和机会仔细研究各部分的含义。制作图表幻灯片的诀窍是：确定你想用图表回答的问题，把答案作为图表的标题，然后选择最适合的图表样式。</p>
+<blockquote>
+<p>演示是参与者给予演讲者的一种恩惠——《新演讲术》</p>
+</blockquote>
+<h1 id="十二、在字里行间呈现金字塔"><a href="#十二、在字里行间呈现金字塔" class="headerlink" title="十二、在字里行间呈现金字塔"></a>十二、在字里行间呈现金字塔</h1><p>做到条理清晰需要经过两个步骤：首先决定要说明的思想或要证明的论点，然后用文字表现。如何在文字中使用金字塔结构呢？</p>
+<ul>
+<li>画脑图（在大脑中画图像）</li>
+<li>把图像复制成文字</li>
+</ul>
+<center><h1>总结</h1></center>
+本书核心内容在前4章，主要是解答了两个问题：为什么要使用金字塔原理？以及如何构建金字塔？
+
+<h3 id="1-为什么要使用金字塔原理？"><a href="#1-为什么要使用金字塔原理？" class="headerlink" title="1. 为什么要使用金字塔原理？"></a>1. 为什么要使用金字塔原理？</h3><p>因为人的大脑短时间只能记住7±2个项目，大脑比较容易记住3个项目。所以我们应该将内容分组归类、抽象概括、总结归纳，构建成金字塔结构，让受众更容易理解和记住我们想要表达的内容。</p>
+<h3 id="2-什么是金字塔原理？"><a href="#2-什么是金字塔原理？" class="headerlink" title="2. 什么是金字塔原理？"></a>2. 什么是金字塔原理？</h3><ul>
+<li><strong>自上而下表达，结论先行</strong><br>先提出总的概念，再列出具体项目，即要自上而下的表达思想</li>
+<li><strong>自下而上思考，总结概括</strong><br>如果不能提前构思好金字塔的上层结构，可以先从金字塔结构的最底层，对每一个单一思想进行分组然后分析逻辑关系进行抽象概括，形成高一层的单一思想。</li>
+</ul>
+<p>此外在金字塔的上层结构中更适合使用归纳推理，在金字塔底层能更适合使用演绎推理。</p>
+<h3 id="3-使用金字塔原理能够达到的沟通效果？"><a href="#3-使用金字塔原理能够达到的沟通效果？" class="headerlink" title="3. 使用金字塔原理能够达到的沟通效果？"></a>3. 使用金字塔原理能够达到的沟通效果？</h3><p>观点鲜明、重点突出、思路清晰、层次分明、简单易懂，让受众有兴趣，能理解，记得住。</p>
+<h3 id="4-SCQA原则"><a href="#4-SCQA原则" class="headerlink" title="4. SCQA原则"></a>4. SCQA原则</h3><p>文章的序言必须用讲故事的结构，先介绍背景，再说明冲突，由此引发读者的疑问，然后针对该“疑问”给出“答案”。<br>序言要用讲故事的形式，是为了让读者抛开复杂的思想，专注于你的话题。激发读者兴趣，吸引注意力：新奇、悬念、与读者本人相关。<br>SCQA的内容如下：</p>
+<ul>
+<li>介绍背景（S，Situation）</li>
+<li>指出冲突（C，Complication）</li>
+<li>引发疑问（Q， Question）</li>
+<li>给出答案（A，Answer）</li>
+</ul>
+<h3 id="5-MECE原则"><a href="#5-MECE原则" class="headerlink" title="5. MECE原则"></a>5. MECE原则</h3><p>分组的MECE原则保证划分后的各部分符合以下要求：</p>
+<ul>
+<li>各部分之间相互独立（mutually exclusive），相互排斥，没有重叠。</li>
+<li>所有部分完全穷尽（collectively exhaustive），没有遗漏。</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn">逐光</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn/2022/08/20/book/jin-zi-ta-yuan-li/">https://www.mpoom.cn/2022/08/20/book/jin-zi-ta-yuan-li/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.mpoom.cn" target="_blank">逐光の博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E9%87%91%E5%AD%97%E5%A1%94%E5%8E%9F%E7%90%86/">金字塔原理</a></div><div class="post_share"><div class="social-share" data-image="/images/book/%E9%87%91%E5%AD%97%E5%A1%94%E5%8E%9F%E7%90%86.jpeg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2022/09/07/book/ni-yao-ru-he-heng-liang-ni-de-ren-sheng/" title="《你要如何衡量你的人生》"><img class="cover" src="/images/book/%E4%BD%A0%E8%A6%81%E5%A6%82%E4%BD%95%E8%A1%A1%E9%87%8F%E4%BD%A0%E7%9A%84%E4%BA%BA%E7%94%9F.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">《你要如何衡量你的人生》</div></div></a></div><div class="next-post pull-right"><a href="/2022/07/13/java/ssh-shi-yong-x11-zhuan-fa-yin-qi-de-yi-chang/" title="SSH使用X11转发引起的异常"><img class="cover" src="/images/feature/11.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">SSH使用X11转发引起的异常</div></div></a></div></nav><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%86%99%E5%9C%A8%E5%89%8D%E9%9D%A2%E7%9A%84%E8%AF%9D"><span class="toc-number">1.</span> <span class="toc-text">写在前面的话</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%BA%8F%E8%A8%80"><span class="toc-number">2.</span> <span class="toc-text">序言</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E5%AD%A6%E4%B9%A0%E9%87%91%E5%AD%97%E5%A1%94%E5%8E%9F%E7%90%86"><span class="toc-number">2.1.</span> <span class="toc-text">为什么要学习金字塔原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%87%91%E5%AD%97%E5%A1%94%E5%8E%9F%E7%90%86%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5"><span class="toc-number">2.2.</span> <span class="toc-text">金字塔原理的基本概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%87%91%E5%AD%97%E5%A1%94%E5%8E%9F%E7%90%86%E8%83%BD%E5%A4%9F%E5%B8%AE%E5%8A%A9%E4%BD%A0%E8%A7%A3%E5%86%B3%E5%93%AA%E4%BA%9B%E9%97%AE%E9%A2%98"><span class="toc-number">2.3.</span> <span class="toc-text">金字塔原理能够帮助你解决哪些问题</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">第1篇：表达的逻辑</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E7%94%A8%E9%87%91%E5%AD%97%E5%A1%94%E7%BB%93%E6%9E%84"><span class="toc-number">4.</span> <span class="toc-text">一、为什么要用金字塔结构</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%A6%82%E4%BD%95%E5%B0%86%E6%80%9D%E6%83%B3%E7%BB%84%E7%BB%87%E6%88%90%E9%87%91%E5%AD%97%E5%A1%94"><span class="toc-number">4.1.</span> <span class="toc-text">1.1 如何将思想组织成金字塔</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A5%87%E5%A6%99%E7%9A%84%E6%95%B0%E5%AD%97%E2%80%9C7%E2%80%9D"><span class="toc-number">4.1.1.</span> <span class="toc-text">奇妙的数字“7”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%90%AD%E5%BB%BA%E9%87%91%E5%AD%97%E5%A1%94%E7%BB%93%E6%9E%84%E7%9A%84%E4%B8%A4%E4%B8%AA%E6%AD%A5%E9%AA%A4"><span class="toc-number">4.1.2.</span> <span class="toc-text">搭建金字塔结构的两个步骤</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E8%87%AA%E4%B8%8A%E8%80%8C%E4%B8%8B%E8%A1%A8%E8%BE%BE%EF%BC%8C%E7%BB%93%E8%AE%BA%E5%85%88%E8%A1%8C"><span class="toc-number">4.2.</span> <span class="toc-text">1.2 自上而下表达，结论先行</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%9D%9E%E7%BB%93%E6%9E%84%E5%8C%96%E8%A1%A8%E8%BE%BE%E5%AD%98%E5%9C%A8%E7%9A%84%E9%97%AE%E9%A2%98%EF%BC%9F"><span class="toc-number">4.2.1.</span> <span class="toc-text">非结构化表达存在的问题？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-3-%E8%87%AA%E4%B8%8B%E8%80%8C%E4%B8%8A%E6%80%9D%E8%80%83%EF%BC%8C%E6%80%BB%E7%BB%93%E6%A6%82%E6%8B%AC"><span class="toc-number">4.3.</span> <span class="toc-text">1.3 自下而上思考，总结概括</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%87%91%E5%AD%97%E5%A1%94%E4%B8%AD%E7%9A%84%E6%80%9D%E6%83%B33%E4%B8%AD%E7%9B%B8%E4%BA%92%E5%85%B3%E8%81%94%E7%9A%84%E6%96%B9%E5%BC%8F"><span class="toc-number">4.3.1.</span> <span class="toc-text">金字塔中的思想3中相互关联的方式</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E9%87%91%E5%AD%97%E5%A1%94%E5%86%85%E9%83%A8%E7%9A%84%E7%BB%93%E6%9E%84"><span class="toc-number">5.</span> <span class="toc-text">二、金字塔内部的结构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%87%91%E5%AD%97%E5%A1%94%E4%B8%AD%E7%9A%84%E5%AD%97%E7%BB%93%E6%9E%84"><span class="toc-number">5.0.1.</span> <span class="toc-text">金字塔中的字结构</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E7%BA%B5%E5%90%91%E5%85%B3%E7%B3%BB"><span class="toc-number">5.1.</span> <span class="toc-text">2.1 纵向关系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E6%A8%AA%E5%90%91%E5%85%B3%E7%B3%BB"><span class="toc-number">5.2.</span> <span class="toc-text">2.2 横向关系</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%A6%82%E4%BD%95%E6%9E%84%E5%BB%BA%E9%87%91%E5%AD%97%E5%A1%94"><span class="toc-number">6.</span> <span class="toc-text">三、如何构建金字塔</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E8%87%AA%E4%B8%8A%E8%80%8C%E4%B8%8B%E6%B3%95"><span class="toc-number">6.1.</span> <span class="toc-text">3.1 自上而下法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%87%AA%E4%B8%8A%E8%80%8C%E4%B8%8B%E6%B3%95%E6%9E%84%E5%BB%BA%E9%87%91%E5%AD%97%E5%A1%94%E7%9A%84%E6%AD%A5%E9%AA%A4%EF%BC%9A"><span class="toc-number">6.1.1.</span> <span class="toc-text">自上而下法构建金字塔的步骤：</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E8%87%AA%E4%B8%8B%E8%80%8C%E4%B8%8A%E6%B3%95"><span class="toc-number">6.2.</span> <span class="toc-text">3.2 自下而上法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%87%AA%E4%B8%8B%E8%80%8C%E4%B8%8A%E6%80%9D%E8%80%83%EF%BC%9A"><span class="toc-number">6.2.1.</span> <span class="toc-text">自下而上思考：</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E5%88%9D%E5%AD%A6%E8%80%85%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="toc-number">6.3.</span> <span class="toc-text">3.3 初学者注意事项</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E5%BA%8F%E8%A8%80%E7%9A%84%E5%85%B7%E4%BD%93%E5%86%99%E6%B3%95"><span class="toc-number">7.</span> <span class="toc-text">四、序言的具体写法</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%B8%B8%E8%A7%81%E7%9A%844%E7%A7%8D%E7%96%91%E9%97%AE%E5%BD%A2%E5%BC%8F"><span class="toc-number">7.1.</span> <span class="toc-text">4.1 常见的4种疑问形式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E5%B8%B8%E8%A7%81%E5%BA%8F%E8%A8%80%E7%BB%93%E6%9E%84%E9%A1%BA%E5%BA%8F"><span class="toc-number">7.2.</span> <span class="toc-text">4.2 常见序言结构顺序</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E5%85%B3%E9%94%AE%E5%8F%A5%E8%A6%81%E7%82%B9"><span class="toc-number">7.3.</span> <span class="toc-text">4.3 关键句要点</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-4-%E5%BA%8F%E8%A8%80%E7%9A%84%E5%B8%B8%E8%A7%81%E6%A8%A1%E5%BC%8F"><span class="toc-number">7.4.</span> <span class="toc-text">4.4 序言的常见模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-5-%E5%BA%8F%E8%A8%804%E8%A6%81%E7%B4%A0SCQA"><span class="toc-number">7.5.</span> <span class="toc-text">4.5 序言4要素SCQA</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%BC%94%E7%BB%8E%E6%8E%A8%E7%90%86%E4%B8%8E%E5%BD%92%E7%BA%B3%E6%8E%A8%E7%90%86"><span class="toc-number">8.</span> <span class="toc-text">五、演绎推理与归纳推理</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E6%BC%94%E7%BB%8E%E6%8E%A8%E7%90%86%E7%9A%843%E4%B8%AA%E6%AD%A5%E9%AA%A4"><span class="toc-number">8.1.</span> <span class="toc-text">5.1 演绎推理的3个步骤</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%BD%92%E7%BA%B3%E6%8E%A8%E7%90%86%E7%9A%842%E4%B8%AA%E6%AD%A5%E9%AA%A4"><span class="toc-number">8.2.</span> <span class="toc-text">5.2 归纳推理的2个步骤</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-%E6%BC%94%E7%BB%8E%E6%8E%A8%E7%90%86%E4%B8%8E%E5%BD%92%E7%BA%B3%E6%8E%A8%E7%90%86%E7%9A%84%E5%8C%BA%E5%88%AB%EF%BC%9A"><span class="toc-number">8.3.</span> <span class="toc-text">5.3 演绎推理与归纳推理的区别：</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">9.</span> <span class="toc-text">第2篇：思考的逻辑</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E5%BA%94%E7%94%A8%E9%80%BB%E8%BE%91%E9%A1%BA%E5%BA%8F"><span class="toc-number">10.</span> <span class="toc-text">六、应用逻辑顺序</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-%E4%B8%89%E7%A7%8D%E9%80%BB%E8%BE%91%E9%A1%BA%E5%BA%8F"><span class="toc-number">10.1.</span> <span class="toc-text">6.1 三种逻辑顺序</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-MECE%E5%8E%9F%E5%88%99"><span class="toc-number">10.2.</span> <span class="toc-text">6.2 MECE原则</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E6%A6%82%E6%8B%AC%E5%90%84%E7%BB%84%E6%80%9D%E6%83%B3"><span class="toc-number">11.</span> <span class="toc-text">七、概括各组思想</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#7-1-%E6%A6%82%E6%8B%AC%E5%90%84%E7%BB%84%E6%80%9D%E6%83%B3%E7%9A%84%E6%96%B9%E6%B3%95"><span class="toc-number">11.1.</span> <span class="toc-text">7.1 概括各组思想的方法</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">12.</span> <span class="toc-text">第3篇：解决问题的逻辑</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E7%95%8C%E5%AE%9A%E9%97%AE%E9%A2%98"><span class="toc-number">13.</span> <span class="toc-text">八、界定问题</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#8-1-%E7%95%8C%E5%AE%9A%E9%97%AE%E9%A2%98%E7%9A%84%E6%A1%86%E6%9E%B6"><span class="toc-number">13.1.</span> <span class="toc-text">8.1 界定问题的框架</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-2-%E5%B1%95%E5%BC%80%E9%97%AE%E9%A2%98%E7%9A%84%E5%90%84%E8%A6%81%E7%B4%A0"><span class="toc-number">13.2.</span> <span class="toc-text">8.2 展开问题的各要素</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B9%9D%E3%80%81%E7%BB%93%E6%9E%84%E5%8C%96%E5%88%86%E6%9E%90%E9%97%AE%E9%A2%98"><span class="toc-number">14.</span> <span class="toc-text">九、结构化分析问题</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#9-1-%E8%AE%BE%E8%AE%A1%E8%AF%8A%E6%96%AD%E6%A1%86%E6%9E%B6"><span class="toc-number">14.1.</span> <span class="toc-text">9.1 设计诊断框架</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-2-%E7%BB%93%E6%9E%84%E5%8C%96%E5%88%86%E6%9E%90%E7%9A%843%E7%A7%8D%E6%96%B9%E6%B3%95"><span class="toc-number">14.2.</span> <span class="toc-text">9.2 结构化分析的3种方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-3-%E5%BB%BA%E7%AB%8B%E9%80%BB%E8%BE%91%E6%A0%91"><span class="toc-number">14.3.</span> <span class="toc-text">9.3 建立逻辑树</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">15.</span> <span class="toc-text">第4篇：演示的逻辑</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8D%81%E3%80%81%E5%9C%A8%E4%B9%A6%E9%9D%A2%E4%B8%8A%E5%91%88%E7%8E%B0%E9%87%91%E5%AD%97%E5%A1%94"><span class="toc-number">16.</span> <span class="toc-text">十、在书面上呈现金字塔</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#10-1-%E7%AA%81%E5%87%BA%E6%98%BE%E7%A4%BA%E6%96%87%E7%AB%A0%E7%9A%84%E6%A1%86%E6%9E%B6%E7%BB%93%E6%9E%84"><span class="toc-number">16.1.</span> <span class="toc-text">10.1 突出显示文章的框架结构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#10-1-1-%E4%BD%BF%E7%94%A8%E6%A0%87%E9%A2%98%E6%B3%A8%E6%84%8F%E7%82%B9"><span class="toc-number">16.1.1.</span> <span class="toc-text">10.1.1 使用标题注意点</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-2-%E4%B8%8A%E4%B8%8B%E6%96%87%E4%B9%8B%E9%97%B4%E8%A6%81%E6%9C%89%E8%BF%87%E6%B8%A1"><span class="toc-number">16.2.</span> <span class="toc-text">10.2 上下文之间要有过渡</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8D%81%E4%B8%80%E3%80%81%E5%9C%A8PPT%E6%BC%94%E7%A4%BA%E6%96%87%E7%A8%BF%E4%B8%AD%E5%91%88%E7%8E%B0%E9%87%91%E5%AD%97%E5%A1%94"><span class="toc-number">17.</span> <span class="toc-text">十一、在PPT演示文稿中呈现金字塔</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#11-1-%E8%AE%BE%E8%AE%A1%E6%96%87%E5%AD%97PPT%E5%B9%BB%E7%81%AF%E7%89%87"><span class="toc-number">17.1.</span> <span class="toc-text">11.1 设计文字PPT幻灯片</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B8%85%E6%A5%9A%E4%BD%A0%E8%A6%81%E8%AF%B4%E7%9A%84%E5%86%85%E5%AE%B9"><span class="toc-number">17.1.1.</span> <span class="toc-text">清楚你要说的内容</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%8E%B0%E7%8A%B6"><span class="toc-number">17.1.1.1.</span> <span class="toc-text">现状</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%8E%B0%E7%8A%B6-1"><span class="toc-number">17.1.1.2.</span> <span class="toc-text">现状</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B8%85%E6%A5%9A%E4%BD%A0%E8%A6%81%E6%BC%94%E7%A4%BA%E7%9A%84%E5%86%85%E5%AE%B9"><span class="toc-number">17.1.2.</span> <span class="toc-text">清楚你要演示的内容</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#11-2-%E8%AE%BE%E8%AE%A1%E5%9B%BE%E8%A1%A8PPT%E5%B9%BB%E7%81%AF%E7%89%87"><span class="toc-number">17.2.</span> <span class="toc-text">11.2 设计图表PPT幻灯片</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8D%81%E4%BA%8C%E3%80%81%E5%9C%A8%E5%AD%97%E9%87%8C%E8%A1%8C%E9%97%B4%E5%91%88%E7%8E%B0%E9%87%91%E5%AD%97%E5%A1%94"><span class="toc-number">18.</span> <span class="toc-text">十二、在字里行间呈现金字塔</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">19.</span> <span class="toc-text">总结</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E4%BD%BF%E7%94%A8%E9%87%91%E5%AD%97%E5%A1%94%E5%8E%9F%E7%90%86%EF%BC%9F"><span class="toc-number">19.0.1.</span> <span class="toc-text">1. 为什么要使用金字塔原理？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E4%BB%80%E4%B9%88%E6%98%AF%E9%87%91%E5%AD%97%E5%A1%94%E5%8E%9F%E7%90%86%EF%BC%9F"><span class="toc-number">19.0.2.</span> <span class="toc-text">2. 什么是金字塔原理？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E4%BD%BF%E7%94%A8%E9%87%91%E5%AD%97%E5%A1%94%E5%8E%9F%E7%90%86%E8%83%BD%E5%A4%9F%E8%BE%BE%E5%88%B0%E7%9A%84%E6%B2%9F%E9%80%9A%E6%95%88%E6%9E%9C%EF%BC%9F"><span class="toc-number">19.0.3.</span> <span class="toc-text">3. 使用金字塔原理能够达到的沟通效果？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-SCQA%E5%8E%9F%E5%88%99"><span class="toc-number">19.0.4.</span> <span class="toc-text">4. SCQA原则</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-MECE%E5%8E%9F%E5%88%99"><span class="toc-number">19.0.5.</span> <span class="toc-text">5. MECE原则</span></a></li></ol></li></ol></li></ol></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2024 By 逐光</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.14.0-b2"></script><script src="/js/main.js?v=4.14.0-b2"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.35/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"><script>(() => {
+  const initValine = () => {
+    const valine = new Valine(Object.assign({
+      el: '#vcomment',
+      appId: 'f5WSKiyRgMriw1qIicgn1Dbu-gzGzoHsz',
+      appKey: 'c9Jx92rNNJ0RzzaxLNCqu4rR',
+      avatar: 'monsterid',
+      serverURLs: '',
+      emojiMaps: "",
+      path: window.location.pathname,
+      visitor: false
+    }, null))
+  }
+
+  const loadValine = async () => {
+    if (typeof Valine === 'function') initValine()
+    else {
+      await btf.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js')
+      initValine()
+    }
+  }
+
+  if ('Valine' === 'Valine' || !true) {
+    if (true) btf.loadComment(document.getElementById('vcomment'),loadValine)
+    else setTimeout(loadValine, 0)
+  } else {
+    window.loadOtherComment = loadValine
+  }
+})()</script></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=4.14.0-b2"></script></div></div></body></html>

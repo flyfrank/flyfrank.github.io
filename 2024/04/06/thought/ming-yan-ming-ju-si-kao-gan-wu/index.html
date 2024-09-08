@@ -1,0 +1,240 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>名言名句 &amp; 思考感悟 | 逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="最近几年读了一些书，经历了一些事，想清楚了一些事，这篇文章记录日常中能够引起共鸣的一些名言名句以及自我的一些思考、认知和感悟。  一、名言名句幸福不是拥有你想要的，而是想要你已经拥有的。 灵魂所需的必需品，一件也不需要用钱去买。把目光朝向内心，你就会看到，你心中有千个地区尚未被发现。到这些地方去旅"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/2024/04/06/thought/ming-yan-ming-ju-si-kao-gan-wu/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=4.14.0-b2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.35/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>(()=>{
+      const saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+      
+      window.btf = {
+        saveToLocal: saveToLocal,
+        getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+          const script = document.createElement('script')
+          script.src = url
+          script.async = true
+          script.onerror = reject
+          script.onload = script.onreadystatechange = function() {
+            const loadState = this.readyState
+            if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+            script.onload = script.onreadystatechange = null
+            resolve()
+          }
+
+          Object.keys(attr).forEach(key => {
+            script.setAttribute(key, attr[key])
+          })
+
+          document.head.appendChild(script)
+        }),
+
+        getCSS: (url, id = false) => new Promise((resolve, reject) => {
+          const link = document.createElement('link')
+          link.rel = 'stylesheet'
+          link.href = url
+          if (id) link.id = id
+          link.onerror = reject
+          link.onload = link.onreadystatechange = function() {
+            const loadState = this.readyState
+            if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+            link.onload = link.onreadystatechange = null
+            resolve()
+          }
+          document.head.appendChild(link)
+        }),
+
+        addGlobalFn: (key, fn, name = false, parent = window) => {
+          const pjaxEnable = false
+          if (!pjaxEnable && key.startsWith('pjax')) return
+
+          const globalFn = parent.globalFn || {}
+          const keyObj = globalFn[key] || {}
+    
+          if (name && keyObj[name]) return
+    
+          name = name || Object.keys(keyObj).length
+          keyObj[name] = fn
+          globalFn[key] = keyObj
+          parent.globalFn = globalFn
+        }
+      }
+    
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+      
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })()</script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '名言名句 & 思考感悟',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-09-08 13:54:35'
+}</script><meta name="generator" content="Hexo 5.4.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/images/theme/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">93</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">128</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">16</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="逐光の博客"><span class="site-name">逐光の博客</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">名言名句 &amp; 思考感悟</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-04-05T16:00:00.000Z" title="发表于 2024-04-06 00:00:00">2024-04-06</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-09-08T05:54:35.191Z" title="更新于 2024-09-08 13:54:35">2024-09-08</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/thought/">thought</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">1.7k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>4分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="名言名句 &amp; 思考感悟"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><blockquote>
+<p>最近几年读了一些书，经历了一些事，想清楚了一些事，这篇文章记录日常中能够引起共鸣的一些名言名句以及自我的一些思考、认知和感悟。</p>
+</blockquote>
+<h1 id="一、名言名句"><a href="#一、名言名句" class="headerlink" title="一、名言名句"></a>一、名言名句</h1><p>幸福不是拥有你想要的，而是想要你已经拥有的。</p>
+<p>灵魂所需的必需品，一件也不需要用钱去买。把目光朝向内心，你就会看到，你心中有千个地区尚未被发现。到这些地方去旅行吧，成为内心宇宙志的专家。</p>
+<p>高山仰止，景行行止，虽不能至，心向往之。</p>
+<p>让时光在指尖转动。</p>
+<p>视此虽近，邈若山河。</p>
+<p>曾国藩座右铭：物来顺应，未来不迎，当时不杂，既过不恋。</p>
+<p>世上只有一种英雄主义，就是在认清生活真相之后依然热爱生活。</p>
+<p>回头看，轻舟已过万重山；<br>向前看，长路漫漫亦灿灿；<br>抬头看，万里明灯照人间；<br>低头看，脚下黄士千年绵；<br>人心看，满腔热血为国燃；</p>
+<p>世人慌慌张张，不过是图碎银几两；偏偏这碎银几两，能解世间万般惆怅。</p>
+<p>牢骚太盛防肠断，风物长宜放眼量。——毛泽东</p>
+<p>真正美丽的东西从不刻意求关注，美一旦自知便容易滑向造作。</p>
+<p>一个人所说的必须真实，但没有义务把所有的真实都说出来——康德</p>
+<p>向阳而生，逐光而行；心有暖阳，满目芬芳，何惧人生沧桑。</p>
+<p>父爱则母静，母静则子安，子安则家和，家和万事兴；<br>父恶则母苦，母苦则子惧，子惧则家衰，家衰败三代。</p>
+<p>一辈子太长，只争朝夕。</p>
+<h1 id="二、思考感悟"><a href="#二、思考感悟" class="headerlink" title="二、思考感悟"></a>二、思考感悟</h1><p>不要用行动上的勤奋掩盖思想上的懒惰。</p>
+<p>不要以战术的勤奋来掩盖战略的懈怠——雷军</p>
+<p>不要沉湎于解决问题，而要能够抓住战略性的机会。</p>
+<p>那些只知念书，不肯生产的人，坐享别人的金蛋，自己永远不敢面对现实。</p>
+<p>一个人的上限，并非由努力程度决定的，而是取决于学习方法和目标定位。</p>
+<p>真正贫穷的家庭，往往不是金钱上的匮乏，而是认知上的贫瘠。</p>
+<p>而且是环境改变人的思维，思维会进一步改变境遇，反过来再改变思维。</p>
+<p>傅盛说，“人跟人之间最大的差别，就是认知上的不同。”人和人最终比拼的，是对一件事情的理解和对行业的洞察。</p>
+<p>我不但充分利用自己的智慧，还竭尽所能去借用他人的智慧。</p>
+<p>逆境是考验人的真实能力的机会，只有挺过逆境的人才能被称作是强者。</p>
+<p>所谓能力问题，80%都是态度问题。</p>
+<p>再好的东西，他也很快就习惯了，感受不到丝毫的刺激与愉悦。他渐渐明白，原来幸福并不来自外部的物质财富，而是一种内心的感受。</p>
+<p>世界的本质是一个迷宫，一楼的人，不管怎么努力奔跑，都走不出迷宫。他们既不提升认知，也不寻求外力，还有太多的父母，一直活在地底下，住在地下室，从来没走出去过。</p>
+<p>照片只是热爱的副产品。</p>
+<p>done is better than perfect.</p>
+<h1 id="三、碎碎念"><a href="#三、碎碎念" class="headerlink" title="三、碎碎念"></a>三、碎碎念</h1><h2 id="1-你是如何被打败的？"><a href="#1-你是如何被打败的？" class="headerlink" title="1.你是如何被打败的？"></a>1.你是如何被打败的？</h2><p>人生不可能100%正确，甚至连50%的正确都无法保证。但是人门却从心底里希望着能够100%正确的人生，于是乎我们小心翼翼的选择，害怕一点点的错误和失败，甚至很多时候我们不敢做出选择，直到时间所剩无多的时候发现自己错过了太多，心有不甘却有无可奈何。在选择时错过或者是过错时，我往往选择了错过。是啊！选择“错过”至少没有会受到伤害，但是选择“过错”或将是心如刀绞亦或是心如死灰。这么看来在“错过”与“过错”之间，选择“错过”无疑是不错的选择。但是当你选择错过后，同时也将改变和成长的机会拒之门外，成长总是被随着阵痛，人只有经历过挫折和苦难方能改变和成长。每个成功的故事背后，都有着无数的失败，没有人可以不经历失败就获得成功。因为不经努力而获得的成功毫无成就感，更谈不上什么成功。</p>
+<h2 id="2-读书有什么用呢？"><a href="#2-读书有什么用呢？" class="headerlink" title="2.读书有什么用呢？"></a>2.读书有什么用呢？</h2><p>一个书友举了一个生动的例子。就像小时候吃的饭，我已经不记得曾吃过什么，但是那些吃进去的东西变成我的血与肉。读书也是一样，我已经无法明确记得到底读过哪些书，但是这些读过的书变成我今天思考、行动的准则。</p>
+<h2 id="3-停止抱怨"><a href="#3-停止抱怨" class="headerlink" title="3.停止抱怨"></a>3.停止抱怨</h2><p>今天上班的时候，发现同事总是在说：烦死了。那一刻我忽然发现自己的心态有了新的变化，那就是我停止了抱怨，而是在麻烦到来的时候做我力所能及的事。</p>
+<p>改变你能改变的，对于不能改变的我们认清其本质，是我们的能力不够，还是存在的客观事实无法改变，从中发现自己的薄弱点，形成一个观念并在日后的生活工作中使用刻意练习的习惯强化自己。</p>
+<p>反思能促使我做出以上改变的应该是这样一句话：悲观者总是正确的，但是悲观者的观点并不会对局势做出有利的改变，而是杞人忧天；反而是乐观者总是尝试通过各种途径去解决问题，不断探索突破，但乐观不是盲目乐观而是要有所行动。我想我要做的是一个勇于探索突破的乐观者，这一点我从我母亲身上看到的，并深受其影响。</p>
+<h2 id="4-为官之道"><a href="#4-为官之道" class="headerlink" title="4.为官之道"></a>4.为官之道</h2><p>官场之中，行事过于方刚者，表面上似乎是强者，实际上却是弱者。这片土地上真正的强者，是表面上看起来柔弱退让、含蓄包容之人。</p>
+<h2 id="5-人生最美的风景"><a href="#5-人生最美的风景" class="headerlink" title="5.人生最美的风景"></a>5.人生最美的风景</h2><p>我们曾如此渴望命运的波澜，到最后才发现，人生最曼妙的风景，竟是内心的淡定与从容。我们曾如此期盼外界的认可，到最后才知道，世界是自己的，与他人毫无关系。</p>
+<h1 id="四、思维理论"><a href="#四、思维理论" class="headerlink" title="四、思维理论"></a>四、思维理论</h1><p>锚定效应</p>
+<p>折中效应</p>
+<p>通人性</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn">逐光</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn/2024/04/06/thought/ming-yan-ming-ju-si-kao-gan-wu/">https://www.mpoom.cn/2024/04/06/thought/ming-yan-ming-ju-si-kao-gan-wu/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.mpoom.cn" target="_blank">逐光の博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E5%90%8D%E8%A8%80%E5%90%8D%E5%8F%A5/">名言名句</a><a class="post-meta__tags" href="/tags/%E6%80%9D%E8%80%83%E6%84%9F%E6%82%9F/">思考感悟</a></div><div class="post_share"><div class="social-share" data-image="/images/feature/11.jpeg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/04/20/prometheus/prometheus-jian-kong-zhi-biao-cai-ji-yu-tu-biao-pei-zhi/" title="Prometheus监控指标采集与图表配置"><img class="cover" src="/images/feature/2.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">Prometheus监控指标采集与图表配置</div></div></a></div><div class="next-post pull-right"><a href="/2023/12/02/java/linux-shang-shi-yong-jmeter-jin-xing-ya-ce/" title="Linux上使用JMeter进行压测"><img class="cover" src="/images/feature/12.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">Linux上使用JMeter进行压测</div></div></a></div></nav><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%90%8D%E8%A8%80%E5%90%8D%E5%8F%A5"><span class="toc-number">1.</span> <span class="toc-text">一、名言名句</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%80%9D%E8%80%83%E6%84%9F%E6%82%9F"><span class="toc-number">2.</span> <span class="toc-text">二、思考感悟</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E7%A2%8E%E7%A2%8E%E5%BF%B5"><span class="toc-number">3.</span> <span class="toc-text">三、碎碎念</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E4%BD%A0%E6%98%AF%E5%A6%82%E4%BD%95%E8%A2%AB%E6%89%93%E8%B4%A5%E7%9A%84%EF%BC%9F"><span class="toc-number">3.1.</span> <span class="toc-text">1.你是如何被打败的？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E8%AF%BB%E4%B9%A6%E6%9C%89%E4%BB%80%E4%B9%88%E7%94%A8%E5%91%A2%EF%BC%9F"><span class="toc-number">3.2.</span> <span class="toc-text">2.读书有什么用呢？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%81%9C%E6%AD%A2%E6%8A%B1%E6%80%A8"><span class="toc-number">3.3.</span> <span class="toc-text">3.停止抱怨</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E4%B8%BA%E5%AE%98%E4%B9%8B%E9%81%93"><span class="toc-number">3.4.</span> <span class="toc-text">4.为官之道</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E4%BA%BA%E7%94%9F%E6%9C%80%E7%BE%8E%E7%9A%84%E9%A3%8E%E6%99%AF"><span class="toc-number">3.5.</span> <span class="toc-text">5.人生最美的风景</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%80%9D%E7%BB%B4%E7%90%86%E8%AE%BA"><span class="toc-number">4.</span> <span class="toc-text">四、思维理论</span></a></li></ol></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2024 By 逐光</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.14.0-b2"></script><script src="/js/main.js?v=4.14.0-b2"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.35/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"><script>(() => {
+  const initValine = () => {
+    const valine = new Valine(Object.assign({
+      el: '#vcomment',
+      appId: 'f5WSKiyRgMriw1qIicgn1Dbu-gzGzoHsz',
+      appKey: 'c9Jx92rNNJ0RzzaxLNCqu4rR',
+      avatar: 'monsterid',
+      serverURLs: '',
+      emojiMaps: "",
+      path: window.location.pathname,
+      visitor: false
+    }, null))
+  }
+
+  const loadValine = async () => {
+    if (typeof Valine === 'function') initValine()
+    else {
+      await btf.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js')
+      initValine()
+    }
+  }
+
+  if ('Valine' === 'Valine' || !true) {
+    if (true) btf.loadComment(document.getElementById('vcomment'),loadValine)
+    else setTimeout(loadValine, 0)
+  } else {
+    window.loadOtherComment = loadValine
+  }
+})()</script></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=4.14.0-b2"></script></div></div></body></html>
