@@ -1,0 +1,320 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>10万TPS级高并发系统——30亿级发送量频次管控（一） | 逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="一、背景简介在客户的业务场景中，需要在全局开启终端用户消息发送的频次管控，避免消息重复发送以及段时间内下发大量消息对终端用户进行信息轰炸，从而引起终端用户投诉。目前业务平台每日最高的消息发送量为30亿，去重后的消息接收人量在千万级到亿级，消息发送管控平台需要对每个消息接收人的消息发送时间进行缓存，并"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/2024/06/15/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-30-yi-ji-fa-song-liang-pin-ci-guan-kong/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  }
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '10万TPS级高并发系统——30亿级发送量频次管控（一）',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2025-09-17 11:54:21'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><meta name="generator" content="Hexo 5.4.2"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/images/theme/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">90</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">126</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">17</div></a></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">逐光の博客</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">10万TPS级高并发系统——30亿级发送量频次管控（一）</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-06-14T16:00:00.000Z" title="发表于 2024-06-15 00:00:00">2024-06-15</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-09-17T03:54:21.116Z" title="更新于 2025-09-17 11:54:21">2025-09-17</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">2.5k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>8分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="10万TPS级高并发系统——30亿级发送量频次管控（一）"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><h1 id="一、背景简介"><a href="#一、背景简介" class="headerlink" title="一、背景简介"></a>一、背景简介</h1><div class="note success no-icon flat"><p>在客户的业务场景中，需要在全局开启终端用户消息发送的频次管控，避免消息重复发送以及段时间内下发大量消息对终端用户进行信息轰炸，从而引起终端用户投诉。目前业务平台每日最高的消息发送量为30亿，去重后的消息接收人量在千万级到亿级，消息发送管控平台需要对每个消息接收人的消息发送时间进行缓存，并根据管控平台配置频次管控策略，检查最新下发的消息是否超过设置的频次，超过则进行拦截。</p>
+</div>
+<h2 id="1-1-频次管控配置"><a href="#1-1-频次管控配置" class="headerlink" title="1.1 频次管控配置"></a>1.1 频次管控配置</h2><table>
+<thead>
+<tr>
+<th>限制项</th>
+<th>限制频率</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>接收频次管控</td>
+<td>15次&#x2F;1分钟</td>
+<td>任意1分钟内，对同一个接收人发送消息最多15次，超出次数会被限制。</td>
+</tr>
+<tr>
+<td>接收频次管控</td>
+<td>50次&#x2F;24小时</td>
+<td>任意24小时内，对同一个接收人发送消息最多50次，超出次数会被限制。</td>
+</tr>
+<tr>
+<td>内容频次管控</td>
+<td>2次&#x2F;59秒</td>
+<td>任意59秒内，对同一个接收人发送同一内容（内容完全相同）最多2次，超出次数会被限制。</td>
+</tr>
+<tr>
+<td>内容频次管控</td>
+<td>5次&#x2F;59分钟</td>
+<td>任意59分钟内，对同一个接收人发送同一消息内容（内容完全相同）最多5次，超出次数会被限制。</td>
+</tr>
+</tbody></table>
+<h1 id="二、需求分析"><a href="#二、需求分析" class="headerlink" title="二、需求分析"></a>二、需求分析</h1><p>基于上述业务场景，我们需要对每个消息接收者做消息接收的频次限制，在每日30亿级的发送量的场景下，接收用户的数量也是亿级的。根据业务频次管控限流要求，需要实现分钟级别和24小时级别的频次管控。即需要对亿级终端接收用户分做独立的限流，限流的时间范围在分钟和24小时级别。</p>
+<h1 id="三、方案设计"><a href="#三、方案设计" class="headerlink" title="三、方案设计"></a>三、方案设计</h1><p>上述业务需求其实是一种流量控制场景，可以结合一些常用的限流方案进行分析与设计。业务常见的限流方案有：固定窗口计数器、滑动窗口计数器、漏桶算法、令牌桶算法、分布式限流等（详见：<a href="https://www.mpoom.cn/2024/06/08/distributed/si-chong-jing-dian-de-xian-liu-suan-fa/">四种经典的限流算法</a>），我们先分析现有方案的特点再结合业务场景进行方案设计。</p>
+<h2 id="3-1-限流算法选择"><a href="#3-1-限流算法选择" class="headerlink" title="3.1 限流算法选择"></a>3.1 限流算法选择</h2><p>基于上述业务场景，需要对每日亿级的终端接收用户做单独限流，结合经典的限流算法特点选择适合的算法：</p>
+<table>
+<thead>
+<tr>
+<th>限流算法</th>
+<th>特点</th>
+<th>是否适合</th>
+<th>具体说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>固定时间窗口</td>
+<td>简单，易于实现和理解</td>
+<td>可选</td>
+<td>容忍临界问题存在</td>
+</tr>
+<tr>
+<td>滑动时间窗口</td>
+<td>简单易懂，精度高，可扩展性强</td>
+<td>适合</td>
+<td>实现简单精度高</td>
+</tr>
+<tr>
+<td>漏桶算法</td>
+<td>平滑的限制处理速度</td>
+<td>不适合</td>
+<td>无法应对突发流量</td>
+</tr>
+<tr>
+<td>令牌桶算法</td>
+<td>稳定性高、精度高、可以处理突发流量</td>
+<td>不适合</td>
+<td>需要对日发送亿级用户做限流，需要维护上亿个令牌桶，复杂度过高</td>
+</tr>
+</tbody></table>
+<p>综上，经典的限流算法中<code>滑动时间窗口</code>是最适合的算法，<code>固定时间窗口</code>作为备选方案，因为固定时间窗口存在一个临界问题。</p>
+<h2 id="3-2-详细设计"><a href="#3-2-详细设计" class="headerlink" title="3.2 详细设计"></a>3.2 详细设计</h2><p>目前系统性能需要达到10万TPS，应用使用集群化方式部署，同时需要实现日亿级用户的限流。所以我们需要实现一个基于滑动时间窗口的分布式限流器，且支持亿级用户做单独的限流。<br>根据业务及性能要求，我们使用Redis来设计一个基于<code>滑动时间窗口算法</code>的分布式限流器。</p>
+<p><img src="/2024/06/15/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-30-yi-ji-fa-song-liang-pin-ci-guan-kong/ZSET%E6%BB%91%E5%8A%A8%E6%97%B6%E9%97%B4%E7%AA%97%E5%8F%A3%E9%99%90%E6%B5%81%E5%99%A8.png" alt="ZSET滑动时间窗口限流器.png"></p>
+<p>基于Redis ZSET集合的特点，我们使用ZSET来实现一个滑动时间窗口，用户每次下发成功后我们向ZSET添加一个成员，该成员的值和分数为当前消息的发送时间戳。</p>
+<h3 id="3-2-1-发送限流"><a href="#3-2-1-发送限流" class="headerlink" title="3.2.1 发送限流"></a>3.2.1 发送限流</h3><p>发送消息前，我们根据当前时间和滑动时间窗口大小计算出滑动窗口起始时间戳，通过ZSET的<code>Score</code>获取起始时间戳和当前时间戳区间内成员的个数即为用户的消息发送量，如果超出频次限制则限制下发，如果未超过，则将该发送时间添加到ZSET中。</p>
+<h3 id="3-2-2-代码实现"><a href="#3-2-2-代码实现" class="headerlink" title="3.2.2 代码实现"></a>3.2.2 代码实现</h3><p>下面通过Redis的ZSET数据结构及LUA脚本实现一个滑动窗口计数器，Lua脚本<code>frequency_limit.lua</code>内容如下：</p>
+<pre class="line-numbers language-none"><code class="language-none">-- 接收参数
+local key &#x3D; KEYS[1]
+local windowSize &#x3D; tonumber(ARGV[1])
+local limit &#x3D; tonumber(ARGV[2])
+
+-- 获取精确到毫秒的时间戳
+local nowMicros &#x3D; redis.call(&#39;time&#39;)
+local nowMillis &#x3D; math.floor(nowMicros[1] * 1000 + nowMicros[2] &#x2F; 1000)
+
+-- 计算时间窗口的最小值
+local minScore &#x3D; nowMillis - windowSize
+
+-- 获取时间窗口范围内的成员数量
+local count &#x3D; redis.call(&#39;ZCOUNT&#39;, key, minScore, nowMillis)
+
+-- 如果数量没有超过限制
+if count &lt; limit then
+    -- 查找下一个可用的、未存在于ZSET中的时间戳
+    local uniqueTimestamp &#x3D; nowMillis
+    while redis.call(&#39;ZSCORE&#39;, key, uniqueTimestamp) do
+        uniqueTimestamp &#x3D; uniqueTimestamp + 1
+    end
+    -- 将找到的唯一时间戳作为值，当前时间戳作为score添加到ZSET
+    redis.call(&#39;ZADD&#39;, key, nowMillis, uniqueTimestamp)
+    
+    -- 仅当添加了新元素后，才更新ZSET的过期时间
+    redis.call(&#39;EXPIRE&#39;, key, windowSize)
+end
+
+-- 返回计算出的数量
+return count<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h4 id="缓存过期时间"><a href="#缓存过期时间" class="headerlink" title="缓存过期时间"></a>缓存过期时间</h4><p>每次调用时将缓存的过期时间更新为一个滑动时间窗口大小，当一个滑动时间窗口区间内没有请求进来，则缓存过期。</p>
+<h4 id="并发访问问题"><a href="#并发访问问题" class="headerlink" title="并发访问问题"></a>并发访问问题</h4><p>我们在ZSET中使用毫秒级别的时间戳来记录访问数量。在高并发的情况下，可能会存在同一毫秒下发多条消息导致发送量出现覆盖，我们采用占用未来时间戳的方式解决并发冲突。</p>
+<div class="note success no-icon flat"><p><strong>说明</strong>：由于我们是对用户进行限流，系统的并发高，但是用户级别的并发并不是很高，如上述的1分钟15次，所以采用占用未来时间戳的方式解决并发冲突。如果是应对系统级别的高并发请求，可以在时间戳后面增加序列号来解决并发冲突，序列号的长度通过每秒的并发数进行计算评估。</p>
+</div>
+
+<h3 id="3-2-3-验证测试"><a href="#3-2-3-验证测试" class="headerlink" title="3.2.3 验证测试"></a>3.2.3 验证测试</h3><div class="note success no-icon flat"><p>假设用户<code>18829340001</code>每分钟接收到消息的数量限制为5条，如果发送量小于限制的5条则继续下发，如果大于等于限制的5条，则进行频次管控。</p>
+</div>
+<h4 id="上传Lua脚本"><a href="#上传Lua脚本" class="headerlink" title="上传Lua脚本"></a>上传Lua脚本</h4><pre class="line-numbers language-none"><code class="language-none">[root@develop bin]# .&#x2F;redis-cli -p 6383 -a 123456 SCRIPT LOAD &quot;$(cat frequency_limit.lua)&quot;
+Warning: Using a password with &#39;-a&#39; or &#39;-u&#39; option on the command line interface may not be safe.
+&quot;59931c4f3ae5b3601ba2988d12d7aa897afc9549&quot;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h4 id="执行Lua脚本"><a href="#执行Lua脚本" class="headerlink" title="执行Lua脚本"></a>执行Lua脚本</h4><p>下面通过Redis执行上述lua脚本，获取<code>18829340001</code>前1分钟的消息发送量，当返回值小于5时，可以继续下发消息；当返回值为5时，表示前1分钟内已经下发了5条，需要进行频次管控。</p>
+<pre class="line-numbers language-none"><code class="language-none">127.0.0.1:6383&gt; EVALSHA 59931c4f3ae5b3601ba2988d12d7aa897afc9549 1 18829340001 60000 5
+(integer) 0
+127.0.0.1:6383&gt; EVALSHA 59931c4f3ae5b3601ba2988d12d7aa897afc9549 1 18829340001 60000 5
+(integer) 1
+127.0.0.1:6383&gt; EVALSHA 59931c4f3ae5b3601ba2988d12d7aa897afc9549 1 18829340001 60000 5
+(integer) 2
+127.0.0.1:6383&gt; EVALSHA 59931c4f3ae5b3601ba2988d12d7aa897afc9549 1 18829340001 60000 5
+(integer) 3
+127.0.0.1:6383&gt; EVALSHA 59931c4f3ae5b3601ba2988d12d7aa897afc9549 1 18829340001 60000 5
+(integer) 4
+127.0.0.1:6383&gt; EVALSHA 59931c4f3ae5b3601ba2988d12d7aa897afc9549 1 18829340001 60000 5
+(integer) 5
+127.0.0.1:6383&gt; EVALSHA 59931c4f3ae5b3601ba2988d12d7aa897afc9549 1 18829340001 60000 5
+(integer) 5<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="四、性能评估"><a href="#四、性能评估" class="headerlink" title="四、性能评估"></a>四、性能评估</h1><h2 id="4-1-业务场景分析"><a href="#4-1-业务场景分析" class="headerlink" title="4.1 业务场景分析"></a>4.1 业务场景分析</h2><div class="note success no-icon flat"><p>消息发送管控系统性能要求为10万TPS，平均响应时长不超过50ms。系统每天发送峰值为30亿，单独的发送用户约在亿级别，全局配置频次管控个数至少为2个，结合系统其它访问Redis的场景，每个请求平均访问Redis3次，频次管控的最大时长为24小时，即用户发送记录最大需要保存24小时，独立用户数在亿级。</p>
+</div>
+
+<p><strong>即Redis的性能要在30万TPS以上,需要支持亿级数据缓存。</strong></p>
+<h2 id="4-2-Redis主备性能评估"><a href="#4-2-Redis主备性能评估" class="headerlink" title="4.2 Redis主备性能评估"></a>4.2 Redis主备性能评估</h2><p>该项目使用华为云部署，使用华为云上Redis服务，华为云提供的<a target="_blank" rel="noopener" href="https://support.huaweicloud.com/usermanual-dcs/dcs_10_0001.html">Redis6主备性能</a>测试数据如下：<br><img src="/2024/06/15/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-30-yi-ji-fa-song-liang-pin-ci-guan-kong/%E5%8D%8E%E4%B8%BA%E4%BA%91Redis6%E4%B8%BB%E5%A4%87%E6%80%A7%E8%83%BD%E6%95%B0%E6%8D%AE.png" alt="华为云Redis6主备性能数据"></p>
+<p>Redis主备32G实例的性能在14万TPS作为，无法满足系统30万+TPS性能要求，所以需要使用Redis集群。</p>
+<h2 id="4-3-Redis集群性能评估"><a href="#4-3-Redis集群性能评估" class="headerlink" title="4.3 Redis集群性能评估"></a>4.3 Redis集群性能评估</h2><p>华为云提供的<a target="_blank" rel="noopener" href="https://support.huaweicloud.com/usermanual-dcs/dcs_10_0002.html">Redis6集群性能</a>测试数据如下：<br><img src="/2024/06/15/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-30-yi-ji-fa-song-liang-pin-ci-guan-kong/%E5%8D%8E%E4%B8%BA%E4%BA%91Redis6%E9%9B%86%E7%BE%A4%E6%80%A7%E8%83%BD%E6%95%B0%E6%8D%AE.png" alt="华为云Redis6集群性能数据"><br>华为云Redis6 32G集群实例的性能达到30万tps，为应对业务中配置多条频次管控场景，选择64G 8分片的规格。<br>但在生产环境中，客户直接选择256G 32分片的规格实例，在配置2条全局的频次管控场景下，压测10万TPS，Redis集群CPU负载在50%以上。</p>
+<h1 id="五、总结"><a href="#五、总结" class="headerlink" title="五、总结"></a>五、总结</h1><p>本文主要介绍基于Redis的ZSET数据结构实现一个滑动窗口计数器，实现亿级用户的发送频次管控，并根据业务场景和华为云Redis不同规格的性能进行规格选择。</p>
+<h2 id="5-1-优化改进"><a href="#5-1-优化改进" class="headerlink" title="5.1 优化改进"></a>5.1 优化改进</h2><p>在上述设计方案中，结合业务场景分析频次管控配置数量在1-2个左右，为实现简单所以每个频次管控单独维护一个滑动窗口计数器。如果需要适配较多的窗口大小的场景下，可以将多个滑动窗口进行合并，降低网络消耗，提高性能。</p>
+<h2 id="5-2-其它问题"><a href="#5-2-其它问题" class="headerlink" title="5.2 其它问题"></a>5.2 其它问题</h2><p>在大数据量、高并发的场景下，Redis的使用还会出现大Key等问题，具体的场景和案例，敬请期待后续文章。</p>
+<h1 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h1><p><a target="_blank" rel="noopener" href="https://juejin.cn/post/7000152990501847048">微服务 —— 常见的5种限流方案｜8月更文挑战</a><br><a target="_blank" rel="noopener" href="https://juejin.cn/post/7339544833999110170">基于redis的简易滑动窗口实现</a><br><a target="_blank" rel="noopener" href="https://heapdump.cn/article/5480577">面试必备：四种经典限流算法讲解</a></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn">逐光</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn/2024/06/15/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-30-yi-ji-fa-song-liang-pin-ci-guan-kong/">https://www.mpoom.cn/2024/06/15/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-30-yi-ji-fa-song-liang-pin-ci-guan-kong/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.mpoom.cn" target="_blank">逐光の博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/">高并发</a><a class="post-meta__tags" href="/tags/%E9%99%90%E6%B5%81%E7%AE%97%E6%B3%95/">限流算法</a><a class="post-meta__tags" href="/tags/10%E4%B8%87TPS/">10万TPS</a><a class="post-meta__tags" href="/tags/%E9%A2%91%E6%AC%A1%E7%AE%A1%E6%8E%A7/">频次管控</a><a class="post-meta__tags" href="/tags/%E6%BB%91%E5%8A%A8%E7%AA%97%E5%8F%A3/">滑动窗口</a></div><div class="post_share"><div class="social-share" data-image="/images/feature/5.jpeg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/06/22/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-10-wan-liang-ji-wen-ben-guan-jian-zi-pi-pei-guo-lu/" title="10万TPS级高并发系统——10万量级文本关键字匹配过滤"><img class="cover" src="/images/feature/19.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">10万TPS级高并发系统——10万量级文本关键字匹配过滤</div></div></a></div><div class="next-post pull-right"><a href="/2024/06/08/distributed/si-chong-jing-dian-de-xian-liu-suan-fa/" title="四种经典的限流算法"><img class="cover" src="/images/feature/5.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">四种经典的限流算法</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/06/08/distributed/si-chong-jing-dian-de-xian-liu-suan-fa/" title="四种经典的限流算法"><img class="cover" src="/images/feature/5.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-08</div><div class="title">四种经典的限流算法</div></div></a></div><div><a href="/2024/06/22/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-10-wan-liang-ji-wen-ben-guan-jian-zi-pi-pei-guo-lu/" title="10万TPS级高并发系统——10万量级文本关键字匹配过滤"><img class="cover" src="/images/feature/19.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-22</div><div class="title">10万TPS级高并发系统——10万量级文本关键字匹配过滤</div></div></a></div><div><a href="/2024/06/01/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-jia-gou-she-ji-yu-xiang-mu-luo-di-shi-jian/" title="10万TPS级消息发送管控平台架构设计与项目落地实践"><img class="cover" src="/images/feature/23.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-01</div><div class="title">10万TPS级消息发送管控平台架构设计与项目落地实践</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E8%83%8C%E6%99%AF%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">一、背景简介</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E9%A2%91%E6%AC%A1%E7%AE%A1%E6%8E%A7%E9%85%8D%E7%BD%AE"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 频次管控配置</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E9%9C%80%E6%B1%82%E5%88%86%E6%9E%90"><span class="toc-number">2.</span> <span class="toc-text">二、需求分析</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%96%B9%E6%A1%88%E8%AE%BE%E8%AE%A1"><span class="toc-number">3.</span> <span class="toc-text">三、方案设计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E9%99%90%E6%B5%81%E7%AE%97%E6%B3%95%E9%80%89%E6%8B%A9"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 限流算法选择</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E8%AF%A6%E7%BB%86%E8%AE%BE%E8%AE%A1"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 详细设计</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-%E5%8F%91%E9%80%81%E9%99%90%E6%B5%81"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 发送限流</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-2-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 代码实现</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%BC%93%E5%AD%98%E8%BF%87%E6%9C%9F%E6%97%B6%E9%97%B4"><span class="toc-number">3.2.2.1.</span> <span class="toc-text">缓存过期时间</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B9%B6%E5%8F%91%E8%AE%BF%E9%97%AE%E9%97%AE%E9%A2%98"><span class="toc-number">3.2.2.2.</span> <span class="toc-text">并发访问问题</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-3-%E9%AA%8C%E8%AF%81%E6%B5%8B%E8%AF%95"><span class="toc-number">3.2.3.</span> <span class="toc-text">3.2.3 验证测试</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%8A%E4%BC%A0Lua%E8%84%9A%E6%9C%AC"><span class="toc-number">3.2.3.1.</span> <span class="toc-text">上传Lua脚本</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%89%A7%E8%A1%8CLua%E8%84%9A%E6%9C%AC"><span class="toc-number">3.2.3.2.</span> <span class="toc-text">执行Lua脚本</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0"><span class="toc-number">4.</span> <span class="toc-text">四、性能评估</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E4%B8%9A%E5%8A%A1%E5%9C%BA%E6%99%AF%E5%88%86%E6%9E%90"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 业务场景分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-Redis%E4%B8%BB%E5%A4%87%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 Redis主备性能评估</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-Redis%E9%9B%86%E7%BE%A4%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 Redis集群性能评估</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%80%BB%E7%BB%93"><span class="toc-number">5.</span> <span class="toc-text">五、总结</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E4%BC%98%E5%8C%96%E6%94%B9%E8%BF%9B"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 优化改进</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%85%B6%E5%AE%83%E9%97%AE%E9%A2%98"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 其它问题</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%AB%A0"><span class="toc-number">6.</span> <span class="toc-text">参考文章</span></a></li></ol></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2025 By 逐光</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div></div></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.min.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"><script>function loadValine () {
+  function initValine () {
+    const valine = new Valine(Object.assign({
+      el: '#vcomment',
+      appId: 'f5WSKiyRgMriw1qIicgn1Dbu-gzGzoHsz',
+      appKey: 'c9Jx92rNNJ0RzzaxLNCqu4rR',
+      avatar: 'monsterid',
+      serverURLs: '',
+      emojiMaps: "",
+      path: window.location.pathname,
+      visitor: false
+    }, null))
+  }
+
+  if (typeof Valine === 'function') initValine() 
+  else getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js').then(initValine)
+}
+
+if ('Valine' === 'Valine' || !true) {
+  if (true) btf.loadComment(document.getElementById('vcomment'),loadValine)
+  else setTimeout(loadValine, 0)
+} else {
+  function loadOtherComment () {
+    loadValine()
+  }
+}</script></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script>((window.gitter = {}).chat = {}).options = {
+  room: 'blog-mpoom/community',
+};
+
+if (false) {
+  function chatBtnHide () {
+    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'none'
+  }
+
+  function chatBtnShow () {
+    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'block'
+  }
+}
+</script><script src="https://sidecar.gitter.im/dist/sidecar.v1.js" async="async" defer="defer"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

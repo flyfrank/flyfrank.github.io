@@ -1,0 +1,228 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>为什么Redis集群使用16384个哈希槽 | 逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="一、Redis集群特点1.1 Redis集群拓扑结构Redis集群是一个网状结构，每个节点都通过TCP连接跟其它每个节点连接。 在一个有N个节点的集群中，每个节点都有N-1个流出的TCP连接和N-1个流入的TCP连接，这些TCP连接会永久保持，并不是按需创建的。 1.2 Redis集群数据分片Red"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/2020/12/30/redis/wei-shi-me-redis-ji-qun-shi-yong-16384-ge-ha-xi-cao/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  }
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '为什么Redis集群使用16384个哈希槽',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2025-09-17 11:54:21'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><meta name="generator" content="Hexo 5.4.2"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/images/theme/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">90</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">126</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">17</div></a></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">逐光の博客</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">为什么Redis集群使用16384个哈希槽</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2020-12-29T16:00:00.000Z" title="发表于 2020-12-30 00:00:00">2020-12-30</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-09-17T03:54:21.200Z" title="更新于 2025-09-17 11:54:21">2025-09-17</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%90%8E%E7%AB%AF/">后端</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">1.2k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>4分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="为什么Redis集群使用16384个哈希槽"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><h1 id="一、Redis集群特点"><a href="#一、Redis集群特点" class="headerlink" title="一、Redis集群特点"></a>一、Redis集群特点</h1><h2 id="1-1-Redis集群拓扑结构"><a href="#1-1-Redis集群拓扑结构" class="headerlink" title="1.1 Redis集群拓扑结构"></a>1.1 Redis集群拓扑结构</h2><p>Redis集群是一个网状结构，每个节点都通过TCP连接跟其它每个节点连接。</p>
+<p>在一个有N个节点的集群中，每个节点都有N-1个流出的TCP连接和N-1个流入的TCP连接，这些TCP连接会永久保持，并不是按需创建的。</p>
+<h2 id="1-2-Redis集群数据分片"><a href="#1-2-Redis集群数据分片" class="headerlink" title="1.2 Redis集群数据分片"></a>1.2 Redis集群数据分片</h2><h3 id="Redis集群的实现方案："><a href="#Redis集群的实现方案：" class="headerlink" title="Redis集群的实现方案："></a>Redis集群的实现方案：</h3><ul>
+<li><p>客户端分区，代表为 Redis Sharding</p>
+</li>
+<li><p>代理分区方案，主流实现的有方案有 Twemproxy 和 Codis</p>
+</li>
+<li><p>查询路由方案，Redis默认实现方案。</p>
+</li>
+</ul>
+<h2 id="1-3-Redis-集群没有使用一致性hash-而是引入了-哈希槽的概念"><a href="#1-3-Redis-集群没有使用一致性hash-而是引入了-哈希槽的概念" class="headerlink" title="1.3 Redis 集群没有使用一致性hash, 而是引入了 哈希槽的概念."></a>1.3 Redis 集群没有使用一致性hash, 而是引入了 哈希槽的概念.</h2><p>Redis 集群有16384个哈希槽,每个key通过CRC16校验后对16384取模来决定放置哪个槽.集群的每个节点负责一部分hash槽,举个例子,比如当前集群有3个节点,那么:</p>
+<p>节点 A 包含 0 到 5500号哈希槽.<br>节点 B 包含5501 到 11000 号哈希槽.<br>节点 C 包含11001 到 16384号哈希槽.<br>这种结构很容易添加或者删除节点. 比如如果我想新添加个节点D, 我需要从节点 A, B, C中得部分槽到D上. 如果我想移除节点A,需要将A中的槽移到B和C节点上,然后将没有任何槽的A节点从集群中移除即可. 由于从一个节点将哈希槽移动到另一个节点并不会停止服务,所以无论添加删除或者改变某个节点的哈希槽的数量都不会造成集群不可用的状态。</p>
+<h1 id="二、为什么Redis的集群使用16384个哈希槽？"><a href="#二、为什么Redis的集群使用16384个哈希槽？" class="headerlink" title="二、为什么Redis的集群使用16384个哈希槽？"></a>二、为什么Redis的集群使用16384个哈希槽？</h1><p>这个问题Redis的作者又在github的issue中解释过，我们看一下原文：<a target="_blank" rel="noopener" href="https://github.com/redis/redis/issues/2576">原文地址</a></p>
+<blockquote>
+<p>why redis-cluster use 16384 slots? crc16() can have 2^16 -1&#x3D;65535 different remainders。</p>
+</blockquote>
+<blockquote>
+<p>The reason is:</p>
+<ol>
+<li>Normal heartbeat packets carry the full configuration of a node, that can be replaced in an idempotent way with the old in order to update an old config. This means they contain the slots configuration for a node, in raw form, that uses 2k of space with16k slots, but would use a prohibitive 8k of space using 65k slots.</li>
+<li>At the same time it is unlikely that Redis Cluster would scale to more than 1000 mater nodes because of other design tradeoffs.<br>So 16k was in the right range to ensure enough slots per master with a max of 1000 maters, but a small enough number to propagate the slot configuration as a raw bitmap easily. Note that in small clusters the bitmap would be hard to compress because when N is small the bitmap would have slots&#x2F;N bits set that is a large percentage of bits set.</li>
+</ol>
+</blockquote>
+<h1 id="三、总结"><a href="#三、总结" class="headerlink" title="三、总结"></a>三、总结</h1><p>从上面Redis的集群拓扑架构中我们知道，Redis集群节点是通过gossip协议进行点对点通信的，每个节点都会与集群中的其它节点进行通信，我们先看一下Redis心跳包的数据结构。</p>
+<pre class="line-numbers language-none"><code class="language-none">typedef struct &#123;
+    char sig[4];        &#x2F;* Signature &quot;RCmb&quot; (Redis Cluster message bus). *&#x2F;
+    uint32_t totlen;    &#x2F;* Total length of this message *&#x2F;
+    uint16_t ver;       &#x2F;* Protocol version, currently set to 1. *&#x2F;
+    uint16_t port;      &#x2F;* TCP base port number. *&#x2F;
+    uint16_t type;      &#x2F;* Message type *&#x2F;
+    uint16_t count;     &#x2F;* Only used for some kind of messages. *&#x2F;
+    uint64_t currentEpoch;  &#x2F;* The epoch accordingly to the sending node. *&#x2F;
+    uint64_t configEpoch;   &#x2F;* The config epoch if it&#39;s a master, or the last
+                               epoch advertised by its master if it is a
+                               slave. *&#x2F;
+    uint64_t offset;    &#x2F;* Master replication offset if node is a master or
+                           processed replication offset if node is a slave. *&#x2F;
+    char sender[CLUSTER_NAMELEN]; &#x2F;* Name of the sender node *&#x2F;
+    unsigned char myslots[CLUSTER_SLOTS&#x2F;8];
+    char slaveof[CLUSTER_NAMELEN];
+    char myip[NET_IP_STR_LEN];    &#x2F;* Sender IP, if not all zeroed. *&#x2F;
+    char notused1[34];  &#x2F;* 34 bytes reserved for future usage. *&#x2F;
+    uint16_t cport;      &#x2F;* Sender TCP cluster bus port *&#x2F;
+    uint16_t flags;      &#x2F;* Sender node flags *&#x2F;
+    unsigned char state; &#x2F;* Cluster state from the POV of the sender *&#x2F;
+    unsigned char mflags[3]; &#x2F;* Message flags: CLUSTERMSG_FLAG[012]_... *&#x2F;
+    union clusterMsgData data;
+&#125; clusterMsg;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>消息头里面有个myslots的char数组，长度为16383&#x2F;8，这其实是一个bitmap,每一个位代表一个槽，如果该位为1，表示这个槽是属于这个节点的。</p>
+<p>在Redis的心跳包携带了节点的全部配置信息，我们可以方便的去更新一个旧节点的全部信息。在心跳包中包含了为这个节点配置的全部哈希槽信息，他是一个位图数据结构。<br>（1）如果使用16384个哈希槽，则这个字段大小为2KB，如果使用65535个哈希槽，则将占用8KB的空间。<br>而且由于其它设计上的权衡，一个Redis集群的规模不可能超过1000个节点。<br>（2）因此16384个哈希槽能确保一个Redis集群上的每个主节点分配到足够的哈希槽；而且16384个哈希槽足够小，可以将节点配置的哈希槽作为原始位图进行传输。<br>而且由于在Redis集群规模较小时，由于每个节点分配的哈希槽会比较多，位图很难被压缩。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn">逐光</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn/2020/12/30/redis/wei-shi-me-redis-ji-qun-shi-yong-16384-ge-ha-xi-cao/">https://www.mpoom.cn/2020/12/30/redis/wei-shi-me-redis-ji-qun-shi-yong-16384-ge-ha-xi-cao/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.mpoom.cn" target="_blank">逐光の博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Redis/">Redis</a></div><div class="post_share"><div class="social-share" data-image="/images/feature/11.jpeg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2021/02/10/book/bei-tao-yan-de-yong-qi/" title="《被讨厌的勇气》"><img class="cover" src="/images/%E8%A2%AB%E8%AE%A8%E5%8E%8C%E7%9A%84%E5%8B%87%E6%B0%94.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">《被讨厌的勇气》</div></div></a></div><div class="next-post pull-right"><a href="/2020/12/25/redis/redis-shao-bing-mo-shi-he-ji-qun-mo-shi/" title="Redis哨兵模式和集群模式"><img class="cover" src="/images/feature/18.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">Redis哨兵模式和集群模式</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2023/05/07/k8s/kube-prometheus-jian-kong-redis/" title="Kube-Prometheus监控Redis（三）"><img class="cover" src="/images/feature/19.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-05-07</div><div class="title">Kube-Prometheus监控Redis（三）</div></div></a></div><div><a href="/2020/12/25/redis/redis-shao-bing-mo-shi-he-ji-qun-mo-shi/" title="Redis哨兵模式和集群模式"><img class="cover" src="/images/feature/18.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-12-25</div><div class="title">Redis哨兵模式和集群模式</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E3%80%81Redis%E9%9B%86%E7%BE%A4%E7%89%B9%E7%82%B9"><span class="toc-number">1.</span> <span class="toc-text">一、Redis集群特点</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-Redis%E9%9B%86%E7%BE%A4%E6%8B%93%E6%89%91%E7%BB%93%E6%9E%84"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 Redis集群拓扑结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-Redis%E9%9B%86%E7%BE%A4%E6%95%B0%E6%8D%AE%E5%88%86%E7%89%87"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 Redis集群数据分片</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Redis%E9%9B%86%E7%BE%A4%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E6%A1%88%EF%BC%9A"><span class="toc-number">1.2.1.</span> <span class="toc-text">Redis集群的实现方案：</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-3-Redis-%E9%9B%86%E7%BE%A4%E6%B2%A1%E6%9C%89%E4%BD%BF%E7%94%A8%E4%B8%80%E8%87%B4%E6%80%A7hash-%E8%80%8C%E6%98%AF%E5%BC%95%E5%85%A5%E4%BA%86-%E5%93%88%E5%B8%8C%E6%A7%BD%E7%9A%84%E6%A6%82%E5%BF%B5"><span class="toc-number">1.3.</span> <span class="toc-text">1.3 Redis 集群没有使用一致性hash, 而是引入了 哈希槽的概念.</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88Redis%E7%9A%84%E9%9B%86%E7%BE%A4%E4%BD%BF%E7%94%A816384%E4%B8%AA%E5%93%88%E5%B8%8C%E6%A7%BD%EF%BC%9F"><span class="toc-number">2.</span> <span class="toc-text">二、为什么Redis的集群使用16384个哈希槽？</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%80%BB%E7%BB%93"><span class="toc-number">3.</span> <span class="toc-text">三、总结</span></a></li></ol></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2025 By 逐光</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div></div></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.min.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"><script>function loadValine () {
+  function initValine () {
+    const valine = new Valine(Object.assign({
+      el: '#vcomment',
+      appId: 'f5WSKiyRgMriw1qIicgn1Dbu-gzGzoHsz',
+      appKey: 'c9Jx92rNNJ0RzzaxLNCqu4rR',
+      avatar: 'monsterid',
+      serverURLs: '',
+      emojiMaps: "",
+      path: window.location.pathname,
+      visitor: false
+    }, null))
+  }
+
+  if (typeof Valine === 'function') initValine() 
+  else getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js').then(initValine)
+}
+
+if ('Valine' === 'Valine' || !true) {
+  if (true) btf.loadComment(document.getElementById('vcomment'),loadValine)
+  else setTimeout(loadValine, 0)
+} else {
+  function loadOtherComment () {
+    loadValine()
+  }
+}</script></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script>((window.gitter = {}).chat = {}).options = {
+  room: 'blog-mpoom/community',
+};
+
+if (false) {
+  function chatBtnHide () {
+    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'none'
+  }
+
+  function chatBtnShow () {
+    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'block'
+  }
+}
+</script><script src="https://sidecar.gitter.im/dist/sidecar.v1.js" async="async" defer="defer"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

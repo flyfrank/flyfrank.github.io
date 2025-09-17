@@ -1,0 +1,369 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>RocketMQ中ConsumeFromWhere详解 | 逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="一、ConsumeFromWhereRocketMQ的Consumer有一个consumeFromWhere属性，表示Consumer启动后将从哪个位置开始消费消息，该属性取值有以下情况： &amp;#x2F;**  * Consuming point on consumer booting. There are t"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/2021/09/06/rockermq/rocketmq-zhong-consumefromwhere-xiang-jie/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  }
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'RocketMQ中ConsumeFromWhere详解',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2025-09-17 11:54:21'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><meta name="generator" content="Hexo 5.4.2"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/images/theme/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">90</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">126</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">17</div></a></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">逐光の博客</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">RocketMQ中ConsumeFromWhere详解</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2021-09-05T16:00:00.000Z" title="发表于 2021-09-06 00:00:00">2021-09-06</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-09-17T03:54:21.176Z" title="更新于 2025-09-17 11:54:21">2025-09-17</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">消息队列</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">1.4k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>6分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="RocketMQ中ConsumeFromWhere详解"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><h1 id="一、ConsumeFromWhere"><a href="#一、ConsumeFromWhere" class="headerlink" title="一、ConsumeFromWhere"></a>一、ConsumeFromWhere</h1><p>RocketMQ的Consumer有一个<code>consumeFromWhere</code>属性，表示Consumer启动后将从哪个位置开始消费消息，该属性取值有以下情况：</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token comment">/**
+ * Consuming point on consumer booting. There are three consuming points:
+ * CONSUME_FROM_LAST_OFFSET: consumer clients pick up where it stopped previously. If it were a newly booting up consumer client, according aging of the consumer group, there are two cases:
+ * if the consumer group is created so recently that the earliest message being subscribed has yet expired, which means the consumer group represents a lately launched business, consuming will start from the very beginning;
+ * if the earliest message being subscribed has expired, consuming will start from the latest messages, meaning messages born prior to the booting timestamp would be ignored.
+ * CONSUME_FROM_FIRST_OFFSET: Consumer client will start from earliest messages available.
+ * CONSUME_FROM_TIMESTAMP: Consumer client will start from specified timestamp, which means messages born prior to consumeTimestamp will be ignored
+ */</span>
+<span class="token keyword">private</span> <span class="token class-name">ConsumeFromWhere</span> consumeFromWhere <span class="token operator">=</span> <span class="token class-name">ConsumeFromWhere</span><span class="token punctuation">.</span><span class="token constant">CONSUME_FROM_LAST_OFFSET</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="二、源码分析"><a href="#二、源码分析" class="headerlink" title="二、源码分析"></a>二、源码分析</h1><p>consumeFromWhere在使用过程中，发现设置CONSUME_FROM_LAST_OFFSET后，有些情况仍然从头开始消费，接下来结合源码分析一下consumeFromWhere处理逻辑。</p>
+<h2 id="2-1-RocketMQ客户端consumeFromWhere处理逻辑"><a href="#2-1-RocketMQ客户端consumeFromWhere处理逻辑" class="headerlink" title="2.1 RocketMQ客户端consumeFromWhere处理逻辑"></a>2.1 RocketMQ客户端consumeFromWhere处理逻辑</h2><p>Consumer启动是调用<code>computePullFromWhere(MessageQueue mq)</code>方法获取offset，以下为该方法的源码实现：<br><code>org.apache.rocketmq.client.impl.consumer.RebalancePushImpl.java</code></p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token keyword">long</span> <span class="token function">computePullFromWhere</span><span class="token punctuation">(</span><span class="token class-name">MessageQueue</span> mq<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">long</span> result <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token keyword">final</span> <span class="token class-name">ConsumeFromWhere</span> consumeFromWhere <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>defaultMQPushConsumerImpl<span class="token punctuation">.</span><span class="token function">getDefaultMQPushConsumer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getConsumeFromWhere</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">final</span> <span class="token class-name">OffsetStore</span> offsetStore <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>defaultMQPushConsumerImpl<span class="token punctuation">.</span><span class="token function">getOffsetStore</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">switch</span> <span class="token punctuation">(</span>consumeFromWhere<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">case</span> <span class="token constant">CONSUME_FROM_LAST_OFFSET_AND_FROM_MIN_WHEN_BOOT_FIRST</span><span class="token operator">:</span>
+        <span class="token keyword">case</span> <span class="token constant">CONSUME_FROM_MIN_OFFSET</span><span class="token operator">:</span>
+        <span class="token keyword">case</span> <span class="token constant">CONSUME_FROM_MAX_OFFSET</span><span class="token operator">:</span>
+        <span class="token keyword">case</span> <span class="token constant">CONSUME_FROM_LAST_OFFSET</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+            
+            <span class="token comment">// 从broker获取消费者组的offset，此时分为两种情况</span>
+            <span class="token comment">// 1. 该消费者组之前已经存在，则broker返回该消费者组的最后的offset，此时offset > 0</span>
+            <span class="token comment">// 2. 如果是一个新的消费者组，则又分为两种情况：</span>
+            <span class="token comment">// 2.1 如果消费者组订阅的消息仍在broker的内存中,则broker返回offset=0</span>
+            <span class="token comment">// 2.2 如果消费者组订阅的消息不在broker的内存中，则broker返回未查找到，客户端将offset设置为-1</span>
+            <span class="token keyword">long</span> lastOffset <span class="token operator">=</span> offsetStore<span class="token punctuation">.</span><span class="token function">readOffset</span><span class="token punctuation">(</span>mq<span class="token punctuation">,</span> <span class="token class-name">ReadOffsetType</span><span class="token punctuation">.</span><span class="token constant">READ_FROM_STORE</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            
+            <span class="token comment">// 消费者组之前已经存在（offset>0),或新消费者组且订阅的历史消息仍存在broker内存中（offset=0)</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>lastOffset <span class="token operator">>=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                result <span class="token operator">=</span> lastOffset<span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+            
+            <span class="token comment">// 新消费者组且历史消息不在broker的内存中</span>
+            <span class="token comment">// First start,no offset</span>
+            <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">1</span> <span class="token operator">==</span> lastOffset<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>mq<span class="token punctuation">.</span><span class="token function">getTopic</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">startsWith</span><span class="token punctuation">(</span><span class="token class-name">MixAll</span><span class="token punctuation">.</span><span class="token constant">RETRY_GROUP_TOPIC_PREFIX</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                    result <span class="token operator">=</span> <span class="token number">0L</span><span class="token punctuation">;</span>
+                <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+                    <span class="token comment">// 从最新的消息开始消费</span>
+                    <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+                        result <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>mQClientFactory<span class="token punctuation">.</span><span class="token function">getMQAdminImpl</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">maxOffset</span><span class="token punctuation">(</span>mq<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">MQClientException</span> e<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                        result <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">&#125;</span>
+                <span class="token punctuation">&#125;</span>
+            <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+                result <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+            <span class="token keyword">break</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">case</span> <span class="token constant">CONSUME_FROM_FIRST_OFFSET</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">long</span> lastOffset <span class="token operator">=</span> offsetStore<span class="token punctuation">.</span><span class="token function">readOffset</span><span class="token punctuation">(</span>mq<span class="token punctuation">,</span> <span class="token class-name">ReadOffsetType</span><span class="token punctuation">.</span><span class="token constant">READ_FROM_STORE</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            
+            <span class="token comment">// 消费者组之前已经存在（offset>0),或新消费者组且历史消息仍存在broker的内存中（offset=0)</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>lastOffset <span class="token operator">>=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                result <span class="token operator">=</span> lastOffset<span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">1</span> <span class="token operator">==</span> lastOffset<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                result <span class="token operator">=</span> <span class="token number">0L</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+                result <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+            <span class="token keyword">break</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">case</span> <span class="token constant">CONSUME_FROM_TIMESTAMP</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">long</span> lastOffset <span class="token operator">=</span> offsetStore<span class="token punctuation">.</span><span class="token function">readOffset</span><span class="token punctuation">(</span>mq<span class="token punctuation">,</span> <span class="token class-name">ReadOffsetType</span><span class="token punctuation">.</span><span class="token constant">READ_FROM_STORE</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            
+             <span class="token comment">// 消费者组之前已经存在（offset>0),或新消费者组且历史消息仍存在broker的内存中（offset=0)</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>lastOffset <span class="token operator">>=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                result <span class="token operator">=</span> lastOffset<span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">1</span> <span class="token operator">==</span> lastOffset<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>mq<span class="token punctuation">.</span><span class="token function">getTopic</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">startsWith</span><span class="token punctuation">(</span><span class="token class-name">MixAll</span><span class="token punctuation">.</span><span class="token constant">RETRY_GROUP_TOPIC_PREFIX</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                    <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+                        result <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>mQClientFactory<span class="token punctuation">.</span><span class="token function">getMQAdminImpl</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">maxOffset</span><span class="token punctuation">(</span>mq<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">MQClientException</span> e<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                        result <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">&#125;</span>
+                <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+                    <span class="token comment">// 从时间戳对应的offset开始消费</span>
+                    <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+                        <span class="token keyword">long</span> timestamp <span class="token operator">=</span> <span class="token class-name">UtilAll</span><span class="token punctuation">.</span><span class="token function">parseDate</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>defaultMQPushConsumerImpl<span class="token punctuation">.</span><span class="token function">getDefaultMQPushConsumer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getConsumeTimestamp</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                            <span class="token class-name">UtilAll</span><span class="token punctuation">.</span><span class="token constant">YYYYMMDDHHMMSS</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getTime</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        result <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>mQClientFactory<span class="token punctuation">.</span><span class="token function">getMQAdminImpl</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">searchOffset</span><span class="token punctuation">(</span>mq<span class="token punctuation">,</span> timestamp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">MQClientException</span> e<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                        result <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">&#125;</span>
+                <span class="token punctuation">&#125;</span>
+            <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+                result <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+            <span class="token keyword">break</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token keyword">default</span><span class="token operator">:</span>
+            <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">return</span> result<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="2-2-broker端查询消费者组offset的处理逻辑"><a href="#2-2-broker端查询消费者组offset的处理逻辑" class="headerlink" title="2.2 broker端查询消费者组offset的处理逻辑"></a>2.2 broker端查询消费者组offset的处理逻辑</h2><h3 id="broker处理queryConsumerOffset请求源码实现"><a href="#broker处理queryConsumerOffset请求源码实现" class="headerlink" title="broker处理queryConsumerOffset请求源码实现"></a>broker处理queryConsumerOffset请求源码实现</h3><p><code>org.apache.rocketmq.broker.processor.ConsumerManageProcessor</code></p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token comment">// broker处理客户端查找Consumer的offset的请求</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token class-name">RemotingCommand</span> <span class="token function">processRequest</span><span class="token punctuation">(</span><span class="token class-name">ChannelHandlerContext</span> ctx<span class="token punctuation">,</span> <span class="token class-name">RemotingCommand</span> request<span class="token punctuation">)</span>
+    <span class="token keyword">throws</span> <span class="token class-name">RemotingCommandException</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">switch</span> <span class="token punctuation">(</span>request<span class="token punctuation">.</span><span class="token function">getCode</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">case</span> <span class="token class-name">RequestCode</span><span class="token punctuation">.</span><span class="token constant">GET_CONSUMER_LIST_BY_GROUP</span><span class="token operator">:</span>
+            <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">getConsumerListByGroup</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> request<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">case</span> <span class="token class-name">RequestCode</span><span class="token punctuation">.</span><span class="token constant">UPDATE_CONSUMER_OFFSET</span><span class="token operator">:</span>
+            <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">updateConsumerOffset</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> request<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">case</span> <span class="token class-name">RequestCode</span><span class="token punctuation">.</span><span class="token constant">QUERY_CONSUMER_OFFSET</span><span class="token operator">:</span>
+            <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">queryConsumerOffset</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> request<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">default</span><span class="token operator">:</span>
+            <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> <span class="token keyword">null</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">private</span> <span class="token class-name">RemotingCommand</span> <span class="token function">queryConsumerOffset</span><span class="token punctuation">(</span><span class="token class-name">ChannelHandlerContext</span> ctx<span class="token punctuation">,</span> <span class="token class-name">RemotingCommand</span> request<span class="token punctuation">)</span>
+        <span class="token keyword">throws</span> <span class="token class-name">RemotingCommandException</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">final</span> <span class="token class-name">RemotingCommand</span> response <span class="token operator">=</span>
+            <span class="token class-name">RemotingCommand</span><span class="token punctuation">.</span><span class="token function">createResponseCommand</span><span class="token punctuation">(</span><span class="token class-name">QueryConsumerOffsetResponseHeader</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">final</span> <span class="token class-name">QueryConsumerOffsetResponseHeader</span> responseHeader <span class="token operator">=</span>
+            <span class="token punctuation">(</span><span class="token class-name">QueryConsumerOffsetResponseHeader</span><span class="token punctuation">)</span> response<span class="token punctuation">.</span><span class="token function">readCustomHeader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">final</span> <span class="token class-name">QueryConsumerOffsetRequestHeader</span> requestHeader <span class="token operator">=</span>
+            <span class="token punctuation">(</span><span class="token class-name">QueryConsumerOffsetRequestHeader</span><span class="token punctuation">)</span> request
+                <span class="token punctuation">.</span><span class="token function">decodeCommandCustomHeader</span><span class="token punctuation">(</span><span class="token class-name">QueryConsumerOffsetRequestHeader</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 从ConsumerOffsetManager中获取offset</span>
+        <span class="token keyword">long</span> offset <span class="token operator">=</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span>brokerController<span class="token punctuation">.</span><span class="token function">getConsumerOffsetManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">queryOffset</span><span class="token punctuation">(</span>
+                requestHeader<span class="token punctuation">.</span><span class="token function">getConsumerGroup</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> requestHeader<span class="token punctuation">.</span><span class="token function">getTopic</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> requestHeader<span class="token punctuation">.</span><span class="token function">getQueueId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>offset <span class="token operator">>=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            responseHeader<span class="token punctuation">.</span><span class="token function">setOffset</span><span class="token punctuation">(</span>offset<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            response<span class="token punctuation">.</span><span class="token function">setCode</span><span class="token punctuation">(</span><span class="token class-name">ResponseCode</span><span class="token punctuation">.</span><span class="token constant">SUCCESS</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            response<span class="token punctuation">.</span><span class="token function">setRemark</span><span class="token punctuation">(</span><span class="token keyword">null</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span> <span class="token comment">// offset小于0，即broker中不存在该消费者组的offset信息（是一个新启动的消费者组）</span>
+            <span class="token comment">// 获取消费队列的最小的offset，如果该队列文件未进行清除，则offset=0</span>
+            <span class="token keyword">long</span> minOffset <span class="token operator">=</span>
+                <span class="token keyword">this</span><span class="token punctuation">.</span>brokerController<span class="token punctuation">.</span><span class="token function">getMessageStore</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getMinOffsetInQueue</span><span class="token punctuation">(</span>requestHeader<span class="token punctuation">.</span><span class="token function">getTopic</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                    requestHeader<span class="token punctuation">.</span><span class="token function">getQueueId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">// 如果minOffset小于等于0，且未被消费的消息仍在内存中则返回offset=0</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>minOffset <span class="token operator">&lt;=</span> <span class="token number">0</span>
+                <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span><span class="token keyword">this</span><span class="token punctuation">.</span>brokerController<span class="token punctuation">.</span><span class="token function">getMessageStore</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">checkInDiskByConsumeOffset</span><span class="token punctuation">(</span>
+                requestHeader<span class="token punctuation">.</span><span class="token function">getTopic</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> requestHeader<span class="token punctuation">.</span><span class="token function">getQueueId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                responseHeader<span class="token punctuation">.</span><span class="token function">setOffset</span><span class="token punctuation">(</span><span class="token number">0L</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                response<span class="token punctuation">.</span><span class="token function">setCode</span><span class="token punctuation">(</span><span class="token class-name">ResponseCode</span><span class="token punctuation">.</span><span class="token constant">SUCCESS</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                response<span class="token punctuation">.</span><span class="token function">setRemark</span><span class="token punctuation">(</span><span class="token keyword">null</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span> <span class="token comment">// 新启动的消费者组，且积压的消息不在内存中，则返回QUERY_NOT_FOUND</span>
+                response<span class="token punctuation">.</span><span class="token function">setCode</span><span class="token punctuation">(</span><span class="token class-name">ResponseCode</span><span class="token punctuation">.</span><span class="token constant">QUERY_NOT_FOUND</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                response<span class="token punctuation">.</span><span class="token function">setRemark</span><span class="token punctuation">(</span><span class="token string">"Not found, V3_0_6_SNAPSHOT maybe this group consumer boot first"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token keyword">return</span> response<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="broker查找消费者组offset源码实现"><a href="#broker查找消费者组offset源码实现" class="headerlink" title="broker查找消费者组offset源码实现"></a>broker查找消费者组offset源码实现</h3><p><code>org.apache.rocketmq.broker.offset.ConsumerOffsetManager.java</code></p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token comment">// broker启动时加载启动用户目录下的store/config/consumerOffset.json文件，该文件保存了对应Topic下的消费者组在队列的offset</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">decode</span><span class="token punctuation">(</span><span class="token class-name">String</span> jsonString<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>jsonString <span class="token operator">!=</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">ConsumerOffsetManager</span> obj <span class="token operator">=</span> <span class="token class-name">RemotingSerializable</span><span class="token punctuation">.</span><span class="token function">fromJson</span><span class="token punctuation">(</span>jsonString<span class="token punctuation">,</span> <span class="token class-name">ConsumerOffsetManager</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>obj <span class="token operator">!=</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span>offsetTable <span class="token operator">=</span> obj<span class="token punctuation">.</span>offsetTable<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token comment">// 根据Topic、消费者组、队列Id从broker获取offset，如果不存在则返回-1</span>
+<span class="token keyword">public</span> <span class="token keyword">long</span> <span class="token function">queryOffset</span><span class="token punctuation">(</span><span class="token keyword">final</span> <span class="token class-name">String</span> group<span class="token punctuation">,</span> <span class="token keyword">final</span> <span class="token class-name">String</span> topic<span class="token punctuation">,</span> <span class="token keyword">final</span> <span class="token keyword">int</span> queueId<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// topic@group</span>
+    <span class="token class-name">String</span> key <span class="token operator">=</span> topic <span class="token operator">+</span> <span class="token constant">TOPIC_GROUP_SEPARATOR</span> <span class="token operator">+</span> group<span class="token punctuation">;</span>
+    <span class="token class-name">ConcurrentMap</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Integer</span><span class="token punctuation">,</span> <span class="token class-name">Long</span><span class="token punctuation">></span></span> map <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>offsetTable<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">null</span> <span class="token operator">!=</span> map<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">Long</span> offset <span class="token operator">=</span> map<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>queueId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>offset <span class="token operator">!=</span> <span class="token keyword">null</span><span class="token punctuation">)</span>
+            <span class="token keyword">return</span> offset<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><ul>
+<li>如果一个消费者组之前已经启动过，再次启动后，无论consumeFromWhere设置何值，都会根据在broker记录的offset进行消费</li>
+<li>如果是一个新启动的消费者组，且消费者组订阅的消息仍在broker的内存中，无论consumeFromWhere设置何值，都将从0开始消费</li>
+<li>如果是一个新启动的消费者组，且消费者组订阅的消息不在broker的内存中，根据consumeFromWhere设置的获取对应的offset进行消费</li>
+</ul>
+<h2 id="克隆或重置消费者组的offset"><a href="#克隆或重置消费者组的offset" class="headerlink" title="克隆或重置消费者组的offset"></a>克隆或重置消费者组的offset</h2><p>根据分析结果，如果是一个已经存在的消费者组，如果想要跳过积压的消息，设置consumeFromWhere是无效的，但是可用通过rocketmq-dashboard或mqadmin重置offset。<br>如果是新建消费者组，不想要重头开始消费，可以在代码中做时间校验跳过历史消息，或者通过rocketmq-dashboard或mqadmin新建消费者组并重置offset。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn">逐光</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn/2021/09/06/rockermq/rocketmq-zhong-consumefromwhere-xiang-jie/">https://www.mpoom.cn/2021/09/06/rockermq/rocketmq-zhong-consumefromwhere-xiang-jie/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.mpoom.cn" target="_blank">逐光の博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/RocketMQ/">RocketMQ</a><a class="post-meta__tags" href="/tags/ConsumeFromWhere/">ConsumeFromWhere</a></div><div class="post_share"><div class="social-share" data-image="/images/feature/20.jpeg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2021/09/23/reprint/zen-me-yong-fu-ge-xing-wei-mo-xing-zhan-sheng-tuo-yan-zheng/" title="怎么用“福格行为模型”战胜拖延症?"><img class="cover" src="/images/feature/1.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">怎么用“福格行为模型”战胜拖延症?</div></div></a></div><div class="next-post pull-right"><a href="/2021/09/05/rockermq/rocketmq-zhong-de-consumer-ji-consumergroup-xiang-jie/" title="RocketMQ中的Consumer及ConsumerGroup详解"><img class="cover" src="/images/feature/10.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">RocketMQ中的Consumer及ConsumerGroup详解</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2023/05/08/k8s/kube-prometheus-jian-kong-rocketmq/" title="Kube-Prometheus监控RocketMQ（四）"><img class="cover" src="/images/feature/23.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-05-08</div><div class="title">Kube-Prometheus监控RocketMQ（四）</div></div></a></div><div><a href="/2020/10/29/rockermq/rocketmq-zhong-mmap-yuan-li-fen-xi-ji-shi-yong/" title="RocketMQ中Mmap原理分析及使用"><img class="cover" src="/images/feature/23.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-10-29</div><div class="title">RocketMQ中Mmap原理分析及使用</div></div></a></div><div><a href="/2020/09/10/rockermq/rocketmq-xiao-xi-cun-chu/" title="RocketMQ消息存储"><img class="cover" src="/images/feature/22.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-09-10</div><div class="title">RocketMQ消息存储</div></div></a></div><div><a href="/2021/09/05/rockermq/rocketmq-zhong-de-consumer-ji-consumergroup-xiang-jie/" title="RocketMQ中的Consumer及ConsumerGroup详解"><img class="cover" src="/images/feature/10.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-05</div><div class="title">RocketMQ中的Consumer及ConsumerGroup详解</div></div></a></div><div><a href="/2020/11/26/rockermq/rocketmq-she-ji-yuan-li-fen-xi/" title="RocketMQ设计原理分析"><img class="cover" src="/images/feature/23.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-11-26</div><div class="title">RocketMQ设计原理分析</div></div></a></div><div><a href="/2022/06/19/rockermq/shen-du-jie-du-rocketmq-cun-chu-ji-zhi/" title="深度解读 RocketMQ 存储机制"><img class="cover" src="/images/feature/18.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-06-19</div><div class="title">深度解读 RocketMQ 存储机制</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E3%80%81ConsumeFromWhere"><span class="toc-number">1.</span> <span class="toc-text">一、ConsumeFromWhere</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="toc-number">2.</span> <span class="toc-text">二、源码分析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-RocketMQ%E5%AE%A2%E6%88%B7%E7%AB%AFconsumeFromWhere%E5%A4%84%E7%90%86%E9%80%BB%E8%BE%91"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 RocketMQ客户端consumeFromWhere处理逻辑</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-broker%E7%AB%AF%E6%9F%A5%E8%AF%A2%E6%B6%88%E8%B4%B9%E8%80%85%E7%BB%84offset%E7%9A%84%E5%A4%84%E7%90%86%E9%80%BB%E8%BE%91"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 broker端查询消费者组offset的处理逻辑</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#broker%E5%A4%84%E7%90%86queryConsumerOffset%E8%AF%B7%E6%B1%82%E6%BA%90%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.2.1.</span> <span class="toc-text">broker处理queryConsumerOffset请求源码实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#broker%E6%9F%A5%E6%89%BE%E6%B6%88%E8%B4%B9%E8%80%85%E7%BB%84offset%E6%BA%90%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.2.2.</span> <span class="toc-text">broker查找消费者组offset源码实现</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">3.</span> <span class="toc-text">总结</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%8B%E9%9A%86%E6%88%96%E9%87%8D%E7%BD%AE%E6%B6%88%E8%B4%B9%E8%80%85%E7%BB%84%E7%9A%84offset"><span class="toc-number">3.1.</span> <span class="toc-text">克隆或重置消费者组的offset</span></a></li></ol></li></ol></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2025 By 逐光</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div></div></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.min.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"><script>function loadValine () {
+  function initValine () {
+    const valine = new Valine(Object.assign({
+      el: '#vcomment',
+      appId: 'f5WSKiyRgMriw1qIicgn1Dbu-gzGzoHsz',
+      appKey: 'c9Jx92rNNJ0RzzaxLNCqu4rR',
+      avatar: 'monsterid',
+      serverURLs: '',
+      emojiMaps: "",
+      path: window.location.pathname,
+      visitor: false
+    }, null))
+  }
+
+  if (typeof Valine === 'function') initValine() 
+  else getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js').then(initValine)
+}
+
+if ('Valine' === 'Valine' || !true) {
+  if (true) btf.loadComment(document.getElementById('vcomment'),loadValine)
+  else setTimeout(loadValine, 0)
+} else {
+  function loadOtherComment () {
+    loadValine()
+  }
+}</script></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script>((window.gitter = {}).chat = {}).options = {
+  room: 'blog-mpoom/community',
+};
+
+if (false) {
+  function chatBtnHide () {
+    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'none'
+  }
+
+  function chatBtnShow () {
+    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'block'
+  }
+}
+</script><script src="https://sidecar.gitter.im/dist/sidecar.v1.js" async="async" defer="defer"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>浅谈“伪共享”问题 | 逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="非原创，转载于：https:&amp;#x2F;&amp;#x2F;www.liuyj.top&amp;#x2F;false_sharing.html  前言学习的过程中遇到了一个名词——伪共享，出于对知识的兴趣，上网查阅了一些博文，研究了伪共享的问题，写此文章总结记录。 要很好的理解伪共享问题，我们要先从CPU的缓存开始说起。 CPU缓存架构CPU"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/2022/01/20/java/qian-tan-wei-gong-xiang-wen-ti/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  }
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '浅谈“伪共享”问题',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2025-09-17 11:54:21'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><meta name="generator" content="Hexo 5.4.2"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/images/theme/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">90</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">126</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">17</div></a></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">逐光の博客</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">浅谈“伪共享”问题</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2022-01-19T16:00:00.000Z" title="发表于 2022-01-20 00:00:00">2022-01-20</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-09-17T03:54:21.166Z" title="更新于 2025-09-17 11:54:21">2025-09-17</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%90%8E%E7%AB%AF/">后端</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">2.2k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>7分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="浅谈“伪共享”问题"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><blockquote>
+<p>非原创，转载于：<a target="_blank" rel="noopener" href="https://www.liuyj.top/false_sharing.html">https://www.liuyj.top/false_sharing.html</a></p>
+</blockquote>
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>学习的过程中遇到了一个名词——伪共享，出于对知识的兴趣，上网查阅了一些博文，研究了伪共享的问题，写此文章总结记录。</p>
+<p>要很好的理解伪共享问题，我们要先从CPU的缓存开始说起。</p>
+<h2 id="CPU缓存架构"><a href="#CPU缓存架构" class="headerlink" title="CPU缓存架构"></a>CPU缓存架构</h2><p>CPU 是计算机的心脏，所有运算和程序最终都要由它来执行。</p>
+<p>主内存（RAM）是数据存放的地方，CPU 和主内存之间有好几级缓存，因为即使直接访问主内存也是非常慢的。</p>
+<p><img src="/2022/01/20/java/qian-tan-wei-gong-xiang-wen-ti/%E7%BC%93%E5%AD%98%E6%9E%B6%E6%9E%84.png" alt="缓存架构"></p>
+<p>如果对一块数据做相同的运算多次，那么在执行运算的时候把它加载到离 CPU 很近的地方就有意义了，比如一个循环计数，你不想每次循环都跑到主内存去取这个数据来增长它吧。</p>
+<p>再对缓存的概念做一些说明：</p>
+<blockquote>
+<p>越靠近 CPU 的缓存越快也越小。<br>所以 L1 缓存很小但很快，并且紧靠着在使用它的 CPU 内核。<br>L2 大一些，也慢一些，并且仍然只能被一个单独的 CPU 核使用。<br>L3 在现代多核机器中更普遍，仍然更大，更慢，并且被<code>单个插槽上的所有 CPU 核共享</code>。<br>最后，主存保存着程序运行的所有数据，它更大，更慢，由<code>全部插槽上的所有 CPU 核共享</code>。</p>
+</blockquote>
+<p>当 CPU 执行运算的时候，它先去 L1 查找所需的数据，再去 L2，然后是 L3，最后如果这些缓存中都没有，所需的数据就要去主内存拿。</p>
+<p>走得越远，运算耗费的时间就越长。</p>
+<p>所以如果进行一些很频繁的运算，要确保数据在 L1 缓存中。</p>
+<h2 id="CPU缓存行"><a href="#CPU缓存行" class="headerlink" title="CPU缓存行"></a>CPU缓存行</h2><p>缓存是由缓存行组成的，通常是 64 字节（常用处理器的缓存行是 64 字节的，比较旧的处理器缓存行是 32 字节），并且它有效地引用主内存中的一块地址。</p>
+<p>一个 Java 的 long 类型是 8 字节，因此在一个缓存行中可以存 8 个 long 类型的变量。</p>
+<p><img src="/2022/01/20/java/qian-tan-wei-gong-xiang-wen-ti/cpu%E7%BC%93%E5%AD%98%E8%A1%8C.png" alt="cpu缓存行"></p>
+<p>在程序运行的过程中，缓存每次更新都从主内存中加载连续的 64 个字节。因此，如果访问一个 long 类型的数组时，当数组中的一个值被加载到缓存中时，另外 7 个元素也会被加载到缓存中。</p>
+<p>但是，如果使用的数据结构中的项在内存中不是彼此相邻的，比如链表，那么将得不到免费缓存加载带来的好处。</p>
+<p>不过，这种免费加载也有一个坏处。设想如果我们有个 long 类型的变量 a，它不是数组的一部分，而是一个单独的变量，并且还有另外一个 long 类型的变量 b 紧挨着它，那么当加载 a 的时候将免费加载 b。</p>
+<p>看起来似乎没有什么毛病，但是如果一个 CPU 核心的线程在对 a 进行修改，另一个 CPU 核心的线程却在对 b 进行读取。</p>
+<p>当前者修改 a 时，会把 a 和 b 同时加载到前者核心的缓存行中，更新完 a 后其它所有包含 a 的缓存行都将失效，因为其它缓存中的 a 不是最新值了。</p>
+<p>而当后者读取 b 时，发现这个缓存行已经失效了，需要从主内存中重新加载。</p>
+<p>请记住，我们的缓存都是以缓存行作为一个单位来处理的，所以失效 a 的缓存的同时，也会把 b 失效，反之亦然。</p>
+<p><img src="/2022/01/20/java/qian-tan-wei-gong-xiang-wen-ti/cpu%E7%BC%93%E5%AD%98%E8%A1%8C-1.png" alt="cpu缓存行-1"></p>
+<p>这样就出现了一个问题，b 和 a 完全不相干，每次却要因为 a 的更新需要从主内存重新读取，它被缓存未命中给拖慢了。</p>
+<p>这就是传说中的<code>伪共享</code>。</p>
+<h2 id="何为伪共享（False-Sharing）"><a href="#何为伪共享（False-Sharing）" class="headerlink" title="何为伪共享（False Sharing）"></a>何为伪共享（False Sharing）</h2><p>从上面我们的原理讲解中，对<code>伪共享</code>有了理性的认识。</p>
+<p>这里我们先给<code>伪共享</code>下个定义：</p>
+<blockquote>
+<p>当多线程修改互相独立的变量时，如果这些变量共享同一个缓存行，就会无意中影响彼此的性能，这就是伪共享。</p>
+</blockquote>
+<p>我们从一个例子来看”伪共享”产生的作用：</p>
+<pre class="line-numbers language-none"><code class="language-none">public class FalseSharingTest &#123;  
+    public static void main(String[] args) throws InterruptedException &#123;  
+        testPointer(new Pointer());  
+    &#125;  
+
+    private static void testPointer(Pointer pointer) throws InterruptedException &#123;  
+        long start &#x3D; System.currentTimeMillis();  
+        Thread t1 &#x3D; new Thread(() -&gt; &#123;  
+            for (int i &#x3D; 0; i &lt; 100000000; i++) &#123;  
+                pointer.x++;  
+            &#125;  
+        &#125;);  
+        Thread t2 &#x3D; new Thread(() -&gt; &#123;  
+            for (int i &#x3D; 0; i &lt; 100000000; i++) &#123;  
+                pointer.y++;  
+            &#125;  
+        &#125;);  
+        tstart();  
+        tstart();  
+        tjoin();  
+        tjoin();  
+        System.out.println(System.currentTimeMillis() - start);  
+        System.out.println(&quot;x: &quot;+pointer.x);  
+        System.out.println(&quot;y: &quot;+pointer.y);  
+    &#125;  
+&#125;  
+
+class Pointer &#123;  
+    volatile long x;  
+    volatile long y;  
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们声明了一个 Pointer 的类，它包含 x 和 y 两个变量（必须声明为volatile，保证可见性），一个线程对 x 进行自增1亿次，一个线程对 y 进行自增1亿次。</p>
+<p>可以看到，x 和 y 完全没有任何关系，但是更新 x 的时候会把其它包含 x 的缓存行失效，同时也就失效了 y，运行这段程序输出的时间为 <code>3458ms</code>。</p>
+<p>运行结果：</p>
+<pre class="line-numbers language-none"><code class="language-none">3458  
+x: 100000000  
+y: 100000000<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>运行了多次，结果都是在3000ms左右。</p>
+<p>虽然从这个时间上我们好像看不出来有什么伪共享的问题，无非可能有点慢而已，但我们没有别的证据。别急，我们下面会有答案的。</p>
+<h2 id="避免伪共享"><a href="#避免伪共享" class="headerlink" title="避免伪共享"></a>避免伪共享</h2><p>伪共享的原理我们知道了，一个缓存行是 64 个字节，一个 long 类型是 8 个字节，所以避免伪共享也很简单，大概有以下三种方式。</p>
+<h2 id="方法一-填充-Padding"><a href="#方法一-填充-Padding" class="headerlink" title="方法一 填充(Padding)"></a>方法一 填充(Padding)</h2><p>顾名思义，填充的思想就是在两个变量之间填充到64个字节，把第二个变量挤到下一个缓存行。</p>
+<p>我们的例子中在两个 long 类型的变量之间再加 7 个 long 类型，把Pointer改成下面的结构之后：</p>
+<pre class="line-numbers language-none"><code class="language-none">class Pointer &#123;  
+    volatile long x;  
+    long p1, p2, p3, p4, p5, p6, p7;  
+    volatile long y;  
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>发现时间神奇的缩短了4分之一，多次试验，大概都在800ms左右：</p>
+<pre class="line-numbers language-none"><code class="language-none">720  
+x: 100000000  
+y: 100000000<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>这个结果也充分证明了<code>伪共享</code>的存在。</p>
+<p><code>注意</code>：在考虑使用填充之前，必须要了解的一点是JVM可能会清除无用字段或重排无用字段的位置，这样的话，可能无形中又会引入伪共享。我们也没有办法指定对象在堆内驻留的位置。</p>
+<h2 id="方法二-自己创建对象"><a href="#方法二-自己创建对象" class="headerlink" title="方法二 自己创建对象"></a>方法二 自己创建对象</h2><p>我们尝试使用另外一种方式，我们重新创建自己的long类型，而不是Java自带的long：</p>
+<pre class="line-numbers language-none"><code class="language-none">class Pointer &#123;  
+    MyLong x&#x3D;new MyLong();  
+    MyLong y&#x3D;new MyLong();  
+&#125;  
+
+class MyLong&#123;  
+    volatile long value;  
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>同时把 <code>pointer.x++;</code> 修改为 <code>pointer.x.value++;</code>，把 <code>pointer.y++;</code> 修改为 <code>pointer.y.value++;</code>，再次运行程序发现时间是 <code>752ms</code>。<br>可以看到也解决了伪共享问题。</p>
+<h2 id="方法三-使用-sun-misc-Contended-注解（java8）"><a href="#方法三-使用-sun-misc-Contended-注解（java8）" class="headerlink" title="方法三 使用 @sun.misc.Contended 注解（java8）"></a>方法三 使用 @sun.misc.Contended 注解（java8）</h2><p>除了对字段进行填充之外，还有一个比较清爽的方法，那就是对需要避免陷入伪共享的字段进行注解，这个注解暗示JVM应当将字段放入不同的缓存行。</p>
+<p>如下添加@Contended注解：</p>
+<pre class="line-numbers language-none"><code class="language-none">import sun.misc.Contended;  
+class Pointer &#123;  
+   @Contended  
+   volatile long x;  
+
+   volatile long y;  
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>默认使用这个注解是无效的，需要在JVM启动参数加上 <code>-XX:-RestrictContended</code>才会生效：</p>
+<p>再次运行程序发现时间是 749ms：</p>
+<pre class="line-numbers language-none"><code class="language-none">749  
+x: 100000000  
+y: 100000000<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>说明：引入了<code>@Contented</code>注解，被这个注解修饰的字段应当和其他的字段驻留在不同的位置。上面的代码将x和y置于不同的缓存行。@Contented注解将y移动到远离对象头部的地方，(以避免和x一起被加载到同一个缓存行)。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><blockquote>
+<p>杂谈 什么是伪共享（false sharing）？ （注：这篇文章中的避免伪共享的方案中的代码及解释有误，本文已纠正）<br>Java8中@Contended和伪共享</p>
+</blockquote>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>（1）CPU具有多级缓存，越接近CPU的缓存越小也越快；</p>
+<p>（2）CPU缓存中的数据是以缓存行为单位处理的；</p>
+<p>（3）CPU缓存行能带来免费加载数据的好处，所以处理数组性能非常高；</p>
+<p>（4）CPU缓存行也带来了弊端，多线程处理不相干的变量时会相互影响，也就是伪共享；</p>
+<p>（5）避免伪共享的主要思路就是让不相干的变量不要出现在同一个缓存行中，常见的有填充、创建自己的变量、使用注解三种方式避免伪共享。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn">逐光</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn/2022/01/20/java/qian-tan-wei-gong-xiang-wen-ti/">https://www.mpoom.cn/2022/01/20/java/qian-tan-wei-gong-xiang-wen-ti/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.mpoom.cn" target="_blank">逐光の博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E4%BC%AA%E5%85%B1%E4%BA%AB/">伪共享</a></div><div class="post_share"><div class="social-share" data-image="/images/feature/9.jpeg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2022/01/20/java/java-zhong-yi-ge-dui-xiang-zhan-yong-duo-shao-ge-zi-jie/" title="Java中一个对象占用多少个字节"><img class="cover" src="/images/feature/13.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">Java中一个对象占用多少个字节</div></div></a></div><div class="next-post pull-right"><a href="/2022/01/18/distributed/xue-hua-suan-fa-yuan-ma-fen-xi-ji-shi-jian/" title="雪花算法源码分析及实践"><img class="cover" src="/images/feature/18.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">雪花算法源码分析及实践</div></div></a></div></nav><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#CPU%E7%BC%93%E5%AD%98%E6%9E%B6%E6%9E%84"><span class="toc-number">1.1.</span> <span class="toc-text">CPU缓存架构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CPU%E7%BC%93%E5%AD%98%E8%A1%8C"><span class="toc-number">1.2.</span> <span class="toc-text">CPU缓存行</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%95%E4%B8%BA%E4%BC%AA%E5%85%B1%E4%BA%AB%EF%BC%88False-Sharing%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">何为伪共享（False Sharing）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%81%BF%E5%85%8D%E4%BC%AA%E5%85%B1%E4%BA%AB"><span class="toc-number">1.4.</span> <span class="toc-text">避免伪共享</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E4%B8%80-%E5%A1%AB%E5%85%85-Padding"><span class="toc-number">1.5.</span> <span class="toc-text">方法一 填充(Padding)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E4%BA%8C-%E8%87%AA%E5%B7%B1%E5%88%9B%E5%BB%BA%E5%AF%B9%E8%B1%A1"><span class="toc-number">1.6.</span> <span class="toc-text">方法二 自己创建对象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E4%B8%89-%E4%BD%BF%E7%94%A8-sun-misc-Contended-%E6%B3%A8%E8%A7%A3%EF%BC%88java8%EF%BC%89"><span class="toc-number">1.7.</span> <span class="toc-text">方法三 使用 @sun.misc.Contended 注解（java8）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-number">1.8.</span> <span class="toc-text">参考资料</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">1.9.</span> <span class="toc-text">总结</span></a></li></ol></li></ol></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2025 By 逐光</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div></div></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.min.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"><script>function loadValine () {
+  function initValine () {
+    const valine = new Valine(Object.assign({
+      el: '#vcomment',
+      appId: 'f5WSKiyRgMriw1qIicgn1Dbu-gzGzoHsz',
+      appKey: 'c9Jx92rNNJ0RzzaxLNCqu4rR',
+      avatar: 'monsterid',
+      serverURLs: '',
+      emojiMaps: "",
+      path: window.location.pathname,
+      visitor: false
+    }, null))
+  }
+
+  if (typeof Valine === 'function') initValine() 
+  else getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js').then(initValine)
+}
+
+if ('Valine' === 'Valine' || !true) {
+  if (true) btf.loadComment(document.getElementById('vcomment'),loadValine)
+  else setTimeout(loadValine, 0)
+} else {
+  function loadOtherComment () {
+    loadValine()
+  }
+}</script></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script>((window.gitter = {}).chat = {}).options = {
+  room: 'blog-mpoom/community',
+};
+
+if (false) {
+  function chatBtnHide () {
+    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'none'
+  }
+
+  function chatBtnShow () {
+    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'block'
+  }
+}
+</script><script src="https://sidecar.gitter.im/dist/sidecar.v1.js" async="async" defer="defer"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
