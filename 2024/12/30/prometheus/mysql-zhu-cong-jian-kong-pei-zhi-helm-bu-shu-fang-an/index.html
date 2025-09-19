@@ -1,0 +1,509 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>MySQL主从监控配置-Helm部署方案 | 逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="一、背景简介生产环境的MySQL监控面临着部署复杂、标签不统一、管理困难等问题。传统方式中每个MySQL实例都需要单独部署一个exporter，部署方式繁琐，采集的指标标签不统一，无法在监控图表上快速检索查看。 核心解决问题：  简化MySQL监控的部署流程 统一监控指标标签格式 支持灵活的多实例监"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/2024/12/30/prometheus/mysql-zhu-cong-jian-kong-pei-zhi-helm-bu-shu-fang-an/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  }
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'MySQL主从监控配置-Helm部署方案',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2025-09-19 17:07:01'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><meta name="generator" content="Hexo 5.4.2"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/images/theme/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">95</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">141</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">17</div></a></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">逐光の博客</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">MySQL主从监控配置-Helm部署方案</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-12-29T16:00:00.000Z" title="发表于 2024-12-30 00:00:00">2024-12-30</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-09-19T09:07:01.835Z" title="更新于 2025-09-19 17:07:01">2025-09-19</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%B3%BB%E7%BB%9F%E7%9B%91%E6%8E%A7/">系统监控</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">1.8k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>7分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="MySQL主从监控配置-Helm部署方案"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><h1 id="一、背景简介"><a href="#一、背景简介" class="headerlink" title="一、背景简介"></a>一、背景简介</h1><p>生产环境的MySQL监控面临着部署复杂、标签不统一、管理困难等问题。传统方式中每个MySQL实例都需要单独部署一个exporter，部署方式繁琐，采集的指标标签不统一，无法在监控图表上快速检索查看。</p>
+<div class="note primary no-icon flat"><p><strong>核心解决问题</strong>：</p>
+<ul>
+<li>简化MySQL监控的部署流程</li>
+<li>统一监控指标标签格式</li>
+<li>支持灵活的多实例监控管理</li>
+<li>提供安全的认证信息存储</li>
+</ul>
+</div>
+
+<p>本方案采用Helm部署mysql-exporter实现MySQL监控采集，可以灵活增加mysql监控实例，大大简化了运维管理复杂度。</p>
+<span id="more"></span>
+
+<h1 id="二、部署文件准备"><a href="#二、部署文件准备" class="headerlink" title="二、部署文件准备"></a>二、部署文件准备</h1><h2 id="2-1-必需文件清单"><a href="#2-1-必需文件清单" class="headerlink" title="2.1. 必需文件清单"></a>2.1. 必需文件清单</h2><table>
+<thead>
+<tr>
+<th>文件类型</th>
+<th>文件名称</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Helm Charts</td>
+<td><code>prometheus-mysql-exporter-2.10.0.tgz</code></td>
+<td>prometheus-mysql-exporter chart部署包</td>
+</tr>
+<tr>
+<td>配置文件</td>
+<td><code>mysql-exporter-values.yaml</code></td>
+<td>mysql-exporter配置文件</td>
+</tr>
+</tbody></table>
+<div class="note info no-icon flat"><p><strong>版本说明</strong>：</p>
+<ul>
+<li>推荐使用prometheus-mysql-exporter 2.10.0或更新版本</li>
+<li>Chart包包含了完整的Kubernetes资源定义</li>
+<li>values.yaml文件用于定制化配置参数</li>
+</ul>
+</div>
+
+<h2 id="2-2-环境要求"><a href="#2-2-环境要求" class="headerlink" title="2.2. 环境要求"></a>2.2. 环境要求</h2><ul>
+<li>Kubernetes集群环境</li>
+<li>Helm 3.x已安装配置</li>
+<li>Prometheus Operator已部署</li>
+<li>具备集群管理权限</li>
+</ul>
+<h1 id="三、配置步骤"><a href="#三、配置步骤" class="headerlink" title="三、配置步骤"></a>三、配置步骤</h1><h2 id="3-1-MySQL监控账号创建"><a href="#3-1-MySQL监控账号创建" class="headerlink" title="3.1. MySQL监控账号创建"></a>3.1. MySQL监控账号创建</h2><p>MySQL监控账号用于采集MySQL监控数据，需要具备特定的权限以确保能够获取完整的监控指标。</p>
+<h3 id="（1）创建监控用户"><a href="#（1）创建监控用户" class="headerlink" title="（1）创建监控用户"></a>（1）创建监控用户</h3><pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">CREATE</span> <span class="token keyword">USER</span> <span class="token string">'exporter'</span><span class="token variable">@'%'</span> IDENTIFIED <span class="token keyword">BY</span> <span class="token string">'your-secure-password'</span> <span class="token keyword">WITH</span> MAX_USER_CONNECTIONS <span class="token number">3</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<h3 id="（2）授权必要权限"><a href="#（2）授权必要权限" class="headerlink" title="（2）授权必要权限"></a>（2）授权必要权限</h3><pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">GRANT</span> PROCESS<span class="token punctuation">,</span> <span class="token keyword">REPLICATION</span> CLIENT<span class="token punctuation">,</span> <span class="token keyword">SELECT</span> <span class="token keyword">ON</span> <span class="token operator">*</span><span class="token punctuation">.</span><span class="token operator">*</span> <span class="token keyword">TO</span> <span class="token string">'exporter'</span><span class="token variable">@'%'</span><span class="token punctuation">;</span>
+FLUSH <span class="token keyword">PRIVILEGES</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<div class="note warning no-icon flat"><p><strong>安全配置要点</strong>：</p>
+<ul>
+<li>将<code>&#39;exporter&#39;@&#39;%&#39;</code>中的<code>%</code>调整为生产环境K8s的具体IP段</li>
+<li>设置<code>MAX_USER_CONNECTIONS 3</code>避免监控连接过多导致数据库过载</li>
+<li>使用强密码并定期轮换</li>
+<li>仅授权必要的最小权限集</li>
+</ul>
+</div>
+
+<h3 id="（3）权限说明"><a href="#（3）权限说明" class="headerlink" title="（3）权限说明"></a>（3）权限说明</h3><table>
+<thead>
+<tr>
+<th>权限类型</th>
+<th>用途说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>PROCESS</code></td>
+<td>查看进程列表，获取连接状态信息</td>
+</tr>
+<tr>
+<td><code>REPLICATION CLIENT</code></td>
+<td>获取主从复制状态信息</td>
+</tr>
+<tr>
+<td><code>SELECT</code></td>
+<td>查询performance_schema等系统表</td>
+</tr>
+</tbody></table>
+<h2 id="3-2-配置文件修改"><a href="#3-2-配置文件修改" class="headerlink" title="3.2. 配置文件修改"></a>3.2. 配置文件修改</h2><p>修改<code>mysql-exporter-values.yaml</code>配置文件中的关键配置项：</p>
+<h3 id="（1）多目标配置结构"><a href="#（1）多目标配置结构" class="headerlink" title="（1）多目标配置结构"></a>（1）多目标配置结构</h3><pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">serviceMonitor</span><span class="token punctuation">:</span>
+  <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+  <span class="token key atrule">additionalLabels</span><span class="token punctuation">:</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+  <span class="token key atrule">jobLabel</span><span class="token punctuation">:</span> <span class="token string">""</span>
+  <span class="token key atrule">targetLabels</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+  <span class="token key atrule">podTargetLabels</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+  <span class="token key atrule">metricRelabelings</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+  <span class="token key atrule">relabelings</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+  
+  <span class="token comment"># 启用多目标采集</span>
+  <span class="token key atrule">multipleTarget</span><span class="token punctuation">:</span>
+    <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+    <span class="token key atrule">targets</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">endpoint</span><span class="token punctuation">:</span> 172.16.1.15
+      <span class="token key atrule">name</span><span class="token punctuation">:</span> app<span class="token punctuation">-</span>db<span class="token punctuation">-</span>write<span class="token punctuation">-</span>master
+      <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">3306</span>
+      <span class="token key atrule">user</span><span class="token punctuation">:</span> exporter
+      <span class="token key atrule">password</span><span class="token punctuation">:</span> your<span class="token punctuation">-</span>secure<span class="token punctuation">-</span>password
+    <span class="token punctuation">-</span> <span class="token key atrule">endpoint</span><span class="token punctuation">:</span> 172.16.1.17
+      <span class="token key atrule">name</span><span class="token punctuation">:</span> app<span class="token punctuation">-</span>db<span class="token punctuation">-</span>backup<span class="token punctuation">-</span>master
+      <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">3306</span>
+      <span class="token key atrule">user</span><span class="token punctuation">:</span> exporter
+      <span class="token key atrule">password</span><span class="token punctuation">:</span> your<span class="token punctuation">-</span>secure<span class="token punctuation">-</span>password
+      
+  <span class="token comment"># 共享认证配置（可选）</span>
+  <span class="token key atrule">sharedSecret</span><span class="token punctuation">:</span>
+    <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> <span class="token string">""</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="（2）配置参数详解"><a href="#（2）配置参数详解" class="headerlink" title="（2）配置参数详解"></a>（2）配置参数详解</h3><table>
+<thead>
+<tr>
+<th>配置项</th>
+<th>示例值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>endpoint</code></td>
+<td><code>172.16.1.15</code></td>
+<td>MySQL实例的IP地址或域名<br><strong>注意</strong>：使用域名配置多个IP时需使用具体IP避免数据混乱</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td><code>app-db-write-master</code></td>
+<td>节点标识名称，用于监控页面筛选<br><strong>命名规范</strong>：平台-用途-角色</td>
+</tr>
+<tr>
+<td><code>port</code></td>
+<td><code>3306</code></td>
+<td>MySQL端口，默认3306，可选配置</td>
+</tr>
+<tr>
+<td><code>user</code></td>
+<td><code>exporter</code></td>
+<td>监控账号用户名</td>
+</tr>
+<tr>
+<td><code>password</code></td>
+<td><code>your-secure-password</code></td>
+<td>监控账号密码<br><strong>注意</strong>：避免使用<code>#</code>等特殊字符</td>
+</tr>
+</tbody></table>
+<h3 id="（3）命名规范示例"><a href="#（3）命名规范示例" class="headerlink" title="（3）命名规范示例"></a>（3）命名规范示例</h3><div class="note success no-icon flat"><p><strong>标准命名格式</strong>：<code>平台-地区-用途-角色[-附加信息]</code></p>
+<p><strong>示例说明</strong>：</p>
+<ul>
+<li><code>app-db-write-master</code>：应用数据库写入主节点</li>
+<li><code>app-db-backup-master</code>：应用数据库备份主节点  </li>
+<li><code>app-db-write-master-slave</code>：应用数据库写入主节点的从节点</li>
+<li><code>app-cache-backup-master</code>：应用缓存备份主节点</li>
+<li><code>app-cache-backup-slave</code>：应用缓存备份从节点</li>
+</ul>
+<p><strong>命名约束</strong>：</p>
+<ul>
+<li>不能包含<code>.</code>等特殊字符</li>
+<li>建议使用英文字母和短横线<code>-</code></li>
+<li>保持简洁明了，便于识别</li>
+</ul>
+</div>
+
+<h1 id="四、部署实施"><a href="#四、部署实施" class="headerlink" title="四、部署实施"></a>四、部署实施</h1><h2 id="4-1-部署命令"><a href="#4-1-部署命令" class="headerlink" title="4.1. 部署命令"></a>4.1. 部署命令</h2><p>在具备Helm环境的生产服务器上执行部署：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 部署MySQL监控</span>
+helm <span class="token function">install</span> prometheus-mysql-exporter <span class="token punctuation">\</span>
+  prometheus-mysql-exporter-2.10.0.tgz <span class="token punctuation">\</span>
+  <span class="token parameter variable">--version</span> <span class="token number">2.10</span>.0 <span class="token punctuation">\</span>
+  <span class="token parameter variable">-n</span> monitoring <span class="token punctuation">\</span>
+  <span class="token parameter variable">-f</span> mysql-exporter-values.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="4-2-部署验证"><a href="#4-2-部署验证" class="headerlink" title="4.2. 部署验证"></a>4.2. 部署验证</h2><h3 id="（1）检查Pod状态"><a href="#（1）检查Pod状态" class="headerlink" title="（1）检查Pod状态"></a>（1）检查Pod状态</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 查看Pod状态</span>
+kubectl get pods <span class="token parameter variable">-n</span> monitoring <span class="token operator">|</span> <span class="token function">grep</span> mysql-exporter
+
+<span class="token comment"># 查看Pod详细信息</span>
+kubectl describe pod <span class="token operator">&lt;</span>mysql-exporter-pod-name<span class="token operator">></span> <span class="token parameter variable">-n</span> monitoring<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="（2）验证Service和ServiceMonitor"><a href="#（2）验证Service和ServiceMonitor" class="headerlink" title="（2）验证Service和ServiceMonitor"></a>（2）验证Service和ServiceMonitor</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 查看Service</span>
+kubectl get <span class="token function">service</span> <span class="token parameter variable">-n</span> monitoring <span class="token operator">|</span> <span class="token function">grep</span> mysql-exporter
+
+<span class="token comment"># 查看ServiceMonitor</span>
+kubectl get servicemonitor <span class="token parameter variable">-n</span> monitoring <span class="token operator">|</span> <span class="token function">grep</span> mysql-exporter<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="（3）验证指标采集"><a href="#（3）验证指标采集" class="headerlink" title="（3）验证指标采集"></a>（3）验证指标采集</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 端口转发测试</span>
+kubectl port-forward service/prometheus-mysql-exporter <span class="token number">9104</span>:9104 <span class="token parameter variable">-n</span> monitoring
+
+<span class="token comment"># 访问指标端点</span>
+<span class="token function">curl</span> http://localhost:9104/metrics<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="4-3-安全清理"><a href="#4-3-安全清理" class="headerlink" title="4.3. 安全清理"></a>4.3. 安全清理</h2><div class="note warning no-icon flat"><p><strong>重要提醒</strong>：部署完成后，为避免配置文件中数据库监控账号及密码泄漏，应立即删除本地配置文件：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 删除本地配置文件</span>
+<span class="token function">rm</span> mysql-exporter-values.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p><strong>后续查看配置方式</strong>：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 通过Helm查看当前配置</span>
+helm get values prometheus-mysql-exporter <span class="token parameter variable">-n</span> monitoring<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre></div>
+
+<h1 id="五、监控配置管理"><a href="#五、监控配置管理" class="headerlink" title="五、监控配置管理"></a>五、监控配置管理</h1><h2 id="5-1-添加新的MySQL实例"><a href="#5-1-添加新的MySQL实例" class="headerlink" title="5.1. 添加新的MySQL实例"></a>5.1. 添加新的MySQL实例</h2><h3 id="（1）获取当前配置"><a href="#（1）获取当前配置" class="headerlink" title="（1）获取当前配置"></a>（1）获取当前配置</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 导出当前配置</span>
+helm get values prometheus-mysql-exporter <span class="token parameter variable">-n</span> monitoring <span class="token operator">></span> current-values.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<h3 id="（2）修改配置添加新实例"><a href="#（2）修改配置添加新实例" class="headerlink" title="（2）修改配置添加新实例"></a>（2）修改配置添加新实例</h3><pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token comment"># 在targets中添加新的MySQL实例</span>
+<span class="token key atrule">targets</span><span class="token punctuation">:</span>
+<span class="token punctuation">-</span> <span class="token key atrule">endpoint</span><span class="token punctuation">:</span> 172.16.1.18
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> app<span class="token punctuation">-</span>cluster<span class="token punctuation">-</span>write<span class="token punctuation">-</span>master
+  <span class="token key atrule">user</span><span class="token punctuation">:</span> exporter
+  <span class="token key atrule">password</span><span class="token punctuation">:</span> your<span class="token punctuation">-</span>secure<span class="token punctuation">-</span>password<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="（3）更新部署"><a href="#（3）更新部署" class="headerlink" title="（3）更新部署"></a>（3）更新部署</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 更新Helm部署</span>
+helm upgrade prometheus-mysql-exporter <span class="token punctuation">\</span>
+  prometheus-mysql-exporter-2.10.0.tgz <span class="token punctuation">\</span>
+  <span class="token parameter variable">--version</span> <span class="token number">2.10</span>.0 <span class="token punctuation">\</span>
+  <span class="token parameter variable">-n</span> monitoring <span class="token punctuation">\</span>
+  <span class="token parameter variable">-f</span> current-values.yaml
+  
+<span class="token comment"># 清理临时配置文件</span>
+<span class="token function">rm</span> current-values.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="5-2-移除MySQL实例"><a href="#5-2-移除MySQL实例" class="headerlink" title="5.2. 移除MySQL实例"></a>5.2. 移除MySQL实例</h2><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 导出配置并编辑</span>
+helm get values prometheus-mysql-exporter <span class="token parameter variable">-n</span> monitoring <span class="token operator">></span> temp-values.yaml
+
+<span class="token comment"># 编辑文件移除不需要的targets配置</span>
+<span class="token function">vim</span> temp-values.yaml
+
+<span class="token comment"># 应用更新</span>
+helm upgrade prometheus-mysql-exporter <span class="token punctuation">\</span>
+  prometheus-mysql-exporter-2.10.0.tgz <span class="token punctuation">\</span>
+  <span class="token parameter variable">--version</span> <span class="token number">2.10</span>.0 <span class="token punctuation">\</span>
+  <span class="token parameter variable">-n</span> monitoring <span class="token punctuation">\</span>
+  <span class="token parameter variable">-f</span> temp-values.yaml
+
+<span class="token comment"># 清理文件</span>
+<span class="token function">rm</span> temp-values.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="5-3-完全卸载"><a href="#5-3-完全卸载" class="headerlink" title="5.3. 完全卸载"></a>5.3. 完全卸载</h2><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 卸载Helm部署</span>
+helm uninstall prometheus-mysql-exporter <span class="token parameter variable">-n</span> monitoring
+
+<span class="token comment"># 清理相关Secret（如果需要）</span>
+kubectl delete secret prometheus-mysql-exporter <span class="token parameter variable">-n</span> monitoring<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="六、监控指标说明"><a href="#六、监控指标说明" class="headerlink" title="六、监控指标说明"></a>六、监控指标说明</h1><h2 id="6-1-核心MySQL指标"><a href="#6-1-核心MySQL指标" class="headerlink" title="6.1. 核心MySQL指标"></a>6.1. 核心MySQL指标</h2><div class="note info no-icon flat"><p><strong>连接指标</strong>：</p>
+<ul>
+<li><code>mysql_global_status_threads_connected</code>：当前连接数</li>
+<li><code>mysql_global_status_threads_running</code>：活跃连接数</li>
+<li><code>mysql_global_status_max_used_connections</code>：历史最大连接数</li>
+</ul>
+<p><strong>性能指标</strong>：</p>
+<ul>
+<li><code>mysql_global_status_queries</code>：查询总数</li>
+<li><code>mysql_global_status_slow_queries</code>：慢查询数量</li>
+<li><code>mysql_global_status_innodb_buffer_pool_reads</code>：缓冲池读取次数</li>
+</ul>
+<p><strong>复制指标</strong>：</p>
+<ul>
+<li><code>mysql_slave_lag_seconds</code>：主从延迟时间</li>
+<li><code>mysql_slave_sql_running</code>：SQL线程运行状态</li>
+<li><code>mysql_slave_io_running</code>：IO线程运行状态</li>
+</ul>
+</div>
+
+<h2 id="6-2-告警规则配置"><a href="#6-2-告警规则配置" class="headerlink" title="6.2. 告警规则配置"></a>6.2. 告警规则配置</h2><pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">groups</span><span class="token punctuation">:</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> mysql_alerts
+  <span class="token key atrule">rules</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">alert</span><span class="token punctuation">:</span> MySQLDown
+    <span class="token key atrule">expr</span><span class="token punctuation">:</span> mysql_up == 0
+    <span class="token key atrule">for</span><span class="token punctuation">:</span> 1m
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">severity</span><span class="token punctuation">:</span> critical
+    <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+      <span class="token key atrule">summary</span><span class="token punctuation">:</span> <span class="token string">"MySQL实例不可用"</span>
+      <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; $labels.instance &#125;&#125; MySQL实例已下线"</span>
+      
+  <span class="token punctuation">-</span> <span class="token key atrule">alert</span><span class="token punctuation">:</span> MySQLSlaveLag
+    <span class="token key atrule">expr</span><span class="token punctuation">:</span> mysql_slave_lag_seconds <span class="token punctuation">></span> 300
+    <span class="token key atrule">for</span><span class="token punctuation">:</span> 2m
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">severity</span><span class="token punctuation">:</span> warning
+    <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+      <span class="token key atrule">summary</span><span class="token punctuation">:</span> <span class="token string">"MySQL主从延迟过高"</span>
+      <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; $labels.instance &#125;&#125; 主从延迟 &#123;&#123; $value &#125;&#125; 秒"</span>
+      
+  <span class="token punctuation">-</span> <span class="token key atrule">alert</span><span class="token punctuation">:</span> MySQLConnectionsHigh
+    <span class="token key atrule">expr</span><span class="token punctuation">:</span> mysql_global_status_threads_connected / mysql_global_variables_max_connections <span class="token punctuation">></span> 0.8
+    <span class="token key atrule">for</span><span class="token punctuation">:</span> 2m
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">severity</span><span class="token punctuation">:</span> warning
+    <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+      <span class="token key atrule">summary</span><span class="token punctuation">:</span> <span class="token string">"MySQL连接数过高"</span>
+      <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; $labels.instance &#125;&#125; 连接使用率超过80%"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="七、故障排查"><a href="#七、故障排查" class="headerlink" title="七、故障排查"></a>七、故障排查</h1><h2 id="7-1-常见问题"><a href="#7-1-常见问题" class="headerlink" title="7.1. 常见问题"></a>7.1. 常见问题</h2><div class="note warning no-icon flat"><p><strong>部署失败</strong>：</p>
+<ul>
+<li>检查Helm Chart版本兼容性</li>
+<li>验证namespace是否存在</li>
+<li>确认RBAC权限配置</li>
+</ul>
+<p><strong>连接失败</strong>：</p>
+<ul>
+<li>验证MySQL账号权限</li>
+<li>检查网络连通性</li>
+<li>确认防火墙规则</li>
+</ul>
+<p><strong>指标缺失</strong>：</p>
+<ul>
+<li>检查ServiceMonitor配置</li>
+<li>验证Prometheus配置</li>
+<li>查看exporter日志</li>
+</ul>
+</div>
+
+<h2 id="7-2-日志排查"><a href="#7-2-日志排查" class="headerlink" title="7.2. 日志排查"></a>7.2. 日志排查</h2><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 查看exporter日志</span>
+kubectl logs <span class="token parameter variable">-f</span> deployment/prometheus-mysql-exporter <span class="token parameter variable">-n</span> monitoring
+
+<span class="token comment"># 查看Prometheus日志</span>
+kubectl logs <span class="token parameter variable">-f</span> prometheus-prometheus-kube-prometheus-prometheus-0 <span class="token parameter variable">-n</span> monitoring
+
+<span class="token comment"># 检查ServiceMonitor状态</span>
+kubectl describe servicemonitor prometheus-mysql-exporter <span class="token parameter variable">-n</span> monitoring<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>通过Helm部署MySQL监控方案具有以下优势：</p>
+<ol>
+<li><strong>简化部署</strong>：一次性配置多个MySQL实例监控</li>
+<li><strong>统一管理</strong>：集中化的配置管理和版本控制</li>
+<li><strong>安全存储</strong>：敏感信息通过Kubernetes Secret安全存储</li>
+<li><strong>灵活扩展</strong>：支持动态添加和移除监控实例</li>
+<li><strong>标准化</strong>：统一的命名规范和标签体系</li>
+</ol>
+<p>本方案大大降低了MySQL监控的运维复杂度，提升了监控系统的可维护性和可扩展性。</p>
+<h1 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h1><ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/prometheus/mysqld_exporter">Prometheus MySQL Exporter</a></li>
+<li><a target="_blank" rel="noopener" href="https://helm.sh/docs/chart_best_practices/">Helm Charts最佳实践</a></li>
+<li><a target="_blank" rel="noopener" href="https://prometheus.io/docs/guides/mysql-monitoring/">MySQL监控指标详解</a></li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn">逐光</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn/2024/12/30/prometheus/mysql-zhu-cong-jian-kong-pei-zhi-helm-bu-shu-fang-an/">https://www.mpoom.cn/2024/12/30/prometheus/mysql-zhu-cong-jian-kong-pei-zhi-helm-bu-shu-fang-an/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.mpoom.cn" target="_blank">逐光の博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Prometheus/">Prometheus</a><a class="post-meta__tags" href="/tags/MySQL/">MySQL</a><a class="post-meta__tags" href="/tags/Helm/">Helm</a><a class="post-meta__tags" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9B%91%E6%8E%A7/">数据库监控</a></div><div class="post_share"><div class="social-share" data-image="/images/feature/1.jpeg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/12/30/prometheus/jmx-exporter-xu-ni-ji-jvm-jian-kong-cai-ji-bu-shu/" title="JMX-Exporter虚拟机JVM监控采集部署"><img class="cover" src="/images/feature/3.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">JMX-Exporter虚拟机JVM监控采集部署</div></div></a></div><div class="next-post pull-right"><a href="/2024/12/30/prometheus/redis-ji-qun-jian-kong-pei-zhi-helm-bu-shu-fang-an/" title="Redis集群监控配置-Helm部署方案"><img class="cover" src="/images/feature/14.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">Redis集群监控配置-Helm部署方案</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2023/05/06/k8s/kube-prometheus-jian-kong-mysql/" title="Kube-Prometheus监控MySQL（二）"><img class="cover" src="/images/feature/2.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-05-06</div><div class="title">Kube-Prometheus监控MySQL（二）</div></div></a></div><div><a href="/2024/12/30/prometheus/redis-ji-qun-jian-kong-pei-zhi-helm-bu-shu-fang-an/" title="Redis集群监控配置-Helm部署方案"><img class="cover" src="/images/feature/14.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-12-30</div><div class="title">Redis集群监控配置-Helm部署方案</div></div></a></div><div><a href="/2023/05/07/k8s/kube-prometheus-jian-kong-redis/" title="Kube-Prometheus监控Redis（三）"><img class="cover" src="/images/feature/15.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-05-07</div><div class="title">Kube-Prometheus监控Redis（三）</div></div></a></div><div><a href="/2023/05/09/k8s/kube-prometheus-jian-kong-nacos/" title="Kube-Prometheus监控Nacos（五）"><img class="cover" src="/images/feature/6.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-05-09</div><div class="title">Kube-Prometheus监控Nacos（五）</div></div></a></div><div><a href="/2023/05/08/k8s/kube-prometheus-jian-kong-rocketmq/" title="Kube-Prometheus监控RocketMQ（四）"><img class="cover" src="/images/feature/3.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-05-08</div><div class="title">Kube-Prometheus监控RocketMQ（四）</div></div></a></div><div><a href="/2023/05/05/k8s/kube-prometheus-jian-kong-zhu-ji-he-zhong-jian-jian/" title="Kube-Prometheus监控主机和中间件（一）"><img class="cover" src="/images/feature/22.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-05-05</div><div class="title">Kube-Prometheus监控主机和中间件（一）</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E8%83%8C%E6%99%AF%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">一、背景简介</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E9%83%A8%E7%BD%B2%E6%96%87%E4%BB%B6%E5%87%86%E5%A4%87"><span class="toc-number">2.</span> <span class="toc-text">二、部署文件准备</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%BF%85%E9%9C%80%E6%96%87%E4%BB%B6%E6%B8%85%E5%8D%95"><span class="toc-number">2.1.</span> <span class="toc-text">2.1. 必需文件清单</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E7%8E%AF%E5%A2%83%E8%A6%81%E6%B1%82"><span class="toc-number">2.2.</span> <span class="toc-text">2.2. 环境要求</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E9%85%8D%E7%BD%AE%E6%AD%A5%E9%AA%A4"><span class="toc-number">3.</span> <span class="toc-text">三、配置步骤</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-MySQL%E7%9B%91%E6%8E%A7%E8%B4%A6%E5%8F%B7%E5%88%9B%E5%BB%BA"><span class="toc-number">3.1.</span> <span class="toc-text">3.1. MySQL监控账号创建</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%881%EF%BC%89%E5%88%9B%E5%BB%BA%E7%9B%91%E6%8E%A7%E7%94%A8%E6%88%B7"><span class="toc-number">3.1.1.</span> <span class="toc-text">（1）创建监控用户</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%882%EF%BC%89%E6%8E%88%E6%9D%83%E5%BF%85%E8%A6%81%E6%9D%83%E9%99%90"><span class="toc-number">3.1.2.</span> <span class="toc-text">（2）授权必要权限</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%883%EF%BC%89%E6%9D%83%E9%99%90%E8%AF%B4%E6%98%8E"><span class="toc-number">3.1.3.</span> <span class="toc-text">（3）权限说明</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E4%BF%AE%E6%94%B9"><span class="toc-number">3.2.</span> <span class="toc-text">3.2. 配置文件修改</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%881%EF%BC%89%E5%A4%9A%E7%9B%AE%E6%A0%87%E9%85%8D%E7%BD%AE%E7%BB%93%E6%9E%84"><span class="toc-number">3.2.1.</span> <span class="toc-text">（1）多目标配置结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%882%EF%BC%89%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0%E8%AF%A6%E8%A7%A3"><span class="toc-number">3.2.2.</span> <span class="toc-text">（2）配置参数详解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%883%EF%BC%89%E5%91%BD%E5%90%8D%E8%A7%84%E8%8C%83%E7%A4%BA%E4%BE%8B"><span class="toc-number">3.2.3.</span> <span class="toc-text">（3）命名规范示例</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%83%A8%E7%BD%B2%E5%AE%9E%E6%96%BD"><span class="toc-number">4.</span> <span class="toc-text">四、部署实施</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E9%83%A8%E7%BD%B2%E5%91%BD%E4%BB%A4"><span class="toc-number">4.1.</span> <span class="toc-text">4.1. 部署命令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E9%83%A8%E7%BD%B2%E9%AA%8C%E8%AF%81"><span class="toc-number">4.2.</span> <span class="toc-text">4.2. 部署验证</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%881%EF%BC%89%E6%A3%80%E6%9F%A5Pod%E7%8A%B6%E6%80%81"><span class="toc-number">4.2.1.</span> <span class="toc-text">（1）检查Pod状态</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%882%EF%BC%89%E9%AA%8C%E8%AF%81Service%E5%92%8CServiceMonitor"><span class="toc-number">4.2.2.</span> <span class="toc-text">（2）验证Service和ServiceMonitor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%883%EF%BC%89%E9%AA%8C%E8%AF%81%E6%8C%87%E6%A0%87%E9%87%87%E9%9B%86"><span class="toc-number">4.2.3.</span> <span class="toc-text">（3）验证指标采集</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E5%AE%89%E5%85%A8%E6%B8%85%E7%90%86"><span class="toc-number">4.3.</span> <span class="toc-text">4.3. 安全清理</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E7%9B%91%E6%8E%A7%E9%85%8D%E7%BD%AE%E7%AE%A1%E7%90%86"><span class="toc-number">5.</span> <span class="toc-text">五、监控配置管理</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E6%B7%BB%E5%8A%A0%E6%96%B0%E7%9A%84MySQL%E5%AE%9E%E4%BE%8B"><span class="toc-number">5.1.</span> <span class="toc-text">5.1. 添加新的MySQL实例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%881%EF%BC%89%E8%8E%B7%E5%8F%96%E5%BD%93%E5%89%8D%E9%85%8D%E7%BD%AE"><span class="toc-number">5.1.1.</span> <span class="toc-text">（1）获取当前配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%882%EF%BC%89%E4%BF%AE%E6%94%B9%E9%85%8D%E7%BD%AE%E6%B7%BB%E5%8A%A0%E6%96%B0%E5%AE%9E%E4%BE%8B"><span class="toc-number">5.1.2.</span> <span class="toc-text">（2）修改配置添加新实例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%883%EF%BC%89%E6%9B%B4%E6%96%B0%E9%83%A8%E7%BD%B2"><span class="toc-number">5.1.3.</span> <span class="toc-text">（3）更新部署</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E7%A7%BB%E9%99%A4MySQL%E5%AE%9E%E4%BE%8B"><span class="toc-number">5.2.</span> <span class="toc-text">5.2. 移除MySQL实例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-%E5%AE%8C%E5%85%A8%E5%8D%B8%E8%BD%BD"><span class="toc-number">5.3.</span> <span class="toc-text">5.3. 完全卸载</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E7%9B%91%E6%8E%A7%E6%8C%87%E6%A0%87%E8%AF%B4%E6%98%8E"><span class="toc-number">6.</span> <span class="toc-text">六、监控指标说明</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-%E6%A0%B8%E5%BF%83MySQL%E6%8C%87%E6%A0%87"><span class="toc-number">6.1.</span> <span class="toc-text">6.1. 核心MySQL指标</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-%E5%91%8A%E8%AD%A6%E8%A7%84%E5%88%99%E9%85%8D%E7%BD%AE"><span class="toc-number">6.2.</span> <span class="toc-text">6.2. 告警规则配置</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5"><span class="toc-number">7.</span> <span class="toc-text">七、故障排查</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#7-1-%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98"><span class="toc-number">7.1.</span> <span class="toc-text">7.1. 常见问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-2-%E6%97%A5%E5%BF%97%E6%8E%92%E6%9F%A5"><span class="toc-number">7.2.</span> <span class="toc-text">7.2. 日志排查</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">8.</span> <span class="toc-text">总结</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E6%A1%A3"><span class="toc-number">9.</span> <span class="toc-text">参考文档</span></a></li></ol></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2025 By 逐光</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div></div></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.min.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"><script>function loadValine () {
+  function initValine () {
+    const valine = new Valine(Object.assign({
+      el: '#vcomment',
+      appId: 'f5WSKiyRgMriw1qIicgn1Dbu-gzGzoHsz',
+      appKey: 'c9Jx92rNNJ0RzzaxLNCqu4rR',
+      avatar: 'monsterid',
+      serverURLs: '',
+      emojiMaps: "",
+      path: window.location.pathname,
+      visitor: false
+    }, null))
+  }
+
+  if (typeof Valine === 'function') initValine() 
+  else getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js').then(initValine)
+}
+
+if ('Valine' === 'Valine' || !true) {
+  if (true) btf.loadComment(document.getElementById('vcomment'),loadValine)
+  else setTimeout(loadValine, 0)
+} else {
+  function loadOtherComment () {
+    loadValine()
+  }
+}</script></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script>((window.gitter = {}).chat = {}).options = {
+  room: 'blog-mpoom/community',
+};
+
+if (false) {
+  function chatBtnHide () {
+    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'none'
+  }
+
+  function chatBtnShow () {
+    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'block'
+  }
+}
+</script><script src="https://sidecar.gitter.im/dist/sidecar.v1.js" async="async" defer="defer"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

@@ -1,0 +1,638 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>Redis集群监控配置-Helm部署方案 | 逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="一、背景简介生产环境的Redis监控告警一直存在准确性问题，通过深入排查发现redis-exporter采集方式不正确，导致监控指标偏差和告警误报。为了解决这些问题，采用标准化的Helm部署方式来实现Redis集群监控采集。 核心解决问题：  修复Redis监控指标采集不准确的问题 统一Redis集"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/2024/12/30/prometheus/redis-ji-qun-jian-kong-pei-zhi-helm-bu-shu-fang-an/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  }
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Redis集群监控配置-Helm部署方案',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2025-09-19 17:07:01'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><meta name="generator" content="Hexo 5.4.2"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/images/theme/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">95</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">141</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">17</div></a></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">逐光の博客</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">Redis集群监控配置-Helm部署方案</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-12-29T16:00:00.000Z" title="发表于 2024-12-30 00:00:00">2024-12-30</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-09-19T09:07:01.839Z" title="更新于 2025-09-19 17:07:01">2025-09-19</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%B3%BB%E7%BB%9F%E7%9B%91%E6%8E%A7/">系统监控</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">2.4k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>9分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="Redis集群监控配置-Helm部署方案"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><h1 id="一、背景简介"><a href="#一、背景简介" class="headerlink" title="一、背景简介"></a>一、背景简介</h1><p>生产环境的Redis监控告警一直存在准确性问题，通过深入排查发现redis-exporter采集方式不正确，导致监控指标偏差和告警误报。为了解决这些问题，采用标准化的Helm部署方式来实现Redis集群监控采集。</p>
+<div class="note primary no-icon flat"><p><strong>核心解决问题</strong>：</p>
+<ul>
+<li>修复Redis监控指标采集不准确的问题</li>
+<li>统一Redis集群监控部署方式</li>
+<li>提供安全的认证信息管理</li>
+<li>支持多集群的灵活配置管理</li>
+</ul>
+</div>
+
+<p>本方案通过Helm部署redis-exporter实现Redis集群监控采集，确保监控数据的准确性和可靠性。</p>
+<span id="more"></span>
+
+<h1 id="二、部署文件准备"><a href="#二、部署文件准备" class="headerlink" title="二、部署文件准备"></a>二、部署文件准备</h1><h2 id="2-1-必需文件清单"><a href="#2-1-必需文件清单" class="headerlink" title="2.1. 必需文件清单"></a>2.1. 必需文件清单</h2><table>
+<thead>
+<tr>
+<th>文件类型</th>
+<th>文件名称</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Helm Charts</td>
+<td><code>prometheus-redis-exporter-6.9.0.tgz</code></td>
+<td>prometheus-redis-exporter chart部署包</td>
+</tr>
+<tr>
+<td>配置文件</td>
+<td><code>redis-exporter-values.yaml</code></td>
+<td>redis-exporter配置文件</td>
+</tr>
+</tbody></table>
+<div class="note info no-icon flat"><p><strong>版本说明</strong>：</p>
+<ul>
+<li>推荐使用prometheus-redis-exporter 6.9.0或更新版本</li>
+<li>Chart包包含了完整的Kubernetes资源定义</li>
+<li>values.yaml文件支持集群多节点配置</li>
+</ul>
+</div>
+
+<h2 id="2-2-环境要求"><a href="#2-2-环境要求" class="headerlink" title="2.2. 环境要求"></a>2.2. 环境要求</h2><ul>
+<li>Kubernetes集群环境</li>
+<li>Helm 3.x已安装配置</li>
+<li>Prometheus Operator已部署</li>
+<li>Redis集群已正常运行</li>
+<li>具备集群管理权限</li>
+</ul>
+<h1 id="三、配置步骤"><a href="#三、配置步骤" class="headerlink" title="三、配置步骤"></a>三、配置步骤</h1><h2 id="3-1-Redis密钥创建"><a href="#3-1-Redis密钥创建" class="headerlink" title="3.1. Redis密钥创建"></a>3.1. Redis密钥创建</h2><p>Redis密钥用于安全存储Redis集群的认证信息，避免明文密码泄露。</p>
+<h3 id="（1）创建Secret命令"><a href="#（1）创建Secret命令" class="headerlink" title="（1）创建Secret命令"></a>（1）创建Secret命令</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">kubectl create secret generic app-redis-cluster-secret <span class="token punctuation">\</span>
+  --from-literal<span class="token operator">=</span>redis-password<span class="token operator">=</span><span class="token string">'your-redis-password'</span> <span class="token punctuation">\</span>
+  <span class="token parameter variable">-n</span> monitoring<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="（2）参数说明"><a href="#（2）参数说明" class="headerlink" title="（2）参数说明"></a>（2）参数说明</h3><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>示例值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Secret名称</td>
+<td><code>app-redis-cluster-secret</code></td>
+<td>Redis密钥标识名称</td>
+</tr>
+<tr>
+<td>密码键名</td>
+<td><code>redis-password</code></td>
+<td>密码在Secret中的键名</td>
+</tr>
+<tr>
+<td>密码值</td>
+<td><code>your-redis-password</code></td>
+<td>Redis集群实际密码</td>
+</tr>
+<tr>
+<td>命名空间</td>
+<td><code>monitoring</code></td>
+<td>Secret存储的命名空间</td>
+</tr>
+</tbody></table>
+<div class="note warning no-icon flat"><p><strong>安全配置要点</strong>：</p>
+<ul>
+<li>将示例中的密钥名称和密码替换为生产环境的实际值</li>
+<li>密码应符合强密码策略要求</li>
+<li>Secret创建后可通过<code>kubectl get secret</code>验证</li>
+<li>定期轮换Redis密码并更新Secret</li>
+</ul>
+</div>
+
+<h3 id="（3）验证Secret创建"><a href="#（3）验证Secret创建" class="headerlink" title="（3）验证Secret创建"></a>（3）验证Secret创建</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 检查Secret是否创建成功</span>
+kubectl get secret app-redis-cluster-secret <span class="token parameter variable">-n</span> monitoring
+
+<span class="token comment"># 查看Secret详细信息（不显示密码内容）</span>
+kubectl describe secret app-redis-cluster-secret <span class="token parameter variable">-n</span> monitoring<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="3-2-配置文件修改"><a href="#3-2-配置文件修改" class="headerlink" title="3.2. 配置文件修改"></a>3.2. 配置文件修改</h2><p>修改<code>redis-exporter-values.yaml</code>配置文件中的关键配置项：</p>
+<h3 id="（1）核心配置参数"><a href="#（1）核心配置参数" class="headerlink" title="（1）核心配置参数"></a>（1）核心配置参数</h3><table>
+<thead>
+<tr>
+<th>配置项</th>
+<th>示例值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>service.labels.platform</code></td>
+<td><code>app-platform</code></td>
+<td>平台标识，如：platform-a、platform-b、platform-c</td>
+</tr>
+<tr>
+<td><code>serviceMonitor.targets</code></td>
+<td>见下方示例</td>
+<td>Redis集群所有节点配置</td>
+</tr>
+<tr>
+<td><code>serviceMonitor.interval</code></td>
+<td><code>60s</code></td>
+<td>监控采集周期，建议60s</td>
+</tr>
+<tr>
+<td><code>auth.secret.name</code></td>
+<td><code>app-redis-cluster-secret</code></td>
+<td>步骤3.1创建的密钥名称</td>
+</tr>
+</tbody></table>
+<h3 id="（2）完整配置示例"><a href="#（2）完整配置示例" class="headerlink" title="（2）完整配置示例"></a>（2）完整配置示例</h3><pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">service</span><span class="token punctuation">:</span>
+  <span class="token key atrule">type</span><span class="token punctuation">:</span> ClusterIP
+  <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">9121</span>
+  <span class="token key atrule">portName</span><span class="token punctuation">:</span> redis<span class="token punctuation">-</span>exporter
+  <span class="token key atrule">annotations</span><span class="token punctuation">:</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+  <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+    <span class="token key atrule">platform</span><span class="token punctuation">:</span> <span class="token string">"app-platform"</span>  <span class="token comment"># 修改为对应平台标识</span>
+
+<span class="token key atrule">serviceMonitor</span><span class="token punctuation">:</span>
+  <span class="token comment"># 启用ServiceMonitor</span>
+  <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+  <span class="token key atrule">multipleTarget</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+  <span class="token key atrule">targets</span><span class="token punctuation">:</span>
+    <span class="token comment"># Redis集群节点配置 - 需配置所有节点</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">url</span><span class="token punctuation">:</span> <span class="token string">"172.16.1.15:6383"</span>
+      <span class="token key atrule">name</span><span class="token punctuation">:</span> <span class="token string">"app-redis-cluster-node-6383"</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">url</span><span class="token punctuation">:</span> <span class="token string">"172.16.1.15:6384"</span>
+      <span class="token key atrule">name</span><span class="token punctuation">:</span> <span class="token string">"app-redis-cluster-node-6384"</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">url</span><span class="token punctuation">:</span> <span class="token string">"172.16.1.15:6385"</span>
+      <span class="token key atrule">name</span><span class="token punctuation">:</span> <span class="token string">"app-redis-cluster-node-6385"</span>
+  
+  <span class="token key atrule">additionalMetricsRelabels</span><span class="token punctuation">:</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+  <span class="token key atrule">additionalRelabeling</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+  
+  <span class="token comment"># ServiceMonitor部署命名空间</span>
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> monitoring
+  
+  <span class="token comment"># Prometheus采集间隔（重要配置）</span>
+  <span class="token key atrule">interval</span><span class="token punctuation">:</span> 60s  <span class="token comment"># 从默认15s调整为60s</span>
+
+<span class="token key atrule">auth</span><span class="token punctuation">:</span>
+  <span class="token comment"># 启用密码认证</span>
+  <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+  <span class="token comment"># 使用已存在的Secret</span>
+  <span class="token key atrule">secret</span><span class="token punctuation">:</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> <span class="token string">"app-redis-cluster-secret"</span>
+    <span class="token key atrule">key</span><span class="token punctuation">:</span> <span class="token string">"redis-password"</span>
+  <span class="token comment"># 当不使用Secret时的密码配置（留空）</span>
+  <span class="token key atrule">redisPassword</span><span class="token punctuation">:</span> <span class="token string">""</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="（3）配置要点说明"><a href="#（3）配置要点说明" class="headerlink" title="（3）配置要点说明"></a>（3）配置要点说明</h3><div class="note success no-icon flat"><p><strong>targets配置规范</strong>：</p>
+<ul>
+<li><code>url</code>：Redis节点的IP和端口，格式为”IP:PORT”</li>
+<li><code>name</code>：节点标识名称，建议格式：”平台-redis-cluster-node-端口”</li>
+<li><strong>必须配置集群的所有节点</strong>，确保监控覆盖完整</li>
+</ul>
+<p><strong>interval调整原因</strong>：</p>
+<ul>
+<li>Redis-exporter使用短连接方式采集数据</li>
+<li>默认15s间隔可能对Redis造成压力</li>
+<li>调整为60s可减少连接频率，提升稳定性</li>
+</ul>
+</div>
+
+<h2 id="3-3-平台标识配置"><a href="#3-3-平台标识配置" class="headerlink" title="3.3. 平台标识配置"></a>3.3. 平台标识配置</h2><p>根据不同的生产环境，配置相应的平台标识：</p>
+<table>
+<thead>
+<tr>
+<th>环境类型</th>
+<th>platform配置值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>应用平台A</td>
+<td><code>platform-a</code></td>
+<td>应用平台A环境</td>
+</tr>
+<tr>
+<td>应用平台B</td>
+<td><code>platform-b</code></td>
+<td>应用平台B环境</td>
+</tr>
+<tr>
+<td>应用平台C</td>
+<td><code>platform-c</code></td>
+<td>应用平台C环境</td>
+</tr>
+<tr>
+<td>数据平台</td>
+<td><code>data-platform</code></td>
+<td>数据平台环境</td>
+</tr>
+<tr>
+<td>测试环境</td>
+<td><code>test-env</code></td>
+<td>测试环境</td>
+</tr>
+</tbody></table>
+<h1 id="四、部署实施"><a href="#四、部署实施" class="headerlink" title="四、部署实施"></a>四、部署实施</h1><h2 id="4-1-Helm发布名称规范"><a href="#4-1-Helm发布名称规范" class="headerlink" title="4.1. Helm发布名称规范"></a>4.1. Helm发布名称规范</h2><div class="note info no-icon flat"><p><strong>命名规范</strong>：<code>平台前缀-prometheus-redis-exporter</code></p>
+<p><strong>标准示例</strong>：</p>
+<ul>
+<li><code>platform-a-prometheus-redis-exporter</code></li>
+<li><code>platform-b-prometheus-redis-exporter</code></li>
+<li><code>data-platform-prometheus-redis-exporter</code></li>
+<li><code>app-cluster-prometheus-redis-exporter</code></li>
+<li><code>test-env-prometheus-redis-exporter</code></li>
+</ul>
+<p><strong>重要说明</strong>：必须保留<code>prometheus-redis-exporter</code>后缀，否则Helm会自动添加该后缀导致名称不规范。</p>
+</div>
+
+<h2 id="4-2-部署命令"><a href="#4-2-部署命令" class="headerlink" title="4.2. 部署命令"></a>4.2. 部署命令</h2><p>在具备Helm环境的生产服务器上执行部署：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 部署Redis监控</span>
+helm <span class="token function">install</span> app-prometheus-redis-exporter <span class="token punctuation">\</span>
+  prometheus-redis-exporter-6.9.0.tgz <span class="token punctuation">\</span>
+  <span class="token parameter variable">--version</span> <span class="token number">6.9</span>.0 <span class="token punctuation">\</span>
+  <span class="token parameter variable">-n</span> monitoring <span class="token punctuation">\</span>
+  <span class="token parameter variable">-f</span> redis-exporter-values.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="多环境部署示例"><a href="#多环境部署示例" class="headerlink" title="多环境部署示例"></a>多环境部署示例</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 平台A环境</span>
+helm <span class="token function">install</span> platform-a-prometheus-redis-exporter <span class="token punctuation">\</span>
+  prometheus-redis-exporter-6.9.0.tgz <span class="token punctuation">\</span>
+  <span class="token parameter variable">--version</span> <span class="token number">6.9</span>.0 <span class="token punctuation">\</span>
+  <span class="token parameter variable">-n</span> monitoring <span class="token punctuation">\</span>
+  <span class="token parameter variable">-f</span> platform-a-redis-exporter-values.yaml
+
+<span class="token comment"># 平台B环境</span>
+helm <span class="token function">install</span> platform-b-prometheus-redis-exporter <span class="token punctuation">\</span>
+  prometheus-redis-exporter-6.9.0.tgz <span class="token punctuation">\</span>
+  <span class="token parameter variable">--version</span> <span class="token number">6.9</span>.0 <span class="token punctuation">\</span>
+  <span class="token parameter variable">-n</span> monitoring <span class="token punctuation">\</span>
+  <span class="token parameter variable">-f</span> platform-b-redis-exporter-values.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="4-3-部署验证"><a href="#4-3-部署验证" class="headerlink" title="4.3. 部署验证"></a>4.3. 部署验证</h2><h3 id="（1）检查Pod状态"><a href="#（1）检查Pod状态" class="headerlink" title="（1）检查Pod状态"></a>（1）检查Pod状态</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 查看Redis-exporter Pod状态</span>
+kubectl get pods <span class="token parameter variable">-n</span> monitoring <span class="token operator">|</span> <span class="token function">grep</span> redis-exporter
+
+<span class="token comment"># 查看具体Pod详情</span>
+kubectl describe pod <span class="token operator">&lt;</span>redis-exporter-pod-name<span class="token operator">></span> <span class="token parameter variable">-n</span> monitoring<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="（2）验证Service和ServiceMonitor"><a href="#（2）验证Service和ServiceMonitor" class="headerlink" title="（2）验证Service和ServiceMonitor"></a>（2）验证Service和ServiceMonitor</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 查看Service</span>
+kubectl get <span class="token function">service</span> <span class="token parameter variable">-n</span> monitoring <span class="token operator">|</span> <span class="token function">grep</span> redis-exporter
+
+<span class="token comment"># 查看ServiceMonitor</span>
+kubectl get servicemonitor <span class="token parameter variable">-n</span> monitoring <span class="token operator">|</span> <span class="token function">grep</span> redis-exporter<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="（3）验证指标采集"><a href="#（3）验证指标采集" class="headerlink" title="（3）验证指标采集"></a>（3）验证指标采集</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 端口转发测试</span>
+kubectl port-forward service/app-prometheus-redis-exporter <span class="token number">9121</span>:9121 <span class="token parameter variable">-n</span> monitoring
+
+<span class="token comment"># 访问指标端点</span>
+<span class="token function">curl</span> http://localhost:9121/metrics<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="4-4-验证Redis连接"><a href="#4-4-验证Redis连接" class="headerlink" title="4.4. 验证Redis连接"></a>4.4. 验证Redis连接</h2><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 查看exporter日志</span>
+kubectl logs <span class="token parameter variable">-f</span> deployment/app-prometheus-redis-exporter <span class="token parameter variable">-n</span> monitoring
+
+<span class="token comment"># 检查是否有连接错误</span>
+kubectl logs deployment/app-prometheus-redis-exporter <span class="token parameter variable">-n</span> monitoring <span class="token operator">|</span> <span class="token function">grep</span> <span class="token parameter variable">-i</span> error<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="五、监控指标说明"><a href="#五、监控指标说明" class="headerlink" title="五、监控指标说明"></a>五、监控指标说明</h1><h2 id="5-1-核心Redis指标"><a href="#5-1-核心Redis指标" class="headerlink" title="5.1. 核心Redis指标"></a>5.1. 核心Redis指标</h2><div class="note info no-icon flat"><p><strong>连接指标</strong>：</p>
+<ul>
+<li><code>redis_connected_clients</code>：当前连接的客户端数量</li>
+<li><code>redis_connected_slaves</code>：连接的从节点数量</li>
+<li><code>redis_blocked_clients</code>：阻塞的客户端数量</li>
+</ul>
+<p><strong>内存指标</strong>：</p>
+<ul>
+<li><code>redis_memory_used_bytes</code>：Redis使用的内存字节数</li>
+<li><code>redis_memory_max_bytes</code>：Redis最大可用内存</li>
+<li><code>redis_memory_fragmentation_ratio</code>：内存碎片率</li>
+</ul>
+<p><strong>性能指标</strong>：</p>
+<ul>
+<li><code>redis_total_commands_processed</code>：总命令处理数</li>
+<li><code>redis_instantaneous_ops_per_sec</code>：每秒操作数</li>
+<li><code>redis_keyspace_hits_total</code>：键空间命中次数</li>
+<li><code>redis_keyspace_misses_total</code>：键空间未命中次数</li>
+</ul>
+<p><strong>集群指标</strong>：</p>
+<ul>
+<li><code>redis_cluster_enabled</code>：集群模式状态</li>
+<li><code>redis_cluster_slots_assigned</code>：分配的集群槽位数</li>
+<li><code>redis_cluster_slots_ok</code>：正常的集群槽位数</li>
+</ul>
+</div>
+
+<h2 id="5-2-告警规则配置"><a href="#5-2-告警规则配置" class="headerlink" title="5.2. 告警规则配置"></a>5.2. 告警规则配置</h2><pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">groups</span><span class="token punctuation">:</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> redis_alerts
+  <span class="token key atrule">rules</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">alert</span><span class="token punctuation">:</span> RedisDown
+    <span class="token key atrule">expr</span><span class="token punctuation">:</span> redis_up == 0
+    <span class="token key atrule">for</span><span class="token punctuation">:</span> 1m
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">severity</span><span class="token punctuation">:</span> critical
+    <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+      <span class="token key atrule">summary</span><span class="token punctuation">:</span> <span class="token string">"Redis实例不可用"</span>
+      <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; $labels.instance &#125;&#125; Redis实例已下线"</span>
+      
+  <span class="token punctuation">-</span> <span class="token key atrule">alert</span><span class="token punctuation">:</span> RedisMemoryHigh
+    <span class="token key atrule">expr</span><span class="token punctuation">:</span> redis_memory_used_bytes / redis_memory_max_bytes <span class="token punctuation">></span> 0.9
+    <span class="token key atrule">for</span><span class="token punctuation">:</span> 2m
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">severity</span><span class="token punctuation">:</span> warning
+    <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+      <span class="token key atrule">summary</span><span class="token punctuation">:</span> <span class="token string">"Redis内存使用率过高"</span>
+      <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; $labels.instance &#125;&#125; 内存使用率超过90%"</span>
+      
+  <span class="token punctuation">-</span> <span class="token key atrule">alert</span><span class="token punctuation">:</span> RedisConnectionsHigh
+    <span class="token key atrule">expr</span><span class="token punctuation">:</span> redis_connected_clients <span class="token punctuation">></span> 1000
+    <span class="token key atrule">for</span><span class="token punctuation">:</span> 2m
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">severity</span><span class="token punctuation">:</span> warning
+    <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+      <span class="token key atrule">summary</span><span class="token punctuation">:</span> <span class="token string">"Redis连接数过高"</span>
+      <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; $labels.instance &#125;&#125; 连接数超过1000"</span>
+      
+  <span class="token punctuation">-</span> <span class="token key atrule">alert</span><span class="token punctuation">:</span> RedisClusterSlotsMissing
+    <span class="token key atrule">expr</span><span class="token punctuation">:</span> redis_cluster_slots_assigned &lt; redis_cluster_slots_ok
+    <span class="token key atrule">for</span><span class="token punctuation">:</span> 1m
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">severity</span><span class="token punctuation">:</span> critical
+    <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+      <span class="token key atrule">summary</span><span class="token punctuation">:</span> <span class="token string">"Redis集群槽位异常"</span>
+      <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; $labels.instance &#125;&#125; 集群槽位分配异常"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="六、Grafana监控配置"><a href="#六、Grafana监控配置" class="headerlink" title="六、Grafana监控配置"></a>六、Grafana监控配置</h1><h2 id="6-1-官方Dashboard"><a href="#6-1-官方Dashboard" class="headerlink" title="6.1. 官方Dashboard"></a>6.1. 官方Dashboard</h2><p>Redis-exporter提供了官方的Grafana Dashboard配置：</p>
+<div class="note success no-icon flat"><p><strong>Dashboard地址</strong>：<br><a target="_blank" rel="noopener" href="https://github.com/oliver006/redis_exporter/blob/master/contrib/grafana_prometheus_redis_dashboard.json">https://github.com/oliver006/redis_exporter/blob/master/contrib/grafana_prometheus_redis_dashboard.json</a></p>
+<p><strong>使用方法</strong>：</p>
+<ol>
+<li>下载JSON配置文件</li>
+<li>在Grafana中导入Dashboard</li>
+<li>配置数据源为对应的Prometheus</li>
+<li>根据实际标签调整查询条件</li>
+</ol>
+</div>
+
+<h2 id="6-2-自定义监控面板"><a href="#6-2-自定义监控面板" class="headerlink" title="6.2. 自定义监控面板"></a>6.2. 自定义监控面板</h2><pre class="line-numbers language-json" data-language="json"><code class="language-json"><span class="token punctuation">&#123;</span>
+  <span class="token property">"dashboard"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+    <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"Redis集群监控"</span><span class="token punctuation">,</span>
+    <span class="token property">"panels"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+      <span class="token punctuation">&#123;</span>
+        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"Redis连接数"</span><span class="token punctuation">,</span>
+        <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"graph"</span><span class="token punctuation">,</span>
+        <span class="token property">"targets"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+          <span class="token punctuation">&#123;</span>
+            <span class="token property">"expr"</span><span class="token operator">:</span> <span class="token string">"redis_connected_clients&#123;platform=\"$platform\"&#125;"</span><span class="token punctuation">,</span>
+            <span class="token property">"legendFormat"</span><span class="token operator">:</span> <span class="token string">"&#123;&#123;instance&#125;&#125; - 连接数"</span>
+          <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">]</span>
+      <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+      <span class="token punctuation">&#123;</span>
+        <span class="token property">"title"</span><span class="token operator">:</span> <span class="token string">"内存使用率"</span><span class="token punctuation">,</span>
+        <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"graph"</span><span class="token punctuation">,</span>
+        <span class="token property">"targets"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+          <span class="token punctuation">&#123;</span>
+            <span class="token property">"expr"</span><span class="token operator">:</span> <span class="token string">"redis_memory_used_bytes&#123;platform=\"$platform\"&#125; / redis_memory_max_bytes&#123;platform=\"$platform\"&#125; * 100"</span><span class="token punctuation">,</span>
+            <span class="token property">"legendFormat"</span><span class="token operator">:</span> <span class="token string">"&#123;&#123;instance&#125;&#125; - 内存使用率%"</span>
+          <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">]</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">]</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="七、配置管理"><a href="#七、配置管理" class="headerlink" title="七、配置管理"></a>七、配置管理</h1><h2 id="7-1-添加新的Redis节点"><a href="#7-1-添加新的Redis节点" class="headerlink" title="7.1. 添加新的Redis节点"></a>7.1. 添加新的Redis节点</h2><h3 id="（1）更新配置文件"><a href="#（1）更新配置文件" class="headerlink" title="（1）更新配置文件"></a>（1）更新配置文件</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 获取当前配置</span>
+helm get values app-prometheus-redis-exporter <span class="token parameter variable">-n</span> monitoring <span class="token operator">></span> current-values.yaml
+
+<span class="token comment"># 编辑配置添加新节点</span>
+<span class="token function">vim</span> current-values.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="（2）在targets中添加新节点"><a href="#（2）在targets中添加新节点" class="headerlink" title="（2）在targets中添加新节点"></a>（2）在targets中添加新节点</h3><pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">targets</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">url</span><span class="token punctuation">:</span> <span class="token string">"172.16.1.15:6386"</span>  <span class="token comment"># 新节点</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> <span class="token string">"app-redis-cluster-node-6386"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="（3）更新部署"><a href="#（3）更新部署" class="headerlink" title="（3）更新部署"></a>（3）更新部署</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 更新Helm部署</span>
+helm upgrade app-prometheus-redis-exporter <span class="token punctuation">\</span>
+  prometheus-redis-exporter-6.9.0.tgz <span class="token punctuation">\</span>
+  <span class="token parameter variable">--version</span> <span class="token number">6.9</span>.0 <span class="token punctuation">\</span>
+  <span class="token parameter variable">-n</span> monitoring <span class="token punctuation">\</span>
+  <span class="token parameter variable">-f</span> current-values.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="7-2-修改监控间隔"><a href="#7-2-修改监控间隔" class="headerlink" title="7.2. 修改监控间隔"></a>7.2. 修改监控间隔</h2><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 修改interval配置</span>
+<span class="token function">sed</span> <span class="token parameter variable">-i</span> <span class="token string">'s/interval: 60s/interval: 30s/g'</span> current-values.yaml
+
+<span class="token comment"># 应用更新</span>
+helm upgrade app-prometheus-redis-exporter <span class="token punctuation">\</span>
+  prometheus-redis-exporter-6.9.0.tgz <span class="token punctuation">\</span>
+  <span class="token parameter variable">--version</span> <span class="token number">6.9</span>.0 <span class="token punctuation">\</span>
+  <span class="token parameter variable">-n</span> monitoring <span class="token punctuation">\</span>
+  <span class="token parameter variable">-f</span> current-values.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="7-3-完全卸载"><a href="#7-3-完全卸载" class="headerlink" title="7.3. 完全卸载"></a>7.3. 完全卸载</h2><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 卸载Helm部署</span>
+helm uninstall app-prometheus-redis-exporter <span class="token parameter variable">-n</span> monitoring
+
+<span class="token comment"># 清理Secret（如果需要）</span>
+kubectl delete secret app-redis-cluster-secret <span class="token parameter variable">-n</span> monitoring<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="八、故障排查"><a href="#八、故障排查" class="headerlink" title="八、故障排查"></a>八、故障排查</h1><h2 id="8-1-常见问题"><a href="#8-1-常见问题" class="headerlink" title="8.1. 常见问题"></a>8.1. 常见问题</h2><div class="note warning no-icon flat"><p><strong>部署失败</strong>：</p>
+<ul>
+<li>检查Secret是否正确创建</li>
+<li>验证Redis集群连通性</li>
+<li>确认Helm Chart版本兼容性</li>
+</ul>
+<p><strong>连接失败</strong>：</p>
+<ul>
+<li>验证Redis密码正确性</li>
+<li>检查网络连通性和防火墙</li>
+<li>确认Redis配置允许外部连接</li>
+</ul>
+<p><strong>指标缺失</strong>：</p>
+<ul>
+<li>检查ServiceMonitor配置</li>
+<li>验证targets配置正确性</li>
+<li>查看exporter日志错误信息</li>
+</ul>
+</div>
+
+<h2 id="8-2-日志排查"><a href="#8-2-日志排查" class="headerlink" title="8.2. 日志排查"></a>8.2. 日志排查</h2><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 查看exporter日志</span>
+kubectl logs <span class="token parameter variable">-f</span> deployment/app-prometheus-redis-exporter <span class="token parameter variable">-n</span> monitoring
+
+<span class="token comment"># 查看最近的错误日志</span>
+kubectl logs deployment/app-prometheus-redis-exporter <span class="token parameter variable">-n</span> monitoring <span class="token parameter variable">--tail</span><span class="token operator">=</span><span class="token number">100</span> <span class="token operator">|</span> <span class="token function">grep</span> <span class="token parameter variable">-i</span> error
+
+<span class="token comment"># 检查ServiceMonitor状态</span>
+kubectl describe servicemonitor app-prometheus-redis-exporter <span class="token parameter variable">-n</span> monitoring<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="8-3-连接测试"><a href="#8-3-连接测试" class="headerlink" title="8.3. 连接测试"></a>8.3. 连接测试</h2><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 测试Redis连接</span>
+redis-cli <span class="token parameter variable">-h</span> <span class="token number">172.16</span>.1.15 <span class="token parameter variable">-p</span> <span class="token number">6383</span> <span class="token parameter variable">-a</span> your-password <span class="token function">ping</span>
+
+<span class="token comment"># 检查集群状态</span>
+redis-cli <span class="token parameter variable">-h</span> <span class="token number">172.16</span>.1.15 <span class="token parameter variable">-p</span> <span class="token number">6383</span> <span class="token parameter variable">-a</span> your-password cluster nodes<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>通过Helm部署Redis集群监控方案解决了以下关键问题：</p>
+<ol>
+<li><strong>准确性提升</strong>：修复了原有采集方式的问题，确保监控数据准确性</li>
+<li><strong>标准化部署</strong>：统一的Helm Chart管理，简化部署和维护流程</li>
+<li><strong>安全管理</strong>：通过Kubernetes Secret安全存储认证信息</li>
+<li><strong>灵活配置</strong>：支持多集群、多节点的灵活配置管理</li>
+<li><strong>性能优化</strong>：合理的采集间隔配置，降低对Redis的影响</li>
+</ol>
+<p>本方案为Redis集群监控提供了可靠的基础设施，确保了生产环境监控的准确性和稳定性。</p>
+<h1 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h1><ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/oliver006/redis_exporter">Redis Exporter官方文档</a></li>
+<li><a target="_blank" rel="noopener" href="https://prometheus.io/docs/guides/redis-monitoring/">Prometheus Redis监控最佳实践</a></li>
+<li><a target="_blank" rel="noopener" href="https://helm.sh/docs/chart_best_practices/">Helm Charts最佳实践</a></li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn">逐光</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn/2024/12/30/prometheus/redis-ji-qun-jian-kong-pei-zhi-helm-bu-shu-fang-an/">https://www.mpoom.cn/2024/12/30/prometheus/redis-ji-qun-jian-kong-pei-zhi-helm-bu-shu-fang-an/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.mpoom.cn" target="_blank">逐光の博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Prometheus/">Prometheus</a><a class="post-meta__tags" href="/tags/Redis/">Redis</a><a class="post-meta__tags" href="/tags/Helm/">Helm</a><a class="post-meta__tags" href="/tags/%E9%9B%86%E7%BE%A4%E7%9B%91%E6%8E%A7/">集群监控</a></div><div class="post_share"><div class="social-share" data-image="/images/feature/14.jpeg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/12/30/prometheus/mysql-zhu-cong-jian-kong-pei-zhi-helm-bu-shu-fang-an/" title="MySQL主从监控配置-Helm部署方案"><img class="cover" src="/images/feature/1.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">MySQL主从监控配置-Helm部署方案</div></div></a></div><div class="next-post pull-right"><a href="/2024/12/30/prometheus/sheng-chan-ying-yong-ri-zhi-jian-kong-gao-jing-fang-an/" title="生产应用日志监控告警方案"><img class="cover" src="/images/feature/19.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">生产应用日志监控告警方案</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2023/05/07/k8s/kube-prometheus-jian-kong-redis/" title="Kube-Prometheus监控Redis（三）"><img class="cover" src="/images/feature/15.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-05-07</div><div class="title">Kube-Prometheus监控Redis（三）</div></div></a></div><div><a href="/2024/12/30/prometheus/mysql-zhu-cong-jian-kong-pei-zhi-helm-bu-shu-fang-an/" title="MySQL主从监控配置-Helm部署方案"><img class="cover" src="/images/feature/1.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-12-30</div><div class="title">MySQL主从监控配置-Helm部署方案</div></div></a></div><div><a href="/2023/05/06/k8s/kube-prometheus-jian-kong-mysql/" title="Kube-Prometheus监控MySQL（二）"><img class="cover" src="/images/feature/2.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-05-06</div><div class="title">Kube-Prometheus监控MySQL（二）</div></div></a></div><div><a href="/2023/05/09/k8s/kube-prometheus-jian-kong-nacos/" title="Kube-Prometheus监控Nacos（五）"><img class="cover" src="/images/feature/6.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-05-09</div><div class="title">Kube-Prometheus监控Nacos（五）</div></div></a></div><div><a href="/2023/05/08/k8s/kube-prometheus-jian-kong-rocketmq/" title="Kube-Prometheus监控RocketMQ（四）"><img class="cover" src="/images/feature/3.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-05-08</div><div class="title">Kube-Prometheus监控RocketMQ（四）</div></div></a></div><div><a href="/2023/05/05/k8s/kube-prometheus-jian-kong-zhu-ji-he-zhong-jian-jian/" title="Kube-Prometheus监控主机和中间件（一）"><img class="cover" src="/images/feature/22.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-05-05</div><div class="title">Kube-Prometheus监控主机和中间件（一）</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E8%83%8C%E6%99%AF%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">一、背景简介</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E9%83%A8%E7%BD%B2%E6%96%87%E4%BB%B6%E5%87%86%E5%A4%87"><span class="toc-number">2.</span> <span class="toc-text">二、部署文件准备</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%BF%85%E9%9C%80%E6%96%87%E4%BB%B6%E6%B8%85%E5%8D%95"><span class="toc-number">2.1.</span> <span class="toc-text">2.1. 必需文件清单</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E7%8E%AF%E5%A2%83%E8%A6%81%E6%B1%82"><span class="toc-number">2.2.</span> <span class="toc-text">2.2. 环境要求</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E9%85%8D%E7%BD%AE%E6%AD%A5%E9%AA%A4"><span class="toc-number">3.</span> <span class="toc-text">三、配置步骤</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-Redis%E5%AF%86%E9%92%A5%E5%88%9B%E5%BB%BA"><span class="toc-number">3.1.</span> <span class="toc-text">3.1. Redis密钥创建</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%881%EF%BC%89%E5%88%9B%E5%BB%BASecret%E5%91%BD%E4%BB%A4"><span class="toc-number">3.1.1.</span> <span class="toc-text">（1）创建Secret命令</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%882%EF%BC%89%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E"><span class="toc-number">3.1.2.</span> <span class="toc-text">（2）参数说明</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%883%EF%BC%89%E9%AA%8C%E8%AF%81Secret%E5%88%9B%E5%BB%BA"><span class="toc-number">3.1.3.</span> <span class="toc-text">（3）验证Secret创建</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E4%BF%AE%E6%94%B9"><span class="toc-number">3.2.</span> <span class="toc-text">3.2. 配置文件修改</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%881%EF%BC%89%E6%A0%B8%E5%BF%83%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0"><span class="toc-number">3.2.1.</span> <span class="toc-text">（1）核心配置参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%882%EF%BC%89%E5%AE%8C%E6%95%B4%E9%85%8D%E7%BD%AE%E7%A4%BA%E4%BE%8B"><span class="toc-number">3.2.2.</span> <span class="toc-text">（2）完整配置示例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%883%EF%BC%89%E9%85%8D%E7%BD%AE%E8%A6%81%E7%82%B9%E8%AF%B4%E6%98%8E"><span class="toc-number">3.2.3.</span> <span class="toc-text">（3）配置要点说明</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E5%B9%B3%E5%8F%B0%E6%A0%87%E8%AF%86%E9%85%8D%E7%BD%AE"><span class="toc-number">3.3.</span> <span class="toc-text">3.3. 平台标识配置</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%83%A8%E7%BD%B2%E5%AE%9E%E6%96%BD"><span class="toc-number">4.</span> <span class="toc-text">四、部署实施</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-Helm%E5%8F%91%E5%B8%83%E5%90%8D%E7%A7%B0%E8%A7%84%E8%8C%83"><span class="toc-number">4.1.</span> <span class="toc-text">4.1. Helm发布名称规范</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E9%83%A8%E7%BD%B2%E5%91%BD%E4%BB%A4"><span class="toc-number">4.2.</span> <span class="toc-text">4.2. 部署命令</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%9A%E7%8E%AF%E5%A2%83%E9%83%A8%E7%BD%B2%E7%A4%BA%E4%BE%8B"><span class="toc-number">4.2.1.</span> <span class="toc-text">多环境部署示例</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E9%83%A8%E7%BD%B2%E9%AA%8C%E8%AF%81"><span class="toc-number">4.3.</span> <span class="toc-text">4.3. 部署验证</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%881%EF%BC%89%E6%A3%80%E6%9F%A5Pod%E7%8A%B6%E6%80%81"><span class="toc-number">4.3.1.</span> <span class="toc-text">（1）检查Pod状态</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%882%EF%BC%89%E9%AA%8C%E8%AF%81Service%E5%92%8CServiceMonitor"><span class="toc-number">4.3.2.</span> <span class="toc-text">（2）验证Service和ServiceMonitor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%883%EF%BC%89%E9%AA%8C%E8%AF%81%E6%8C%87%E6%A0%87%E9%87%87%E9%9B%86"><span class="toc-number">4.3.3.</span> <span class="toc-text">（3）验证指标采集</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-4-%E9%AA%8C%E8%AF%81Redis%E8%BF%9E%E6%8E%A5"><span class="toc-number">4.4.</span> <span class="toc-text">4.4. 验证Redis连接</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E7%9B%91%E6%8E%A7%E6%8C%87%E6%A0%87%E8%AF%B4%E6%98%8E"><span class="toc-number">5.</span> <span class="toc-text">五、监控指标说明</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E6%A0%B8%E5%BF%83Redis%E6%8C%87%E6%A0%87"><span class="toc-number">5.1.</span> <span class="toc-text">5.1. 核心Redis指标</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%91%8A%E8%AD%A6%E8%A7%84%E5%88%99%E9%85%8D%E7%BD%AE"><span class="toc-number">5.2.</span> <span class="toc-text">5.2. 告警规则配置</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%AD%E3%80%81Grafana%E7%9B%91%E6%8E%A7%E9%85%8D%E7%BD%AE"><span class="toc-number">6.</span> <span class="toc-text">六、Grafana监控配置</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-%E5%AE%98%E6%96%B9Dashboard"><span class="toc-number">6.1.</span> <span class="toc-text">6.1. 官方Dashboard</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-%E8%87%AA%E5%AE%9A%E4%B9%89%E7%9B%91%E6%8E%A7%E9%9D%A2%E6%9D%BF"><span class="toc-number">6.2.</span> <span class="toc-text">6.2. 自定义监控面板</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E9%85%8D%E7%BD%AE%E7%AE%A1%E7%90%86"><span class="toc-number">7.</span> <span class="toc-text">七、配置管理</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#7-1-%E6%B7%BB%E5%8A%A0%E6%96%B0%E7%9A%84Redis%E8%8A%82%E7%82%B9"><span class="toc-number">7.1.</span> <span class="toc-text">7.1. 添加新的Redis节点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%881%EF%BC%89%E6%9B%B4%E6%96%B0%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">7.1.1.</span> <span class="toc-text">（1）更新配置文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%882%EF%BC%89%E5%9C%A8targets%E4%B8%AD%E6%B7%BB%E5%8A%A0%E6%96%B0%E8%8A%82%E7%82%B9"><span class="toc-number">7.1.2.</span> <span class="toc-text">（2）在targets中添加新节点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%883%EF%BC%89%E6%9B%B4%E6%96%B0%E9%83%A8%E7%BD%B2"><span class="toc-number">7.1.3.</span> <span class="toc-text">（3）更新部署</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-2-%E4%BF%AE%E6%94%B9%E7%9B%91%E6%8E%A7%E9%97%B4%E9%9A%94"><span class="toc-number">7.2.</span> <span class="toc-text">7.2. 修改监控间隔</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-3-%E5%AE%8C%E5%85%A8%E5%8D%B8%E8%BD%BD"><span class="toc-number">7.3.</span> <span class="toc-text">7.3. 完全卸载</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5"><span class="toc-number">8.</span> <span class="toc-text">八、故障排查</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#8-1-%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98"><span class="toc-number">8.1.</span> <span class="toc-text">8.1. 常见问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-2-%E6%97%A5%E5%BF%97%E6%8E%92%E6%9F%A5"><span class="toc-number">8.2.</span> <span class="toc-text">8.2. 日志排查</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-3-%E8%BF%9E%E6%8E%A5%E6%B5%8B%E8%AF%95"><span class="toc-number">8.3.</span> <span class="toc-text">8.3. 连接测试</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">9.</span> <span class="toc-text">总结</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E6%A1%A3"><span class="toc-number">10.</span> <span class="toc-text">参考文档</span></a></li></ol></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2025 By 逐光</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div></div></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.min.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"><script>function loadValine () {
+  function initValine () {
+    const valine = new Valine(Object.assign({
+      el: '#vcomment',
+      appId: 'f5WSKiyRgMriw1qIicgn1Dbu-gzGzoHsz',
+      appKey: 'c9Jx92rNNJ0RzzaxLNCqu4rR',
+      avatar: 'monsterid',
+      serverURLs: '',
+      emojiMaps: "",
+      path: window.location.pathname,
+      visitor: false
+    }, null))
+  }
+
+  if (typeof Valine === 'function') initValine() 
+  else getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js').then(initValine)
+}
+
+if ('Valine' === 'Valine' || !true) {
+  if (true) btf.loadComment(document.getElementById('vcomment'),loadValine)
+  else setTimeout(loadValine, 0)
+} else {
+  function loadOtherComment () {
+    loadValine()
+  }
+}</script></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script>((window.gitter = {}).chat = {}).options = {
+  room: 'blog-mpoom/community',
+};
+
+if (false) {
+  function chatBtnHide () {
+    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'none'
+  }
+
+  function chatBtnShow () {
+    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'block'
+  }
+}
+</script><script src="https://sidecar.gitter.im/dist/sidecar.v1.js" async="async" defer="defer"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
