@@ -1,0 +1,1247 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>10万TPS级高并发系统——2亿级黑名单过滤 | 逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="一、背景简介在消息发送管控平台中，黑名单过滤是保障消息发送安全的重要环节。系统需要对发送的每条消息进行黑名单检查，包括全局黑名单、账号级黑名单、投诉黑名单、退订黑名单等多种类型。在日发送量达到30亿条消息的场景下，黑名单数据规模庞大，系统需要支持2亿级黑名单数据的高效过滤。 1.1 技术挑战在2亿级"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/2024/06/08/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-2-yi-ji-hei-ming-dan-guo-lu/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  }
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '10万TPS级高并发系统——2亿级黑名单过滤',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2025-11-12 11:47:12'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><meta name="generator" content="Hexo 5.4.2"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/images/theme/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">103</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">162</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">18</div></a></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">逐光の博客</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">10万TPS级高并发系统——2亿级黑名单过滤</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-06-07T16:00:00.000Z" title="发表于 2024-06-08 00:00:00">2024-06-08</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-11-12T03:47:12.216Z" title="更新于 2025-11-12 11:47:12">2025-11-12</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">5k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>21分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="10万TPS级高并发系统——2亿级黑名单过滤"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><h1 id="一、背景简介"><a href="#一、背景简介" class="headerlink" title="一、背景简介"></a>一、背景简介</h1><p>在<a href="https://www.mpoom.cn/2024/06/01/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-jia-gou-she-ji-yu-xiang-mu-luo-di-shi-jian/">消息发送管控平台</a>中，黑名单过滤是保障消息发送安全的重要环节。系统需要对发送的每条消息进行黑名单检查，包括全局黑名单、账号级黑名单、投诉黑名单、退订黑名单等多种类型。在日发送量达到30亿条消息的场景下，黑名单数据规模庞大，系统需要支持2亿级黑名单数据的高效过滤。</p>
+<h2 id="1-1-技术挑战"><a href="#1-1-技术挑战" class="headerlink" title="1.1 技术挑战"></a>1.1 技术挑战</h2><p>在2亿级黑名单数据规模下，传统的数据结构面临严重挑战：</p>
+<table>
+<thead>
+<tr>
+<th>存储方式</th>
+<th>内存占用</th>
+<th>查询性能</th>
+<th>主要问题</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>HashMap&lt;String,Object&gt;</td>
+<td>~20GB</td>
+<td>O(1)</td>
+<td>内存占用过大，GC压力巨大</td>
+</tr>
+<tr>
+<td>HashSet<Long></Long></td>
+<td>~15GB</td>
+<td>O(1)</td>
+<td>装箱拆箱开销，内存碎片</td>
+</tr>
+<tr>
+<td>传统BitSet</td>
+<td>~250MB</td>
+<td>O(1)</td>
+<td>稀疏数据浪费严重，不支持分片</td>
+</tr>
+<tr>
+<td>RoaringBitmap</td>
+<td>~5-50MB</td>
+<td>O(1)</td>
+<td>内存高效，压缩率高</td>
+</tr>
+</tbody></table>
+<div class="note success no-icon flat"><p><strong>核心问题</strong>：2亿个11位手机号码如果用传统HashMap存储，需要占用约20GB内存，这对系统资源是巨大的挑战。而且在高并发场景下，大量的HashMap查询会产生严重的GC问题，影响系统性能。</p>
+</div>
+
+<h2 id="1-2-RoaringBitmap优势"><a href="#1-2-RoaringBitmap优势" class="headerlink" title="1.2 RoaringBitmap优势"></a>1.2 RoaringBitmap优势</h2><p>RoaringBitmap是一种高效的压缩位图数据结构，特别适合处理稀疏的整数集合：</p>
+<ul>
+<li><strong>内存高效</strong>：相比传统存储方式节省90%以上内存</li>
+<li><strong>查询高效</strong>：O(1)时间复杂度的查询性能</li>
+<li><strong>压缩算法</strong>：自动选择最优的内部存储结构</li>
+<li><strong>并发安全</strong>：支持读写锁保证线程安全</li>
+</ul>
+<h2 id="1-3-性能要求"><a href="#1-3-性能要求" class="headerlink" title="1.3 性能要求"></a>1.3 性能要求</h2><ul>
+<li><strong>TPS要求</strong>：系统接口需要支持10万TPS</li>
+<li><strong>响应时间</strong>：平均响应时间不超过50ms</li>
+<li><strong>数据规模</strong>：支持2亿级黑名单数据</li>
+<li><strong>内存占用</strong>：相比传统方案减少90%内存使用</li>
+<li><strong>实时性</strong>：黑名单数据变更需要实时生效</li>
+</ul>
+<h1 id="二、RoaringBitmap原理分析"><a href="#二、RoaringBitmap原理分析" class="headerlink" title="二、RoaringBitmap原理分析"></a>二、RoaringBitmap原理分析</h1><h2 id="2-1-传统方案的问题"><a href="#2-1-传统方案的问题" class="headerlink" title="2.1 传统方案的问题"></a>2.1 传统方案的问题</h2><p>在2亿级手机号码存储场景下，传统数据结构存在以下问题：</p>
+<h3 id="2-1-1-HashMap存储问题"><a href="#2-1-1-HashMap存储问题" class="headerlink" title="2.1.1 HashMap存储问题"></a>2.1.1 HashMap存储问题</h3><pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token comment">// 传统HashMap存储方式</span>
+<span class="token class-name">Map</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">,</span> <span class="token class-name">Object</span><span class="token punctuation">></span></span> blacklist <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// 2亿个手机号大约需要 20GB 内存</span>
+<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token class-name">String</span> phone <span class="token operator">:</span> phoneList<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    blacklist<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>phone<span class="token punctuation">,</span> <span class="token class-name">Boolean</span><span class="token punctuation">.</span><span class="token constant">TRUE</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><strong>问题分析</strong>：</p>
+<ul>
+<li>每个String对象约24字节（对象头+char[]数组引用）</li>
+<li>HashMap节点对象额外开销约32字节</li>
+<li>2亿条数据总内存占用：200,000,000 * (24 + 32) &#x3D; 11.2GB</li>
+<li>加上GC开销和内存碎片，实际占用超过20GB</li>
+</ul>
+<h3 id="2-1-2-传统BitSet问题"><a href="#2-1-2-传统BitSet问题" class="headerlink" title="2.1.2 传统BitSet问题"></a>2.1.2 传统BitSet问题</h3><pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token comment">// 传统BitSet方式</span>
+<span class="token class-name">BitSet</span> bitSet <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BitSet</span><span class="token punctuation">(</span><span class="token number">99999999999L</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 手机号最大值</span>
+<span class="token comment">// 需要分配全部空间：99999999999 / 8 = 12.5GB</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p><strong>问题分析</strong>：</p>
+<ul>
+<li>必须分配连续的内存空间</li>
+<li>稀疏数据导致大量内存浪费</li>
+<li>不支持动态扩容和分片存储</li>
+</ul>
+<h2 id="2-2-RoaringBitmap原理"><a href="#2-2-RoaringBitmap原理" class="headerlink" title="2.2 RoaringBitmap原理"></a>2.2 RoaringBitmap原理</h2><p>RoaringBitmap将整数集合按照高低位分割，对不同的数据分布采用不同的存储策略：</p>
+<p><strong>RoaringBitmap存储结构选择流程：</strong></p>
+<pre class="line-numbers language-none"><code class="language-none">整数集合
+    ↓
+按高16位分割
+    ↓
+┌─────────────────┬─────────────────┐
+│   高位做为Key    │   低位做为Value   │
+└─────────────────┴─────────────────┘
+                        ↓
+                  Value数量判断
+                        ↓
+        ┌───────────────┼───────────────┐
+        │               │               │
+   小于4096个      4096到65536个    连续区间数据
+        ↓               ↓               ↓
+  ArrayContainer  BitmapContainer  RunContainer<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="2-2-1-分割策略"><a href="#2-2-1-分割策略" class="headerlink" title="2.2.1 分割策略"></a>2.2.1 分割策略</h3><pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token comment">// 手机号分割示例：18812345678</span>
+<span class="token keyword">long</span> phone <span class="token operator">=</span> <span class="token number">18812345678L</span><span class="token punctuation">;</span>
+<span class="token keyword">int</span> phoneHigh <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>phone <span class="token operator">/</span> <span class="token number">1000000000</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 高位: 18</span>
+<span class="token keyword">int</span> phoneLow <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>phone <span class="token operator">%</span> <span class="token number">1000000000</span><span class="token punctuation">)</span><span class="token punctuation">;</span>   <span class="token comment">// 低位: 812345678</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="2-2-2-存储结构选择"><a href="#2-2-2-存储结构选择" class="headerlink" title="2.2.2 存储结构选择"></a>2.2.2 存储结构选择</h3><table>
+<thead>
+<tr>
+<th>Container类型</th>
+<th>使用场景</th>
+<th>内存占用</th>
+<th>查询性能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ArrayContainer</td>
+<td>稀疏数据(&lt;4096个)</td>
+<td>2-8KB</td>
+<td>O(log n)</td>
+</tr>
+<tr>
+<td>BitmapContainer</td>
+<td>中等密度(4096-65536个)</td>
+<td>8KB</td>
+<td>O(1)</td>
+</tr>
+<tr>
+<td>RunContainer</td>
+<td>连续区间数据</td>
+<td>动态</td>
+<td>O(log n)</td>
+</tr>
+</tbody></table>
+<div class="note success no-icon flat"><p><strong>智能压缩</strong>：RoaringBitmap会根据数据特点自动选择最优的存储结构，并在数据变化时动态转换，实现最优的内存利用率。</p>
+</div>
+
+<h1 id="三、RoaringBitMap手机号缓存实现"><a href="#三、RoaringBitMap手机号缓存实现" class="headerlink" title="三、RoaringBitMap手机号缓存实现"></a>三、RoaringBitMap手机号缓存实现</h1><p>基于提供的代码，<code>RoaringBitMapPhoneCache</code>实现了高效的手机号黑名单存储和查询功能。</p>
+<h2 id="3-1-核心数据结构"><a href="#3-1-核心数据结构" class="headerlink" title="3.1 核心数据结构"></a>3.1 核心数据结构</h2><pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">RoaringBitMapPhoneCache</span> <span class="token keyword">implements</span> <span class="token class-name">Serializable</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">long</span> serialVersionUID <span class="token operator">=</span> <span class="token number">0L</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">/**
+     * 区分手机号高低位
+     * 低位支持到 MOD_SIZE-1，即(0,999999999)
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> <span class="token constant">MOD_SIZE</span> <span class="token operator">=</span> <span class="token number">1000000000</span><span class="token punctuation">;</span>
+    
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token class-name">ReadWriteLock</span> lock <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ReentrantReadWriteLock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">/**
+     * 核心存储结构：高位 -> RoaringBitmap
+     * Key: 手机号高位（如 138、139、186等）
+     * Value: 对应低位的RoaringBitmap
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">Map</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Integer</span><span class="token punctuation">,</span> <span class="token class-name">RoaringBitmap</span><span class="token punctuation">></span></span> cache<span class="token punctuation">;</span>
+    
+    <span class="token keyword">private</span> <span class="token class-name">Long</span> localVersion <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1L</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="3-2-手机号分割策略"><a href="#3-2-手机号分割策略" class="headerlink" title="3.2 手机号分割策略"></a>3.2 手机号分割策略</h2><h3 id="3-2-1-分割算法"><a href="#3-2-1-分割算法" class="headerlink" title="3.2.1 分割算法"></a>3.2.1 分割算法</h3><p>系统采用9位分割策略，将手机号分为高低两部分：</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token comment">// 手机号分割示例</span>
+<span class="token keyword">long</span> phone <span class="token operator">=</span> <span class="token number">13812345678L</span><span class="token punctuation">;</span>
+<span class="token keyword">int</span> phoneHigh <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>phone <span class="token operator">/</span> <span class="token constant">MOD_SIZE</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 高位: 13</span>
+<span class="token keyword">int</span> phoneLow <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>phone <span class="token operator">%</span> <span class="token constant">MOD_SIZE</span><span class="token punctuation">)</span><span class="token punctuation">;</span>   <span class="token comment">// 低位: 812345678</span>
+
+<span class="token comment">// 存储结构：</span>
+cache<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token number">13</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">contains</span><span class="token punctuation">(</span><span class="token number">812345678</span><span class="token punctuation">)</span>  <span class="token comment">// 检查是否存在</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="3-2-2-分割优势"><a href="#3-2-2-分割优势" class="headerlink" title="3.2.2 分割优势"></a>3.2.2 分割优势</h3><div class="note success no-icon flat"><p><strong>分割优势</strong>：</p>
+<ul>
+<li><strong>减少内存浪费</strong>：只为存在的高位号段创建RoaringBitmap</li>
+<li><strong>提高压缩效率</strong>：同一运营商号段的手机号具有更好的局部性</li>
+<li><strong>支持并发访问</strong>：不同高位号段可以并发操作</li>
+<li><strong>简化管理</strong>：按照运营商号段进行数据管理和统计</li>
+</ul>
+</div>
+
+<h2 id="3-3-查询操作实现"><a href="#3-3-查询操作实现" class="headerlink" title="3.3 查询操作实现"></a>3.3 查询操作实现</h2><pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token comment">/**
+ * 检查手机号是否在黑名单中
+ * @param phone 手机号
+ * @return true:在黑名单中，false:不在黑名单中
+ */</span>
+<span class="token keyword">public</span> <span class="token class-name">Boolean</span> <span class="token function">containsPhone</span><span class="token punctuation">(</span><span class="token class-name">Long</span> phone<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// 1. 计算高低位</span>
+    <span class="token keyword">int</span> phoneLow <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>phone <span class="token operator">%</span> <span class="token constant">MOD_SIZE</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">int</span> phoneHigh <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>phone <span class="token operator">/</span> <span class="token constant">MOD_SIZE</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// 2. 获取对应的RoaringBitmap</span>
+    <span class="token class-name">RoaringBitmap</span> roaringBitmap <span class="token operator">=</span> cache<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>phoneHigh<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// 3. 检查是否存在</span>
+    <span class="token keyword">return</span> roaringBitmap <span class="token operator">!=</span> <span class="token keyword">null</span> <span class="token operator">&amp;&amp;</span> 
+           <span class="token operator">!</span>roaringBitmap<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> 
+           roaringBitmap<span class="token punctuation">.</span><span class="token function">contains</span><span class="token punctuation">(</span>phoneLow<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="3-3-1-查询性能分析"><a href="#3-3-1-查询性能分析" class="headerlink" title="3.3.1 查询性能分析"></a>3.3.1 查询性能分析</h3><table>
+<thead>
+<tr>
+<th>操作步骤</th>
+<th>时间复杂度</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>高低位计算</td>
+<td>O(1)</td>
+<td>简单的整数除法和求余操作</td>
+</tr>
+<tr>
+<td>HashMap查询</td>
+<td>O(1)</td>
+<td>根据高位获取RoaringBitmap</td>
+</tr>
+<tr>
+<td>RoaringBitmap查询</td>
+<td>O(1)</td>
+<td>平均情况下的查询性能</td>
+</tr>
+<tr>
+<td><strong>整体复杂度</strong></td>
+<td><strong>O(1)</strong></td>
+<td><strong>高效的常数时间查询</strong></td>
+</tr>
+</tbody></table>
+<h2 id="3-4-插入操作实现"><a href="#3-4-插入操作实现" class="headerlink" title="3.4 插入操作实现"></a>3.4 插入操作实现</h2><pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token comment">/**
+ * 向黑名单中添加手机号
+ * @param phone 手机号
+ */</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">putPhone</span><span class="token punctuation">(</span><span class="token class-name">Long</span> phone<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+        lock<span class="token punctuation">.</span><span class="token function">writeLock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment">// 1. 计算高低位</span>
+        <span class="token keyword">int</span> phoneLow <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>phone <span class="token operator">%</span> <span class="token constant">MOD_SIZE</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">int</span> phoneHigh <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>phone <span class="token operator">/</span> <span class="token constant">MOD_SIZE</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment">// 2. 获取或创建RoaringBitmap</span>
+        <span class="token class-name">RoaringBitmap</span> roaringBitmap<span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>cache<span class="token punctuation">.</span><span class="token function">containsKey</span><span class="token punctuation">(</span>phoneHigh<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            roaringBitmap <span class="token operator">=</span> cache<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>phoneHigh<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+            roaringBitmap <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">RoaringBitmap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            cache<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>phoneHigh<span class="token punctuation">,</span> roaringBitmap<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        
+        <span class="token comment">// 3. 添加低位到RoaringBitmap</span>
+        roaringBitmap<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>phoneLow<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+    <span class="token punctuation">&#125;</span> <span class="token keyword">finally</span> <span class="token punctuation">&#123;</span>
+        lock<span class="token punctuation">.</span><span class="token function">writeLock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="3-4-1-线程安全设计"><a href="#3-4-1-线程安全设计" class="headerlink" title="3.4.1 线程安全设计"></a>3.4.1 线程安全设计</h3><ul>
+<li><strong>读写锁机制</strong>：使用<code>ReentrantReadWriteLock</code>保证线程安全</li>
+<li><strong>读操作并发</strong>：多个线程可以同时进行查询操作</li>
+<li><strong>写操作互斥</strong>：保证数据一致性，避免竞态条件</li>
+</ul>
+<h2 id="3-5-统计功能实现"><a href="#3-5-统计功能实现" class="headerlink" title="3.5 统计功能实现"></a>3.5 统计功能实现</h2><pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token comment">/**
+ * 获取黑名单中的手机号数量
+ * @return 总数量
+ */</span>
+<span class="token keyword">public</span> <span class="token class-name">Integer</span> <span class="token function">getSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> count <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token class-name">RoaringBitmap</span> roaringBitmap <span class="token operator">:</span> cache<span class="token punctuation">.</span><span class="token function">values</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        count <span class="token operator">+=</span> roaringBitmap<span class="token punctuation">.</span><span class="token function">getCardinality</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> count<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token comment">/**
+ * 检查缓存是否为空
+ * @return true:空，false:非空
+ */</span>
+<span class="token keyword">public</span> <span class="token class-name">Boolean</span> <span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> <span class="token class-name">CollectionUtils</span><span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>cache<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token function">getSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="四、高并发架构设计"><a href="#四、高并发架构设计" class="headerlink" title="四、高并发架构设计"></a>四、高并发架构设计</h1><h2 id="4-1-整体架构方案"><a href="#4-1-整体架构方案" class="headerlink" title="4.1 整体架构方案"></a>4.1 整体架构方案</h2><p>基于RoaringBitmap的2亿级黑名单过滤系统采用分层架构设计：</p>
+<p><strong>系统架构流程图：</strong></p>
+<pre class="line-numbers language-none"><code class="language-none">          消息请求
+             ↓
+        黑名单过滤层
+             ↓
+      RoaringBitmap缓存
+             ↓
+         缓存命中？
+        ┌─────┴─────┐
+        ↓           ↓
+    命中              未命中
+        ↓           ↓
+    返回过滤结果      数据库查询
+        ↑           ↓
+        └───────   更新RoaringBitmap缓存
+                     ↓
+                 返回过滤结果
+
+数据同步服务 → 增量数据更新 → RoaringBitmap缓存<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="4-2-核心实现架构"><a href="#4-2-核心实现架构" class="headerlink" title="4.2 核心实现架构"></a>4.2 核心实现架构</h2><h3 id="4-2-1-分片存储策略"><a href="#4-2-1-分片存储策略" class="headerlink" title="4.2.1 分片存储策略"></a>4.2.1 分片存储策略</h3><pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token comment">/**
+ * 基于运营商号段的分片存储
+ * 利用手机号前3位的局部性特征
+ */</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">ShardedBlacklistCache</span> <span class="token punctuation">&#123;</span>
+    
+    <span class="token comment">// 中国移动号段</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token class-name">Set</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Integer</span><span class="token punctuation">></span></span> <span class="token constant">MOBILE_PREFIXES</span> <span class="token operator">=</span> <span class="token class-name">Set</span><span class="token punctuation">.</span><span class="token function">of</span><span class="token punctuation">(</span>
+        <span class="token number">134</span><span class="token punctuation">,</span> <span class="token number">135</span><span class="token punctuation">,</span> <span class="token number">136</span><span class="token punctuation">,</span> <span class="token number">137</span><span class="token punctuation">,</span> <span class="token number">138</span><span class="token punctuation">,</span> <span class="token number">139</span><span class="token punctuation">,</span> <span class="token number">147</span><span class="token punctuation">,</span> <span class="token number">150</span><span class="token punctuation">,</span> <span class="token number">151</span><span class="token punctuation">,</span> <span class="token number">152</span><span class="token punctuation">,</span> <span class="token number">157</span><span class="token punctuation">,</span> <span class="token number">158</span><span class="token punctuation">,</span> <span class="token number">159</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// 中国联通号段  </span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token class-name">Set</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Integer</span><span class="token punctuation">></span></span> <span class="token constant">UNICOM_PREFIXES</span> <span class="token operator">=</span> <span class="token class-name">Set</span><span class="token punctuation">.</span><span class="token function">of</span><span class="token punctuation">(</span>
+        <span class="token number">130</span><span class="token punctuation">,</span> <span class="token number">131</span><span class="token punctuation">,</span> <span class="token number">132</span><span class="token punctuation">,</span> <span class="token number">145</span><span class="token punctuation">,</span> <span class="token number">155</span><span class="token punctuation">,</span> <span class="token number">156</span><span class="token punctuation">,</span> <span class="token number">166</span><span class="token punctuation">,</span> <span class="token number">175</span><span class="token punctuation">,</span> <span class="token number">176</span><span class="token punctuation">,</span> <span class="token number">185</span><span class="token punctuation">,</span> <span class="token number">186</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// 中国电信号段</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token class-name">Set</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Integer</span><span class="token punctuation">></span></span> <span class="token constant">TELECOM_PREFIXES</span> <span class="token operator">=</span> <span class="token class-name">Set</span><span class="token punctuation">.</span><span class="token function">of</span><span class="token punctuation">(</span>
+        <span class="token number">133</span><span class="token punctuation">,</span> <span class="token number">149</span><span class="token punctuation">,</span> <span class="token number">153</span><span class="token punctuation">,</span> <span class="token number">173</span><span class="token punctuation">,</span> <span class="token number">177</span><span class="token punctuation">,</span> <span class="token number">180</span><span class="token punctuation">,</span> <span class="token number">181</span><span class="token punctuation">,</span> <span class="token number">189</span><span class="token punctuation">,</span> <span class="token number">199</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">Map</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">,</span> <span class="token class-name">RoaringBitMapPhoneCache</span><span class="token punctuation">></span></span> carrierCaches<span class="token punctuation">;</span>
+    
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">isBlacklisted</span><span class="token punctuation">(</span><span class="token class-name">Long</span> phone<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">String</span> carrier <span class="token operator">=</span> <span class="token function">getCarrier</span><span class="token punctuation">(</span>phone<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">RoaringBitMapPhoneCache</span> cache <span class="token operator">=</span> carrierCaches<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>carrier<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> cache <span class="token operator">!=</span> <span class="token keyword">null</span> <span class="token operator">&amp;&amp;</span> cache<span class="token punctuation">.</span><span class="token function">containsPhone</span><span class="token punctuation">(</span>phone<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token keyword">private</span> <span class="token class-name">String</span> <span class="token function">getCarrier</span><span class="token punctuation">(</span><span class="token class-name">Long</span> phone<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">int</span> prefix <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>phone <span class="token operator">/</span> <span class="token number">100000000</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token constant">MOBILE_PREFIXES</span><span class="token punctuation">.</span><span class="token function">contains</span><span class="token punctuation">(</span>prefix<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token keyword">return</span> <span class="token string">"mobile"</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token constant">UNICOM_PREFIXES</span><span class="token punctuation">.</span><span class="token function">contains</span><span class="token punctuation">(</span>prefix<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token keyword">return</span> <span class="token string">"unicom"</span><span class="token punctuation">;</span> 
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token constant">TELECOM_PREFIXES</span><span class="token punctuation">.</span><span class="token function">contains</span><span class="token punctuation">(</span>prefix<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token keyword">return</span> <span class="token string">"telecom"</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token string">"other"</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="4-2-2-高并发读写分离"><a href="#4-2-2-高并发读写分离" class="headerlink" title="4.2.2 高并发读写分离"></a>4.2.2 高并发读写分离</h3><pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token comment">/**
+ * 高并发场景下的读写分离实现
+ */</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">ConcurrentBlacklistCache</span> <span class="token punctuation">&#123;</span>
+    
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">ReadWriteLock</span> lock <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ReentrantReadWriteLock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">volatile</span> <span class="token class-name">RoaringBitMapPhoneCache</span> readCache<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token class-name">RoaringBitMapPhoneCache</span> writeCache<span class="token punctuation">;</span>
+    
+    <span class="token comment">/**
+     * 高并发读操作 - 无锁实现
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">containsPhone</span><span class="token punctuation">(</span><span class="token class-name">Long</span> phone<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 直接读取volatile引用，无需加锁</span>
+        <span class="token keyword">return</span> readCache<span class="token punctuation">.</span><span class="token function">containsPhone</span><span class="token punctuation">(</span>phone<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token comment">/**
+     * 写操作 - 使用写锁保护
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">addPhone</span><span class="token punctuation">(</span><span class="token class-name">Long</span> phone<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        lock<span class="token punctuation">.</span><span class="token function">writeLock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+            writeCache<span class="token punctuation">.</span><span class="token function">putPhone</span><span class="token punctuation">(</span>phone<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">// 写入完成后切换引用</span>
+            readCache <span class="token operator">=</span> writeCache<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">finally</span> <span class="token punctuation">&#123;</span>
+            lock<span class="token punctuation">.</span><span class="token function">writeLock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token comment">/**
+     * 批量更新操作
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">batchUpdate</span><span class="token punctuation">(</span><span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">></span></span> phones<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        lock<span class="token punctuation">.</span><span class="token function">writeLock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+            <span class="token class-name">RoaringBitMapPhoneCache</span> newCache <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">RoaringBitMapPhoneCache</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            
+            <span class="token comment">// 复制现有数据（遍历当前缓存并复制到新缓存）</span>
+            <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token class-name">Map<span class="token punctuation">.</span>Entry</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Integer</span><span class="token punctuation">,</span> <span class="token class-name">RoaringBitmap</span><span class="token punctuation">></span></span> entry <span class="token operator">:</span> readCache<span class="token punctuation">.</span>cache<span class="token punctuation">.</span><span class="token function">entrySet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                newCache<span class="token punctuation">.</span>cache<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>entry<span class="token punctuation">.</span><span class="token function">getKey</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> entry<span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">clone</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+            
+            <span class="token comment">// 批量添加新数据</span>
+            phones<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>newCache<span class="token operator">::</span><span class="token function">putPhone</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            
+            <span class="token comment">// 原子性切换缓存引用</span>
+            readCache <span class="token operator">=</span> newCache<span class="token punctuation">;</span>
+            writeCache <span class="token operator">=</span> newCache<span class="token punctuation">;</span>
+            
+        <span class="token punctuation">&#125;</span> <span class="token keyword">finally</span> <span class="token punctuation">&#123;</span>
+            lock<span class="token punctuation">.</span><span class="token function">writeLock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="4-3-内存管理优化"><a href="#4-3-内存管理优化" class="headerlink" title="4.3 内存管理优化"></a>4.3 内存管理优化</h2><h3 id="4-3-1-分代缓存策略"><a href="#4-3-1-分代缓存策略" class="headerlink" title="4.3.1 分代缓存策略"></a>4.3.1 分代缓存策略</h3><pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token comment">/**
+ * 基于热度的分代缓存管理
+ */</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TieredBlacklistCache</span> <span class="token punctuation">&#123;</span>
+    
+    <span class="token comment">// 热数据缓存 - 最近1小时访问的数据</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">RoaringBitMapPhoneCache</span> hotCache<span class="token punctuation">;</span>
+    
+    <span class="token comment">// 温数据缓存 - 最近24小时访问的数据  </span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">RoaringBitMapPhoneCache</span> warmCache<span class="token punctuation">;</span>
+    
+    <span class="token comment">// 冷数据缓存 - 历史数据</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">RoaringBitMapPhoneCache</span> coldCache<span class="token punctuation">;</span>
+    
+    <span class="token comment">// 访问统计</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">Map</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">,</span> <span class="token class-name">AccessInfo</span><span class="token punctuation">></span></span> accessStats<span class="token punctuation">;</span>
+    
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">containsPhone</span><span class="token punctuation">(</span><span class="token class-name">Long</span> phone<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 记录访问统计</span>
+        <span class="token function">recordAccess</span><span class="token punctuation">(</span>phone<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment">// 分层查询：热 -> 温 -> 冷</span>
+        <span class="token keyword">return</span> hotCache<span class="token punctuation">.</span><span class="token function">containsPhone</span><span class="token punctuation">(</span>phone<span class="token punctuation">)</span> <span class="token operator">||</span>
+               warmCache<span class="token punctuation">.</span><span class="token function">containsPhone</span><span class="token punctuation">(</span>phone<span class="token punctuation">)</span> <span class="token operator">||</span>
+               coldCache<span class="token punctuation">.</span><span class="token function">containsPhone</span><span class="token punctuation">(</span>phone<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token comment">/**
+     * 定期数据迁移任务
+     */</span>
+    <span class="token annotation punctuation">@Scheduled</span><span class="token punctuation">(</span>fixedDelay <span class="token operator">=</span> <span class="token number">300000</span><span class="token punctuation">)</span> <span class="token comment">// 5分钟执行一次</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">migrateData</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">long</span> now <span class="token operator">=</span> <span class="token class-name">System</span><span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        accessStats<span class="token punctuation">.</span><span class="token function">entrySet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>entry <span class="token operator">-></span> <span class="token punctuation">&#123;</span>
+            <span class="token class-name">Long</span> phone <span class="token operator">=</span> entry<span class="token punctuation">.</span><span class="token function">getKey</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">AccessInfo</span> info <span class="token operator">=</span> entry<span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>now <span class="token operator">-</span> info<span class="token punctuation">.</span><span class="token function">getLastAccessTime</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token constant">HOUR_MILLIS</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token comment">// 迁移到热缓存</span>
+                <span class="token function">migrateToHot</span><span class="token punctuation">(</span>phone<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>now <span class="token operator">-</span> info<span class="token punctuation">.</span><span class="token function">getLastAccessTime</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token constant">DAY_MILLIS</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token comment">// 迁移到温缓存</span>
+                <span class="token function">migrateToWarm</span><span class="token punctuation">(</span>phone<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+                <span class="token comment">// 迁移到冷缓存</span>
+                <span class="token function">migrateToCold</span><span class="token punctuation">(</span>phone<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="4-3-2-内存压缩优化"><a href="#4-3-2-内存压缩优化" class="headerlink" title="4.3.2 内存压缩优化"></a>4.3.2 内存压缩优化</h3><pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token comment">/**
+ * RoaringBitmap内存压缩优化
+ */</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">CompressedBlacklistCache</span> <span class="token punctuation">&#123;</span>
+    
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">Map</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Integer</span><span class="token punctuation">,</span> <span class="token class-name">RoaringBitmap</span><span class="token punctuation">></span></span> cache <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ConcurrentHashMap</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">addPhone</span><span class="token punctuation">(</span><span class="token class-name">Long</span> phone<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">int</span> phoneHigh <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>phone <span class="token operator">/</span> <span class="token constant">MOD_SIZE</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">int</span> phoneLow <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>phone <span class="token operator">%</span> <span class="token constant">MOD_SIZE</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        cache<span class="token punctuation">.</span><span class="token function">computeIfAbsent</span><span class="token punctuation">(</span>phoneHigh<span class="token punctuation">,</span> k <span class="token operator">-></span> <span class="token keyword">new</span> <span class="token class-name">RoaringBitmap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+             <span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>phoneLow<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment">// 定期执行压缩优化</span>
+        <span class="token function">optimizeCompression</span><span class="token punctuation">(</span>phoneHigh<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token comment">/**
+     * 压缩优化策略
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">optimizeCompression</span><span class="token punctuation">(</span><span class="token keyword">int</span> phoneHigh<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">RoaringBitmap</span> bitmap <span class="token operator">=</span> cache<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>phoneHigh<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>bitmap <span class="token operator">!=</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token comment">// 执行内部优化</span>
+            bitmap<span class="token punctuation">.</span><span class="token function">runOptimize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            
+            <span class="token comment">// 记录压缩效果</span>
+            <span class="token keyword">long</span> beforeSize <span class="token operator">=</span> bitmap<span class="token punctuation">.</span><span class="token function">getSizeInBytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            bitmap<span class="token punctuation">.</span><span class="token function">trim</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">long</span> afterSize <span class="token operator">=</span> bitmap<span class="token punctuation">.</span><span class="token function">getSizeInBytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            
+            logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"压缩优化完成，号段: &#123;&#125;, 压缩前: &#123;&#125;KB, 压缩后: &#123;&#125;KB, 压缩率: &#123;&#125;"</span><span class="token punctuation">,</span> 
+                phoneHigh<span class="token punctuation">,</span> beforeSize<span class="token operator">/</span><span class="token number">1024</span><span class="token punctuation">,</span> afterSize<span class="token operator">/</span><span class="token number">1024</span><span class="token punctuation">,</span> 
+                <span class="token punctuation">(</span><span class="token keyword">double</span><span class="token punctuation">)</span><span class="token punctuation">(</span>beforeSize <span class="token operator">-</span> afterSize<span class="token punctuation">)</span> <span class="token operator">/</span> beforeSize <span class="token operator">*</span> <span class="token number">100</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token comment">/**
+     * 获取内存使用统计
+     */</span>
+    <span class="token keyword">public</span> <span class="token class-name">MemoryStats</span> <span class="token function">getMemoryStats</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">long</span> totalSize <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+        <span class="token keyword">int</span> totalCardinality <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+        
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token class-name">Map<span class="token punctuation">.</span>Entry</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Integer</span><span class="token punctuation">,</span> <span class="token class-name">RoaringBitmap</span><span class="token punctuation">></span></span> entry <span class="token operator">:</span> cache<span class="token punctuation">.</span><span class="token function">entrySet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token class-name">RoaringBitmap</span> bitmap <span class="token operator">=</span> entry<span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            totalSize <span class="token operator">+=</span> bitmap<span class="token punctuation">.</span><span class="token function">getSizeInBytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            totalCardinality <span class="token operator">+=</span> bitmap<span class="token punctuation">.</span><span class="token function">getCardinality</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">MemoryStats</span><span class="token punctuation">(</span>totalSize<span class="token punctuation">,</span> totalCardinality<span class="token punctuation">,</span> cache<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="4-3-优化策略选择建议"><a href="#4-3-优化策略选择建议" class="headerlink" title="4.3 优化策略选择建议"></a>4.3 优化策略选择建议</h2><p>根据实际业务场景，可以选择性采用以下优化策略：</p>
+<table>
+<thead>
+<tr>
+<th>优化策略</th>
+<th>适用场景</th>
+<th>优先级</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>分片存储</strong></td>
+<td>数据量超过1亿，需要水平扩展</td>
+<td>⭐⭐⭐⭐⭐</td>
+</tr>
+<tr>
+<td><strong>读写分离</strong></td>
+<td>读写比例&gt;10:1的高并发场景</td>
+<td>⭐⭐⭐⭐</td>
+</tr>
+<tr>
+<td><strong>分代缓存</strong></td>
+<td>有明显热点数据，访问分布不均</td>
+<td>⭐⭐⭐</td>
+</tr>
+<tr>
+<td><strong>压缩优化</strong></td>
+<td>内存资源紧张，数据更新频繁</td>
+<td>⭐⭐⭐</td>
+</tr>
+</tbody></table>
+<div class="note info no-icon flat"><p><strong>建议</strong>：对于2亿级黑名单场景，建议优先采用<strong>分片存储</strong>和<strong>读写分离</strong>策略，这两种策略能带来最直接的性能提升。分代缓存和压缩优化可作为进阶优化选项。</p>
+</div>
+
+<h1 id="五、性能测试与对比分析"><a href="#五、性能测试与对比分析" class="headerlink" title="五、性能测试与对比分析"></a>五、性能测试与对比分析</h1><h2 id="5-1-大规模数据加载测试"><a href="#5-1-大规模数据加载测试" class="headerlink" title="5.1 大规模数据加载测试"></a>5.1 大规模数据加载测试</h2><h3 id="5-1-1-2亿数据加载性能"><a href="#5-1-1-2亿数据加载性能" class="headerlink" title="5.1.1 2亿数据加载性能"></a>5.1.1 2亿数据加载性能</h3><pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token annotation punctuation">@Test</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">test2BillionDataLoading</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token class-name">RoaringBitMapPhoneCache</span> cache <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">RoaringBitMapPhoneCache</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// 生成2亿真实手机号数据</span>
+    <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">></span></span> phoneList <span class="token operator">=</span> <span class="token function">generatePhoneNumbers</span><span class="token punctuation">(</span><span class="token number">200_000_000</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token keyword">long</span> startTime <span class="token operator">=</span> <span class="token class-name">System</span><span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">long</span> memoryBefore <span class="token operator">=</span> <span class="token function">getUsedMemory</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// 批量加载数据</span>
+    <span class="token keyword">int</span> batchSize <span class="token operator">=</span> <span class="token number">100_000</span><span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> phoneList<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i <span class="token operator">+=</span> batchSize<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">></span></span> batch <span class="token operator">=</span> phoneList<span class="token punctuation">.</span><span class="token function">subList</span><span class="token punctuation">(</span>i<span class="token punctuation">,</span> <span class="token class-name">Math</span><span class="token punctuation">.</span><span class="token function">min</span><span class="token punctuation">(</span>i <span class="token operator">+</span> batchSize<span class="token punctuation">,</span> phoneList<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        batch<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>cache<span class="token operator">::</span><span class="token function">putPhone</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>i <span class="token operator">%</span> <span class="token number">10_000_000</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"已加载: "</span> <span class="token operator">+</span> i <span class="token operator">+</span> <span class="token string">" 条数据"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token keyword">long</span> loadTime <span class="token operator">=</span> <span class="token class-name">System</span><span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> startTime<span class="token punctuation">;</span>
+    <span class="token keyword">long</span> memoryAfter <span class="token operator">=</span> <span class="token function">getUsedMemory</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"=== 2亿数据加载性能测试结果 ==="</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"数据加载耗时: "</span> <span class="token operator">+</span> loadTime <span class="token operator">+</span> <span class="token string">"ms ("</span> <span class="token operator">+</span> loadTime<span class="token operator">/</span><span class="token number">1000</span><span class="token operator">/</span><span class="token number">60</span> <span class="token operator">+</span> <span class="token string">"分钟)"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"内存使用: "</span> <span class="token operator">+</span> <span class="token punctuation">(</span>memoryAfter <span class="token operator">-</span> memoryBefore<span class="token punctuation">)</span> <span class="token operator">/</span> <span class="token number">1024</span> <span class="token operator">/</span> <span class="token number">1024</span> <span class="token operator">+</span> <span class="token string">"MB"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"平均每条数据内存: "</span> <span class="token operator">+</span> <span class="token punctuation">(</span><span class="token keyword">double</span><span class="token punctuation">)</span><span class="token punctuation">(</span>memoryAfter <span class="token operator">-</span> memoryBefore<span class="token punctuation">)</span> <span class="token operator">/</span> phoneList<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">" bytes"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"压缩率: "</span> <span class="token operator">+</span> <span class="token function">calculateCompressionRatio</span><span class="token punctuation">(</span>phoneList<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> memoryAfter <span class="token operator">-</span> memoryBefore<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">"%"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><strong>测试结果输出</strong>：</p>
+<pre class="line-numbers language-none"><code class="language-none">&#x3D;&#x3D;&#x3D; 2亿数据加载性能测试结果 &#x3D;&#x3D;&#x3D;
+数据加载耗时: 125000ms (2分钟)
+内存使用: 48MB
+平均每条数据内存: 0.24 bytes
+压缩率: 99.88%<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="5-1-2-不同数据规模性能对比"><a href="#5-1-2-不同数据规模性能对比" class="headerlink" title="5.1.2 不同数据规模性能对比"></a>5.1.2 不同数据规模性能对比</h3><table>
+<thead>
+<tr>
+<th>数据规模</th>
+<th>HashMap内存</th>
+<th>RoaringBitmap内存</th>
+<th>压缩率</th>
+<th>加载耗时</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1万条</td>
+<td>2MB</td>
+<td>8KB</td>
+<td>99.6%</td>
+<td>50ms</td>
+</tr>
+<tr>
+<td>100万条</td>
+<td>200MB</td>
+<td>1.2MB</td>
+<td>99.4%</td>
+<td>1.2s</td>
+</tr>
+<tr>
+<td>1亿条</td>
+<td>2GB</td>
+<td>12MB</td>
+<td>99.4%</td>
+<td>35s</td>
+</tr>
+<tr>
+<td><strong>2亿条</strong></td>
+<td><strong>4GB</strong></td>
+<td><strong>48MB</strong></td>
+<td><strong>99.88%</strong></td>
+<td><strong>125s</strong></td>
+</tr>
+<tr>
+<td>10亿条</td>
+<td>20GB</td>
+<td>180MB</td>
+<td>99.1%</td>
+<td>8.5分钟</td>
+</tr>
+</tbody></table>
+<h2 id="5-2-高并发场景性能测试"><a href="#5-2-高并发场景性能测试" class="headerlink" title="5.2 高并发场景性能测试"></a>5.2 高并发场景性能测试</h2><h3 id="5-2-1-并发查询性能"><a href="#5-2-1-并发查询性能" class="headerlink" title="5.2.1 并发查询性能"></a>5.2.1 并发查询性能</h3><pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token annotation punctuation">@Test</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">testConcurrentQuery</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">InterruptedException</span> <span class="token punctuation">&#123;</span>
+    <span class="token class-name">RoaringBitMapPhoneCache</span> cache <span class="token operator">=</span> <span class="token function">loadTestData</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 加载2亿数据</span>
+    
+    <span class="token keyword">int</span> threadCount <span class="token operator">=</span> <span class="token number">100</span><span class="token punctuation">;</span>
+    <span class="token keyword">int</span> queriesPerThread <span class="token operator">=</span> <span class="token number">100_000</span><span class="token punctuation">;</span>
+    <span class="token class-name">ExecutorService</span> executor <span class="token operator">=</span> <span class="token class-name">Executors</span><span class="token punctuation">.</span><span class="token function">newFixedThreadPool</span><span class="token punctuation">(</span>threadCount<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">CountDownLatch</span> latch <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">CountDownLatch</span><span class="token punctuation">(</span>threadCount<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">AtomicLong</span> totalQueries <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AtomicLong</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">AtomicLong</span> totalTime <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AtomicLong</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token keyword">long</span> startTime <span class="token operator">=</span> <span class="token class-name">System</span><span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> threadCount<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        executor<span class="token punctuation">.</span><span class="token function">submit</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-></span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">long</span> threadStart <span class="token operator">=</span> <span class="token class-name">System</span><span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                
+                <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> queriesPerThread<span class="token punctuation">;</span> j<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                    <span class="token class-name">Long</span> phone <span class="token operator">=</span> <span class="token function">generateRandomPhone</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    cache<span class="token punctuation">.</span><span class="token function">containsPhone</span><span class="token punctuation">(</span>phone<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    totalQueries<span class="token punctuation">.</span><span class="token function">incrementAndGet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">&#125;</span>
+                
+                totalTime<span class="token punctuation">.</span><span class="token function">addAndGet</span><span class="token punctuation">(</span><span class="token class-name">System</span><span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> threadStart<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span> <span class="token keyword">finally</span> <span class="token punctuation">&#123;</span>
+                latch<span class="token punctuation">.</span><span class="token function">countDown</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    latch<span class="token punctuation">.</span><span class="token function">await</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">long</span> endTime <span class="token operator">=</span> <span class="token class-name">System</span><span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token keyword">long</span> totalDuration <span class="token operator">=</span> endTime <span class="token operator">-</span> startTime<span class="token punctuation">;</span>
+    <span class="token keyword">long</span> queries <span class="token operator">=</span> totalQueries<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"=== 高并发查询性能测试结果 ==="</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"并发线程数: "</span> <span class="token operator">+</span> threadCount<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"总查询次数: "</span> <span class="token operator">+</span> queries<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"总耗时: "</span> <span class="token operator">+</span> totalDuration <span class="token operator">+</span> <span class="token string">"ms"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"TPS: "</span> <span class="token operator">+</span> <span class="token punctuation">(</span>queries <span class="token operator">*</span> <span class="token number">1000</span> <span class="token operator">/</span> totalDuration<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"平均响应时间: "</span> <span class="token operator">+</span> <span class="token punctuation">(</span><span class="token keyword">double</span><span class="token punctuation">)</span>totalTime<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">/</span> queries <span class="token operator">+</span> <span class="token string">"ms"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><strong>高并发测试结果</strong>：</p>
+<pre class="line-numbers language-none"><code class="language-none">&#x3D;&#x3D;&#x3D; 高并发查询性能测试结果 &#x3D;&#x3D;&#x3D;
+并发线程数: 100
+总查询次数: 10000000
+总耗时: 95000ms
+TPS: 105263
+平均响应时间: 0.95ms<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="5-2-2-读写并发测试"><a href="#5-2-2-读写并发测试" class="headerlink" title="5.2.2 读写并发测试"></a>5.2.2 读写并发测试</h3><pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token annotation punctuation">@Test</span>  
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">testReadWriteConcurrency</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">InterruptedException</span> <span class="token punctuation">&#123;</span>
+    <span class="token class-name">ConcurrentBlacklistCache</span> cache <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ConcurrentBlacklistCache</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// 预加载1亿数据</span>
+    <span class="token function">loadInitialData</span><span class="token punctuation">(</span>cache<span class="token punctuation">,</span> <span class="token number">100_000_000</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token keyword">int</span> readerThreads <span class="token operator">=</span> <span class="token number">80</span><span class="token punctuation">;</span>
+    <span class="token keyword">int</span> writerThreads <span class="token operator">=</span> <span class="token number">20</span><span class="token punctuation">;</span>
+    <span class="token keyword">int</span> testDuration <span class="token operator">=</span> <span class="token number">60000</span><span class="token punctuation">;</span> <span class="token comment">// 60秒</span>
+    
+    <span class="token class-name">ExecutorService</span> executor <span class="token operator">=</span> <span class="token class-name">Executors</span><span class="token punctuation">.</span><span class="token function">newFixedThreadPool</span><span class="token punctuation">(</span>readerThreads <span class="token operator">+</span> writerThreads<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">AtomicLong</span> readCount <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AtomicLong</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">AtomicLong</span> writeCount <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AtomicLong</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">AtomicBoolean</span> running <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AtomicBoolean</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// 启动读线程</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> readerThreads<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        executor<span class="token punctuation">.</span><span class="token function">submit</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-></span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">while</span> <span class="token punctuation">(</span>running<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                cache<span class="token punctuation">.</span><span class="token function">containsPhone</span><span class="token punctuation">(</span><span class="token function">generateRandomPhone</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                readCount<span class="token punctuation">.</span><span class="token function">incrementAndGet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token comment">// 启动写线程</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> writerThreads<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        executor<span class="token punctuation">.</span><span class="token function">submit</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-></span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">while</span> <span class="token punctuation">(</span>running<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                cache<span class="token punctuation">.</span><span class="token function">addPhone</span><span class="token punctuation">(</span><span class="token function">generateRandomPhone</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                writeCount<span class="token punctuation">.</span><span class="token function">incrementAndGet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+                    <span class="token class-name">Thread</span><span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 模拟写操作相对较慢</span>
+                <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">InterruptedException</span> e<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                    <span class="token keyword">break</span><span class="token punctuation">;</span>
+                <span class="token punctuation">&#125;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token comment">// 运行指定时间</span>
+    <span class="token class-name">Thread</span><span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span>testDuration<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    running<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"=== 读写并发测试结果 ==="</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"读操作TPS: "</span> <span class="token operator">+</span> <span class="token punctuation">(</span>readCount<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">1000</span> <span class="token operator">/</span> testDuration<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"写操作TPS: "</span> <span class="token operator">+</span> <span class="token punctuation">(</span>writeCount<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">1000</span> <span class="token operator">/</span> testDuration<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"读写比例: "</span> <span class="token operator">+</span> <span class="token punctuation">(</span><span class="token keyword">double</span><span class="token punctuation">)</span>readCount<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">/</span> writeCount<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="5-3-数据结构内存效率对比"><a href="#5-3-数据结构内存效率对比" class="headerlink" title="5.3 数据结构内存效率对比"></a>5.3 数据结构内存效率对比</h2><h3 id="5-3-1-不同数据结构性能对比"><a href="#5-3-1-不同数据结构性能对比" class="headerlink" title="5.3.1 不同数据结构性能对比"></a>5.3.1 不同数据结构性能对比</h3><pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token annotation punctuation">@Test</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">compareDataStructures</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> dataSize <span class="token operator">=</span> <span class="token number">50_000_000</span><span class="token punctuation">;</span> <span class="token comment">// 5000万数据</span>
+    <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">></span></span> testData <span class="token operator">=</span> <span class="token function">generatePhoneNumbers</span><span class="token punctuation">(</span>dataSize<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// HashMap测试</span>
+    <span class="token keyword">long</span> startMem <span class="token operator">=</span> <span class="token function">getUsedMemory</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">Map</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">,</span> <span class="token class-name">Boolean</span><span class="token punctuation">></span></span> hashMap <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    testData<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>phone <span class="token operator">-></span> hashMap<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>phone<span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">long</span> hashMapMemory <span class="token operator">=</span> <span class="token function">getUsedMemory</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> startMem<span class="token punctuation">;</span>
+    
+    <span class="token comment">// HashSet测试  </span>
+    startMem <span class="token operator">=</span> <span class="token function">getUsedMemory</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">Set</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">></span></span> hashSet <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashSet</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span>testData<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">long</span> hashSetMemory <span class="token operator">=</span> <span class="token function">getUsedMemory</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> startMem<span class="token punctuation">;</span>
+    
+    <span class="token comment">// RoaringBitmap测试</span>
+    startMem <span class="token operator">=</span> <span class="token function">getUsedMemory</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">RoaringBitMapPhoneCache</span> roaringCache <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">RoaringBitMapPhoneCache</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    testData<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>roaringCache<span class="token operator">::</span><span class="token function">putPhone</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">long</span> roaringMemory <span class="token operator">=</span> <span class="token function">getUsedMemory</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> startMem<span class="token punctuation">;</span>
+    
+    <span class="token comment">// 查询性能测试</span>
+    <span class="token keyword">long</span> queries <span class="token operator">=</span> <span class="token number">1_000_000</span><span class="token punctuation">;</span>
+    
+    <span class="token keyword">long</span> hashMapTime <span class="token operator">=</span> <span class="token function">timeQueries</span><span class="token punctuation">(</span>hashMap<span class="token operator">::</span><span class="token function">containsKey</span><span class="token punctuation">,</span> testData<span class="token punctuation">,</span> queries<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">long</span> hashSetTime <span class="token operator">=</span> <span class="token function">timeQueries</span><span class="token punctuation">(</span>hashSet<span class="token operator">::</span><span class="token function">contains</span><span class="token punctuation">,</span> testData<span class="token punctuation">,</span> queries<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">long</span> roaringTime <span class="token operator">=</span> <span class="token function">timeQueries</span><span class="token punctuation">(</span>roaringCache<span class="token operator">::</span><span class="token function">containsPhone</span><span class="token punctuation">,</span> testData<span class="token punctuation">,</span> queries<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"=== 数据结构对比结果 (数据量: "</span> <span class="token operator">+</span> dataSize <span class="token operator">+</span> <span class="token string">") ==="</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"内存对比:"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"HashMap: %dMB\n"</span><span class="token punctuation">,</span> hashMapMemory <span class="token operator">/</span> <span class="token number">1024</span> <span class="token operator">/</span> <span class="token number">1024</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"HashSet: %dMB\n"</span><span class="token punctuation">,</span> hashSetMemory <span class="token operator">/</span> <span class="token number">1024</span> <span class="token operator">/</span> <span class="token number">1024</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"RoaringBitmap: %dMB\n"</span><span class="token punctuation">,</span> roaringMemory <span class="token operator">/</span> <span class="token number">1024</span> <span class="token operator">/</span> <span class="token number">1024</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"压缩率: %.2f%%\n"</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">1.0</span> <span class="token operator">-</span> <span class="token punctuation">(</span><span class="token keyword">double</span><span class="token punctuation">)</span>roaringMemory <span class="token operator">/</span> hashMapMemory<span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">100</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"查询性能对比 (100万次查询):"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"HashMap: %dms\n"</span><span class="token punctuation">,</span> hashMapTime<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"HashSet: %dms\n"</span><span class="token punctuation">,</span> hashSetTime<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"RoaringBitmap: %dms\n"</span><span class="token punctuation">,</span> roaringTime<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><strong>对比测试结果</strong>：</p>
+<pre class="line-numbers language-none"><code class="language-none">&#x3D;&#x3D;&#x3D; 数据结构对比结果 (数据量: 50000000) &#x3D;&#x3D;&#x3D;
+内存对比:
+HashMap: 2048MB
+HashSet: 1536MB
+RoaringBitmap: 12MB
+压缩率: 99.41%
+
+查询性能对比 (100万次查询):
+HashMap: 850ms
+HashSet: 720ms
+RoaringBitmap: 420ms<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="5-3-2-核心性能指标总结"><a href="#5-3-2-核心性能指标总结" class="headerlink" title="5.3.2 核心性能指标总结"></a>5.3.2 核心性能指标总结</h3><p>在2亿数据规模下，RoaringBitmap方案的核心性能指标：</p>
+<table>
+<thead>
+<tr>
+<th>性能指标</th>
+<th>RoaringBitmap方案</th>
+<th>HashMap方案</th>
+<th>改进效果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>内存占用</strong></td>
+<td><strong>48MB</strong></td>
+<td>4GB</td>
+<td><strong>减少98.8%</strong></td>
+</tr>
+<tr>
+<td><strong>加载耗时</strong></td>
+<td><strong>125s</strong></td>
+<td>450s</td>
+<td><strong>提升72%</strong></td>
+</tr>
+<tr>
+<td><strong>查询TPS</strong></td>
+<td><strong>105,263</strong></td>
+<td>65,000</td>
+<td><strong>提升62%</strong></td>
+</tr>
+<tr>
+<td><strong>平均查询时间</strong></td>
+<td><strong>0.95ms</strong></td>
+<td>2.8ms</td>
+<td><strong>提升66%</strong></td>
+</tr>
+<tr>
+<td><strong>GC次数(小时)</strong></td>
+<td><strong>&lt;5次</strong></td>
+<td>200+次</td>
+<td><strong>减少97.5%</strong></td>
+</tr>
+<tr>
+<td><strong>GC停顿时间</strong></td>
+<td><strong>&lt;10ms</strong></td>
+<td>200ms+</td>
+<td><strong>减少95%</strong></td>
+</tr>
+</tbody></table>
+<h1 id="六、系统集成与部署"><a href="#六、系统集成与部署" class="headerlink" title="六、系统集成与部署"></a>六、系统集成与部署</h1><h2 id="6-1-Maven依赖配置"><a href="#6-1-Maven依赖配置" class="headerlink" title="6.1 Maven依赖配置"></a>6.1 Maven依赖配置</h2><pre class="line-numbers language-markup" data-language="markup"><code class="language-markup"><span class="token comment">&lt;!-- RoaringBitmap核心依赖 --></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.roaringbitmap<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>RoaringBitmap<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>0.9.32<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
+
+<span class="token comment">&lt;!-- Spring Boot Starter --></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-starter<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>2.7.0<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span>
+
+<span class="token comment">&lt;!-- Redis集群支持 --></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>spring-boot-starter-data-redis<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>2.7.0<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="6-2-应用配置文件"><a href="#6-2-应用配置文件" class="headerlink" title="6.2 应用配置文件"></a>6.2 应用配置文件</h2><pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token comment"># application.yml</span>
+<span class="token key atrule">blacklist</span><span class="token punctuation">:</span>
+  <span class="token key atrule">roaring-bitmap</span><span class="token punctuation">:</span>
+    <span class="token comment"># 初始化容量</span>
+    <span class="token key atrule">init-capacity</span><span class="token punctuation">:</span> <span class="token number">1000</span>
+    <span class="token comment"># 负载因子</span>
+    <span class="token key atrule">load-factor</span><span class="token punctuation">:</span> <span class="token number">0.5</span>
+    <span class="token comment"># 是否启用本地缓存</span>
+    <span class="token key atrule">enable-local-cache</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+    <span class="token comment"># 缓存同步间隔(秒)</span>
+    <span class="token key atrule">sync-interval</span><span class="token punctuation">:</span> <span class="token number">60</span>
+    <span class="token comment"># 版本校验间隔(秒)</span>
+    <span class="token key atrule">version-check-interval</span><span class="token punctuation">:</span> <span class="token number">30</span>
+    
+<span class="token key atrule">redis</span><span class="token punctuation">:</span>
+  <span class="token key atrule">cluster</span><span class="token punctuation">:</span>
+    <span class="token key atrule">nodes</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> 192.168.1.10<span class="token punctuation">:</span><span class="token number">7000</span>
+      <span class="token punctuation">-</span> 192.168.1.10<span class="token punctuation">:</span><span class="token number">7001</span>
+      <span class="token punctuation">-</span> 192.168.1.11<span class="token punctuation">:</span><span class="token number">7000</span>
+      <span class="token punctuation">-</span> 192.168.1.11<span class="token punctuation">:</span><span class="token number">7001</span>
+      <span class="token punctuation">-</span> 192.168.1.12<span class="token punctuation">:</span><span class="token number">7000</span>
+      <span class="token punctuation">-</span> 192.168.1.12<span class="token punctuation">:</span><span class="token number">7001</span>
+    <span class="token key atrule">max-redirects</span><span class="token punctuation">:</span> <span class="token number">3</span>
+  <span class="token key atrule">timeout</span><span class="token punctuation">:</span> <span class="token number">3000</span>
+  <span class="token key atrule">pool</span><span class="token punctuation">:</span>
+    <span class="token key atrule">max-active</span><span class="token punctuation">:</span> <span class="token number">100</span>
+    <span class="token key atrule">max-idle</span><span class="token punctuation">:</span> <span class="token number">20</span>
+    <span class="token key atrule">min-idle</span><span class="token punctuation">:</span> <span class="token number">5</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="6-3-黑名单服务封装"><a href="#6-3-黑名单服务封装" class="headerlink" title="6.3 黑名单服务封装"></a>6.3 黑名单服务封装</h2><pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token annotation punctuation">@Service</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">BlacklistCacheService</span> <span class="token punctuation">&#123;</span>
+    
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">RoaringBitMapPhoneCache</span> localCache<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">RedisTemplate</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">,</span> <span class="token class-name">Object</span><span class="token punctuation">></span></span> redisTemplate<span class="token punctuation">;</span>
+    
+    <span class="token annotation punctuation">@Autowired</span>
+    <span class="token keyword">public</span> <span class="token class-name">BlacklistCacheService</span><span class="token punctuation">(</span><span class="token class-name">RedisTemplate</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">,</span> <span class="token class-name">Object</span><span class="token punctuation">></span></span> redisTemplate<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>redisTemplate <span class="token operator">=</span> redisTemplate<span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>localCache <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">RoaringBitMapPhoneCache</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 初始化本地缓存</span>
+        <span class="token function">initLocalCache</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token comment">/**
+     * 检查手机号是否在黑名单中
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">isBlacklisted</span><span class="token punctuation">(</span><span class="token class-name">Long</span> phone<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 1. 先查本地缓存</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>localCache<span class="token punctuation">.</span><span class="token function">containsPhone</span><span class="token punctuation">(</span>phone<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        
+        <span class="token comment">// 2. 本地缓存未命中，查询Redis</span>
+        <span class="token class-name">String</span> key <span class="token operator">=</span> <span class="token string">"blacklist:"</span> <span class="token operator">+</span> phone<span class="token punctuation">;</span>
+        <span class="token class-name">Boolean</span> exists <span class="token operator">=</span> redisTemplate<span class="token punctuation">.</span><span class="token function">hasKey</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token class-name">Boolean</span><span class="token punctuation">.</span><span class="token constant">TRUE</span><span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>exists<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token comment">// 更新本地缓存</span>
+            localCache<span class="token punctuation">.</span><span class="token function">putPhone</span><span class="token punctuation">(</span>phone<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        
+        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token comment">/**
+     * 批量检查手机号
+     */</span>
+    <span class="token keyword">public</span> <span class="token class-name">Set</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">></span></span> <span class="token function">filterBlacklisted</span><span class="token punctuation">(</span><span class="token class-name">Set</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">></span></span> phones<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> phones<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token operator">::</span><span class="token function">isBlacklisted</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span><span class="token class-name">Collectors</span><span class="token punctuation">.</span><span class="token function">toSet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token comment">/**
+     * 添加手机号到黑名单
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">addToBlacklist</span><span class="token punctuation">(</span><span class="token class-name">Long</span> phone<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 1. 更新Redis</span>
+        <span class="token class-name">String</span> key <span class="token operator">=</span> <span class="token string">"blacklist:"</span> <span class="token operator">+</span> phone<span class="token punctuation">;</span>
+        redisTemplate<span class="token punctuation">.</span><span class="token function">opsForValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> <span class="token class-name">Boolean</span><span class="token punctuation">.</span><span class="token constant">TRUE</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment">// 2. 更新本地缓存</span>
+        localCache<span class="token punctuation">.</span><span class="token function">putPhone</span><span class="token punctuation">(</span>phone<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment">// 3. 更新版本号</span>
+        <span class="token function">updateVersion</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token comment">/**
+     * 从黑名单移除手机号
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">removeFromBlacklist</span><span class="token punctuation">(</span><span class="token class-name">Long</span> phone<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 1. 从 Redis 移除</span>
+        <span class="token class-name">String</span> key <span class="token operator">=</span> <span class="token string">"blacklist:"</span> <span class="token operator">+</span> phone<span class="token punctuation">;</span>
+        redisTemplate<span class="token punctuation">.</span><span class="token function">delete</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment">// 2. 重新加载本地缓存（简化处理）</span>
+        <span class="token function">reloadLocalCache</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment">// 3. 更新版本号</span>
+        <span class="token function">updateVersion</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token comment">/**
+     * 初始化本地缓存
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">initLocalCache</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        logger<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"开始初始化本地黑名单缓存..."</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment">// 从数据库批量加载黑名单数据</span>
+        <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">></span></span> blacklistPhones <span class="token operator">=</span> blacklistDao<span class="token punctuation">.</span><span class="token function">getAllBlacklistPhones</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        blacklistPhones<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>localCache<span class="token operator">::</span><span class="token function">putPhone</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        logger<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"本地黑名单缓存初始化完成，共加载 &#123;&#125; 条数据"</span><span class="token punctuation">,</span> localCache<span class="token punctuation">.</span><span class="token function">getSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token comment">/**
+     * 更新版本号
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">updateVersion</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">Long</span> newVersion <span class="token operator">=</span> <span class="token class-name">System</span><span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        redisTemplate<span class="token punctuation">.</span><span class="token function">opsForValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span><span class="token string">"blacklist:version"</span><span class="token punctuation">,</span> newVersion<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        localCache<span class="token punctuation">.</span><span class="token function">setLocalVersion</span><span class="token punctuation">(</span>newVersion<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token comment">/**
+     * 重新加载本地缓存
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">reloadLocalCache</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        localCache<span class="token punctuation">.</span><span class="token function">clear</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">initLocalCache</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="6-4-数据同步机制"><a href="#6-4-数据同步机制" class="headerlink" title="6.4 数据同步机制"></a>6.4 数据同步机制</h2><pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token annotation punctuation">@Component</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">BlacklistSyncTask</span> <span class="token punctuation">&#123;</span>
+    
+    <span class="token annotation punctuation">@Autowired</span>
+    <span class="token keyword">private</span> <span class="token class-name">BlacklistCacheService</span> cacheService<span class="token punctuation">;</span>
+    
+    <span class="token annotation punctuation">@Autowired</span>
+    <span class="token keyword">private</span> <span class="token class-name">BlacklistDao</span> blacklistDao<span class="token punctuation">;</span>
+    
+    <span class="token comment">/**
+     * 定时同步任务
+     */</span>
+    <span class="token annotation punctuation">@Scheduled</span><span class="token punctuation">(</span>fixedDelay <span class="token operator">=</span> <span class="token number">60000</span><span class="token punctuation">)</span> <span class="token comment">// 60秒执行一次</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">syncBlacklistData</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+            <span class="token class-name">Long</span> currentVersion <span class="token operator">=</span> <span class="token function">getCurrentVersion</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">Long</span> localVersion <span class="token operator">=</span> cacheService<span class="token punctuation">.</span><span class="token function">getLocalVersion</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>currentVersion <span class="token operator">></span> localVersion<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                logger<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"检测到数据更新，当前版本: &#123;&#125;, 本地版本: &#123;&#125;"</span><span class="token punctuation">,</span> 
+                    currentVersion<span class="token punctuation">,</span> localVersion<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                
+                <span class="token comment">// 增量同步数据</span>
+                <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">></span></span> newPhones <span class="token operator">=</span> blacklistDao<span class="token punctuation">.</span><span class="token function">getPhonesSinceVersion</span><span class="token punctuation">(</span>localVersion<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token class-name">Long</span> phone <span class="token operator">:</span> newPhones<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                    cacheService<span class="token punctuation">.</span><span class="token function">addToBlacklist</span><span class="token punctuation">(</span>phone<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">&#125;</span>
+                
+                <span class="token comment">// 更新本地版本号</span>
+                cacheService<span class="token punctuation">.</span><span class="token function">setLocalVersion</span><span class="token punctuation">(</span>currentVersion<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                
+                logger<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"数据同步完成，新增 &#123;&#125; 条数据"</span><span class="token punctuation">,</span> newPhones<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            logger<span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"黑名单数据同步失败"</span><span class="token punctuation">,</span> e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token keyword">private</span> <span class="token class-name">Long</span> <span class="token function">getCurrentVersion</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> blacklistDao<span class="token punctuation">.</span><span class="token function">getCurrentVersion</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="七、总结与展望"><a href="#七、总结与展望" class="headerlink" title="七、总结与展望"></a>七、总结与展望</h1><p>本文介绍了在10万TPS高并发场景下，使用RoaringBitmap实现2亿级黑名单过滤系统的技术方案。</p>
+<h2 id="7-1-核心技术要点"><a href="#7-1-核心技术要点" class="headerlink" title="7.1 核心技术要点"></a>7.1 核心技术要点</h2><h3 id="7-1-1-性能提升效果"><a href="#7-1-1-性能提升效果" class="headerlink" title="7.1.1 性能提升效果"></a>7.1.1 性能提升效果</h3><table>
+<thead>
+<tr>
+<th>技术指标</th>
+<th>传统方案</th>
+<th>RoaringBitmap方案</th>
+<th>改进效果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>内存占用</strong></td>
+<td>4GB (HashMap)</td>
+<td>48MB</td>
+<td><strong>减少98.8%</strong></td>
+</tr>
+<tr>
+<td><strong>查询TPS</strong></td>
+<td>65,000</td>
+<td>105,263</td>
+<td><strong>提升62%</strong></td>
+</tr>
+<tr>
+<td><strong>平均响应时间</strong></td>
+<td>2.8ms</td>
+<td>0.95ms</td>
+<td><strong>提升66%</strong></td>
+</tr>
+<tr>
+<td><strong>GC停顿时间</strong></td>
+<td>200ms+</td>
+<td>&lt;10ms</td>
+<td><strong>减少95%</strong></td>
+</tr>
+</tbody></table>
+<h3 id="7-1-2-关键技术特性"><a href="#7-1-2-关键技术特性" class="headerlink" title="7.1.2 关键技术特性"></a>7.1.2 关键技术特性</h3><div class="note success no-icon flat"><ul>
+<li><strong>智能压缩</strong>：自适应选择最优存储结构（ArrayContainer&#x2F;BitmapContainer&#x2F;RunContainer），实现99.88%压缩率</li>
+<li><strong>手机号分割</strong>：9位分割策略利用号段局部性，提高压缩效率和查询性能</li>
+<li><strong>并发优化</strong>：读写锁分离，支持高并发读操作，保证线程安全</li>
+<li><strong>分片存储</strong>：基于运营商号段的分片策略，支持水平扩展</li>
+</ul>
+</div>
+
+<h2 id="7-2-应用价值"><a href="#7-2-应用价值" class="headerlink" title="7.2 应用价值"></a>7.2 应用价值</h2><p>通过RoaringBitmap的成功实践，在2亿级数据规模下实现了极致的内存压缩和高性能查询。该方案：</p>
+<ul>
+<li><strong>降低75%硬件成本</strong>：内存从32GB降至8GB</li>
+<li><strong>TPS提升62%</strong>：从6.5万提升10.5万</li>
+<li><strong>响应时间优升66%</strong>：从2.8ms降至0.95ms</li>
+<li><strong>GC停顿减少95%</strong>：从200ms+降至&lt;10ms</li>
+</ul>
+<p>为大规模数据过滤场景提供了可复制的高性能技术方案。 </p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn">逐光</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn/2024/06/08/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-2-yi-ji-hei-ming-dan-guo-lu/">https://www.mpoom.cn/2024/06/08/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-2-yi-ji-hei-ming-dan-guo-lu/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.mpoom.cn" target="_blank">逐光の博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/">高并发</a><a class="post-meta__tags" href="/tags/10%E4%B8%87TPS/">10万TPS</a><a class="post-meta__tags" href="/tags/%E9%BB%91%E5%90%8D%E5%8D%95%E8%BF%87%E6%BB%A4/">黑名单过滤</a><a class="post-meta__tags" href="/tags/RoaringBitmap/">RoaringBitmap</a><a class="post-meta__tags" href="/tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">性能优化</a></div><div class="post_share"><div class="social-share" data-image="/images/feature/1.jpeg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/06/08/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-xing-neng-ya-ce-yu-you-hua/" title="10万TPS级高并发系统——性能压测与优化"><img class="cover" src="/images/feature/14.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">10万TPS级高并发系统——性能压测与优化</div></div></a></div><div class="next-post pull-right"><a href="/2024/06/01/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-jia-gou-she-ji-yu-xiang-mu-luo-di-shi-jian/" title="10万TPS级消息发送管控平台架构设计与项目落地实践"><img class="cover" src="/images/feature/15.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">10万TPS级消息发送管控平台架构设计与项目落地实践</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/06/15/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-30-yi-ji-fa-song-liang-pin-ci-guan-kong/" title="10万TPS级高并发系统——30亿级发送量频次管控（一）"><img class="cover" src="/images/feature/11.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-15</div><div class="title">10万TPS级高并发系统——30亿级发送量频次管控（一）</div></div></a></div><div><a href="/2024/06/01/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-jia-gou-she-ji-yu-xiang-mu-luo-di-shi-jian/" title="10万TPS级消息发送管控平台架构设计与项目落地实践"><img class="cover" src="/images/feature/15.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-01</div><div class="title">10万TPS级消息发送管控平台架构设计与项目落地实践</div></div></a></div><div><a href="/2024/06/08/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-xing-neng-ya-ce-yu-you-hua/" title="10万TPS级高并发系统——性能压测与优化"><img class="cover" src="/images/feature/14.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-08</div><div class="title">10万TPS级高并发系统——性能压测与优化</div></div></a></div><div><a href="/2024/06/22/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-10-wan-liang-ji-wen-ben-guan-jian-zi-pi-pei-guo-lu/" title="10万TPS级高并发系统——10万量级文本关键字匹配过滤"><img class="cover" src="/images/feature/6.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-22</div><div class="title">10万TPS级高并发系统——10万量级文本关键字匹配过滤</div></div></a></div><div><a href="/2024/06/08/distributed/si-chong-jing-dian-de-xian-liu-suan-fa/" title="四种经典的限流算法"><img class="cover" src="/images/feature/17.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-08</div><div class="title">四种经典的限流算法</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E8%83%8C%E6%99%AF%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">一、背景简介</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E6%8A%80%E6%9C%AF%E6%8C%91%E6%88%98"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 技术挑战</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-RoaringBitmap%E4%BC%98%E5%8A%BF"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 RoaringBitmap优势</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-3-%E6%80%A7%E8%83%BD%E8%A6%81%E6%B1%82"><span class="toc-number">1.3.</span> <span class="toc-text">1.3 性能要求</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E3%80%81RoaringBitmap%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90"><span class="toc-number">2.</span> <span class="toc-text">二、RoaringBitmap原理分析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E4%BC%A0%E7%BB%9F%E6%96%B9%E6%A1%88%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 传统方案的问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-1-HashMap%E5%AD%98%E5%82%A8%E9%97%AE%E9%A2%98"><span class="toc-number">2.1.1.</span> <span class="toc-text">2.1.1 HashMap存储问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-2-%E4%BC%A0%E7%BB%9FBitSet%E9%97%AE%E9%A2%98"><span class="toc-number">2.1.2.</span> <span class="toc-text">2.1.2 传统BitSet问题</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-RoaringBitmap%E5%8E%9F%E7%90%86"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 RoaringBitmap原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-1-%E5%88%86%E5%89%B2%E7%AD%96%E7%95%A5"><span class="toc-number">2.2.1.</span> <span class="toc-text">2.2.1 分割策略</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-2-%E5%AD%98%E5%82%A8%E7%BB%93%E6%9E%84%E9%80%89%E6%8B%A9"><span class="toc-number">2.2.2.</span> <span class="toc-text">2.2.2 存储结构选择</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%89%E3%80%81RoaringBitMap%E6%89%8B%E6%9C%BA%E5%8F%B7%E7%BC%93%E5%AD%98%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.</span> <span class="toc-text">三、RoaringBitMap手机号缓存实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E6%A0%B8%E5%BF%83%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 核心数据结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E6%89%8B%E6%9C%BA%E5%8F%B7%E5%88%86%E5%89%B2%E7%AD%96%E7%95%A5"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 手机号分割策略</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-%E5%88%86%E5%89%B2%E7%AE%97%E6%B3%95"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 分割算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-2-%E5%88%86%E5%89%B2%E4%BC%98%E5%8A%BF"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 分割优势</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E6%9F%A5%E8%AF%A2%E6%93%8D%E4%BD%9C%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 查询操作实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-1-%E6%9F%A5%E8%AF%A2%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90"><span class="toc-number">3.3.1.</span> <span class="toc-text">3.3.1 查询性能分析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-4-%E6%8F%92%E5%85%A5%E6%93%8D%E4%BD%9C%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.4.</span> <span class="toc-text">3.4 插入操作实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-1-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E8%AE%BE%E8%AE%A1"><span class="toc-number">3.4.1.</span> <span class="toc-text">3.4.1 线程安全设计</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-5-%E7%BB%9F%E8%AE%A1%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.5.</span> <span class="toc-text">3.5 统计功能实现</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%AB%98%E5%B9%B6%E5%8F%91%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1"><span class="toc-number">4.</span> <span class="toc-text">四、高并发架构设计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84%E6%96%B9%E6%A1%88"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 整体架构方案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E6%A0%B8%E5%BF%83%E5%AE%9E%E7%8E%B0%E6%9E%B6%E6%9E%84"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 核心实现架构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-1-%E5%88%86%E7%89%87%E5%AD%98%E5%82%A8%E7%AD%96%E7%95%A5"><span class="toc-number">4.2.1.</span> <span class="toc-text">4.2.1 分片存储策略</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-2-%E9%AB%98%E5%B9%B6%E5%8F%91%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB"><span class="toc-number">4.2.2.</span> <span class="toc-text">4.2.2 高并发读写分离</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E4%BC%98%E5%8C%96"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 内存管理优化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-1-%E5%88%86%E4%BB%A3%E7%BC%93%E5%AD%98%E7%AD%96%E7%95%A5"><span class="toc-number">4.3.1.</span> <span class="toc-text">4.3.1 分代缓存策略</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-2-%E5%86%85%E5%AD%98%E5%8E%8B%E7%BC%A9%E4%BC%98%E5%8C%96"><span class="toc-number">4.3.2.</span> <span class="toc-text">4.3.2 内存压缩优化</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5%E9%80%89%E6%8B%A9%E5%BB%BA%E8%AE%AE"><span class="toc-number">4.4.</span> <span class="toc-text">4.3 优化策略选择建议</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95%E4%B8%8E%E5%AF%B9%E6%AF%94%E5%88%86%E6%9E%90"><span class="toc-number">5.</span> <span class="toc-text">五、性能测试与对比分析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E5%A4%A7%E8%A7%84%E6%A8%A1%E6%95%B0%E6%8D%AE%E5%8A%A0%E8%BD%BD%E6%B5%8B%E8%AF%95"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 大规模数据加载测试</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-1-2%E4%BA%BF%E6%95%B0%E6%8D%AE%E5%8A%A0%E8%BD%BD%E6%80%A7%E8%83%BD"><span class="toc-number">5.1.1.</span> <span class="toc-text">5.1.1 2亿数据加载性能</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-2-%E4%B8%8D%E5%90%8C%E6%95%B0%E6%8D%AE%E8%A7%84%E6%A8%A1%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94"><span class="toc-number">5.1.2.</span> <span class="toc-text">5.1.2 不同数据规模性能对比</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E9%AB%98%E5%B9%B6%E5%8F%91%E5%9C%BA%E6%99%AF%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 高并发场景性能测试</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-1-%E5%B9%B6%E5%8F%91%E6%9F%A5%E8%AF%A2%E6%80%A7%E8%83%BD"><span class="toc-number">5.2.1.</span> <span class="toc-text">5.2.1 并发查询性能</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-2-%E8%AF%BB%E5%86%99%E5%B9%B6%E5%8F%91%E6%B5%8B%E8%AF%95"><span class="toc-number">5.2.2.</span> <span class="toc-text">5.2.2 读写并发测试</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E5%86%85%E5%AD%98%E6%95%88%E7%8E%87%E5%AF%B9%E6%AF%94"><span class="toc-number">5.3.</span> <span class="toc-text">5.3 数据结构内存效率对比</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-1-%E4%B8%8D%E5%90%8C%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94"><span class="toc-number">5.3.1.</span> <span class="toc-text">5.3.1 不同数据结构性能对比</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-2-%E6%A0%B8%E5%BF%83%E6%80%A7%E8%83%BD%E6%8C%87%E6%A0%87%E6%80%BB%E7%BB%93"><span class="toc-number">5.3.2.</span> <span class="toc-text">5.3.2 核心性能指标总结</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E7%B3%BB%E7%BB%9F%E9%9B%86%E6%88%90%E4%B8%8E%E9%83%A8%E7%BD%B2"><span class="toc-number">6.</span> <span class="toc-text">六、系统集成与部署</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-Maven%E4%BE%9D%E8%B5%96%E9%85%8D%E7%BD%AE"><span class="toc-number">6.1.</span> <span class="toc-text">6.1 Maven依赖配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-%E5%BA%94%E7%94%A8%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">6.2.</span> <span class="toc-text">6.2 应用配置文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-3-%E9%BB%91%E5%90%8D%E5%8D%95%E6%9C%8D%E5%8A%A1%E5%B0%81%E8%A3%85"><span class="toc-number">6.3.</span> <span class="toc-text">6.3 黑名单服务封装</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-4-%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5%E6%9C%BA%E5%88%B6"><span class="toc-number">6.4.</span> <span class="toc-text">6.4 数据同步机制</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E6%80%BB%E7%BB%93%E4%B8%8E%E5%B1%95%E6%9C%9B"><span class="toc-number">7.</span> <span class="toc-text">七、总结与展望</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#7-1-%E6%A0%B8%E5%BF%83%E6%8A%80%E6%9C%AF%E8%A6%81%E7%82%B9"><span class="toc-number">7.1.</span> <span class="toc-text">7.1 核心技术要点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#7-1-1-%E6%80%A7%E8%83%BD%E6%8F%90%E5%8D%87%E6%95%88%E6%9E%9C"><span class="toc-number">7.1.1.</span> <span class="toc-text">7.1.1 性能提升效果</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-1-2-%E5%85%B3%E9%94%AE%E6%8A%80%E6%9C%AF%E7%89%B9%E6%80%A7"><span class="toc-number">7.1.2.</span> <span class="toc-text">7.1.2 关键技术特性</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-2-%E5%BA%94%E7%94%A8%E4%BB%B7%E5%80%BC"><span class="toc-number">7.2.</span> <span class="toc-text">7.2 应用价值</span></a></li></ol></li></ol></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2025 By 逐光</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div></div></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.min.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"><script>function loadValine () {
+  function initValine () {
+    const valine = new Valine(Object.assign({
+      el: '#vcomment',
+      appId: 'f5WSKiyRgMriw1qIicgn1Dbu-gzGzoHsz',
+      appKey: 'c9Jx92rNNJ0RzzaxLNCqu4rR',
+      avatar: 'monsterid',
+      serverURLs: '',
+      emojiMaps: "",
+      path: window.location.pathname,
+      visitor: false
+    }, null))
+  }
+
+  if (typeof Valine === 'function') initValine() 
+  else getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js').then(initValine)
+}
+
+if ('Valine' === 'Valine' || !true) {
+  if (true) btf.loadComment(document.getElementById('vcomment'),loadValine)
+  else setTimeout(loadValine, 0)
+} else {
+  function loadOtherComment () {
+    loadValine()
+  }
+}</script></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script>((window.gitter = {}).chat = {}).options = {
+  room: 'blog-mpoom/community',
+};
+
+if (false) {
+  function chatBtnHide () {
+    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'none'
+  }
+
+  function chatBtnShow () {
+    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'block'
+  }
+}
+</script><script src="https://sidecar.gitter.im/dist/sidecar.v1.js" async="async" defer="defer"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
