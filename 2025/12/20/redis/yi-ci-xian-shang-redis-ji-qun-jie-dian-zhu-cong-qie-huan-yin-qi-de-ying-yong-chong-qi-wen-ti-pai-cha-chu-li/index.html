@@ -1,0 +1,389 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>一次线上Redis集群节点主从切换引起的应用重启问题排查处理 | 逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="一、问题背景某日生产环境出现大规模应用重启告警，经过初步排查发现与Redis集群节点主从切换有关。该问题导致多个核心服务不可用，对业务产生了较大影响。 问题环境：  Redis集群架构 Kubernetes容器化部署 Spring Boot微服务架构  二、问题现象问题发生时，监控系统显示大量应用实"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/2025/12/20/redis/yi-ci-xian-shang-redis-ji-qun-jie-dian-zhu-cong-qie-huan-yin-qi-de-ying-yong-chong-qi-wen-ti-pai-cha-chu-li/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  }
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '一次线上Redis集群节点主从切换引起的应用重启问题排查处理',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2025-12-23 19:03:00'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><meta name="generator" content="Hexo 5.4.2"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/images/theme/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">104</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">170</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">19</div></a></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">逐光の博客</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">一次线上Redis集群节点主从切换引起的应用重启问题排查处理</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-12-19T16:00:00.000Z" title="发表于 2025-12-20 00:00:00">2025-12-20</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-12-23T11:03:00.969Z" title="更新于 2025-12-23 19:03:00">2025-12-23</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/middleware/">middleware</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">2.4k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>7分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="一次线上Redis集群节点主从切换引起的应用重启问题排查处理"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><h2 id="一、问题背景"><a href="#一、问题背景" class="headerlink" title="一、问题背景"></a>一、问题背景</h2><p>某日生产环境出现大规模应用重启告警，经过初步排查发现与Redis集群节点主从切换有关。该问题导致多个核心服务不可用，对业务产生了较大影响。</p>
+<p><strong>问题环境：</strong></p>
+<ul>
+<li>Redis集群架构</li>
+<li>Kubernetes容器化部署</li>
+<li>Spring Boot微服务架构</li>
+</ul>
+<h2 id="二、问题现象"><a href="#二、问题现象" class="headerlink" title="二、问题现象"></a>二、问题现象</h2><p>问题发生时，监控系统显示大量应用实例出现重启现象，具体表现为：</p>
+<ol>
+<li><strong>应用层面：</strong> 多个微服务实例频繁重启</li>
+<li><strong>日志异常：</strong> 应用日志中出现大量Redis连接异常</li>
+<li><strong>监控指标：</strong> Redis集群监控显示某个节点发生主从切换</li>
+<li><strong>业务影响：</strong> 部分核心接口响应超时，用户体验下降</li>
+</ol>
+<p><img src="/2025/12/20/redis/yi-ci-xian-shang-redis-ji-qun-jie-dian-zhu-cong-qie-huan-yin-qi-de-ying-yong-chong-qi-wen-ti-pai-cha-chu-li/redis%E9%9B%86%E7%BE%A4%E8%8A%82%E7%82%B9%E8%B5%84%E6%BA%90%E7%9B%91%E6%8E%A7.png" alt="Redis集群节点资源监控"></p>
+<p><em>图1：Redis集群节点资源监控图示</em></p>
+<h2 id="三、排查过程"><a href="#三、排查过程" class="headerlink" title="三、排查过程"></a>三、排查过程</h2><h3 id="3-1-初步分析"><a href="#3-1-初步分析" class="headerlink" title="3.1 初步分析"></a>3.1 初步分析</h3><p>通过监控系统初步定位，发现问题与Redis集群节点主从切换存在强关联性：</p>
+<ol>
+<li>时间关联性：应用重启时间与Redis节点主从切换时间高度吻合</li>
+<li>影响范围：所有依赖该Redis集群的服务均受到影响</li>
+<li>初步判断：可能是Redis集群拓扑变化导致应用无法正常连接</li>
+</ol>
+<h3 id="3-2-深入排查"><a href="#3-2-深入排查" class="headerlink" title="3.2 深入排查"></a>3.2 深入排查</h3><p>为进一步定位问题根因，我们进行了深入的技术排查：</p>
+<p><strong>排查工具与方法：</strong></p>
+<ul>
+<li>查看应用日志，分析异常堆栈信息</li>
+<li>检查Redis集群状态和节点信息</li>
+<li>分析Kubernetes事件和Pod状态变化</li>
+<li>对比切换前后集群拓扑结构</li>
+</ul>
+<p><strong>关键发现：</strong></p>
+<ul>
+<li>应用日志中反复出现<code>Node xxx.xxx.xxx.xxx:xxxx is unknown to cluster</code>异常</li>
+<li>Redis集群已完成主从切换，但应用仍尝试连接已失效的节点</li>
+<li>K8s健康检查因Redis健康检查失败而判定Pod不健康，触发重启机制</li>
+</ul>
+<p><img src="/2025/12/20/redis/yi-ci-xian-shang-redis-ji-qun-jie-dian-zhu-cong-qie-huan-yin-qi-de-ying-yong-chong-qi-wen-ti-pai-cha-chu-li/redis%E9%9B%86%E7%BE%A4%E8%8A%82%E7%82%B9%E6%97%A5%E5%BF%97.png" alt="Redis集群节点日志"></p>
+<p><em>图2：Redis集群节点日志截图</em></p>
+<h3 id="3-3-根因定位"><a href="#3-3-根因定位" class="headerlink" title="3.3 根因定位"></a>3.3 根因定位</h3><p>通过深入分析，我们定位到问题的根本原因：</p>
+<p><strong>Pod重启的核心原因分析：</strong></p>
+<p>Redis集群健康检查失败是触发Pod重启的直接原因，而客户端未能及时感知集群拓扑变化是问题的根本所在，二者共同导致Pod被K8s判定为”不健康”并重启：</p>
+<ol>
+<li><strong>直接触发原因：Redis集群健康检查失败</strong><ul>
+<li>日志中反复出现Redis health check failed及相关异常：</li>
+</ul>
+<pre class="line-numbers language-none"><code class="language-none">org.springframework.dao.DataAccessResourceFailureException: Node x.x.x.x:xxxx is unknown to cluster<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ul>
+<li>含义：Spring Boot Actuator的Redis健康检查组件尝试连接Redis集群节点时，发现该节点不在集群节点列表中</li>
+<li>连锁反应：K8s的存活&#x2F;就绪探针因健康检查失败判定Pod不健康，进而触发Pod重启</li>
+</ul>
+</li>
+</ol>
+<p><img src="/2025/12/20/redis/yi-ci-xian-shang-redis-ji-qun-jie-dian-zhu-cong-qie-huan-yin-qi-de-ying-yong-chong-qi-wen-ti-pai-cha-chu-li/k8s%E4%BA%8B%E4%BB%B6%E9%80%9A%E7%9F%A5.png" alt="k8s事件通知"></p>
+<p><em>图3：Kubernetes事件通知截图</em></p>
+<h2 id="四、问题分析"><a href="#四、问题分析" class="headerlink" title="四、问题分析"></a>四、问题分析</h2><h3 id="4-1-技术原理分析"><a href="#4-1-技术原理分析" class="headerlink" title="4.1 技术原理分析"></a>4.1 技术原理分析</h3><p>Redis集群主从切换后应用持续报<code>Node x.x.x.x:xxxx is unknown to cluster</code>，核心原因是应用侧未感知Redis集群拓扑变化，仍缓存旧的节点信息（失效的主节点），而新的集群拓扑中已无该节点。</p>
+<p><strong>主从切换后Redis集群的核心变化：</strong></p>
+<ol>
+<li><strong>节点角色&#x2F;状态变更：</strong> 原主节点可能被下线、降级为从节点，或在集群重新分片后被移除</li>
+<li><strong>集群拓扑更新：</strong> Redis集群会将新的主节点信息同步到所有存活节点</li>
+</ol>
+<p><strong>客户端感知问题：</strong> 应用侧不会主动感知这个变化，仍依赖初始化时加载的旧拓扑。</p>
+<h3 id="4-2-为什么报错会”持续”？"><a href="#4-2-为什么报错会”持续”？" class="headerlink" title="4.2 为什么报错会”持续”？"></a>4.2 为什么报错会”持续”？</h3><ol>
+<li><strong>缓存未过期：</strong> Jedis客户端的拓扑缓存无过期机制，除非主动刷新或应用重启，否则不会更新</li>
+<li><strong>健康检查周期性执行：</strong> K8s探针&#x2F;Actuator健康检查是定时任务，每次都会尝试访问旧节点，导致报错反复出现</li>
+<li><strong>无被动刷新触发条件：</strong> 若应用访问的key哈希槽未命中该失效节点，不会触发MOVED重定向，Jedis无法被动更新拓扑</li>
+</ol>
+<p><img src="/2025/12/20/redis/yi-ci-xian-shang-redis-ji-qun-jie-dian-zhu-cong-qie-huan-yin-qi-de-ying-yong-chong-qi-wen-ti-pai-cha-chu-li/redis%E8%8A%82%E7%82%B9%E4%B8%BB%E4%BB%8E%E7%8A%B6%E6%80%81.png" alt="redis节点主从状态"></p>
+<p><em>图4：Redis节点主从状态变化图示</em></p>
+<h3 id="4-3-Redis主从切换的根本原因分析"><a href="#4-3-Redis主从切换的根本原因分析" class="headerlink" title="4.3 Redis主从切换的根本原因分析"></a>4.3 Redis主从切换的根本原因分析</h3><p>通过分析Redis节点日志和资源监控数据，我们定位到主从切换的根本原因：</p>
+<p><strong>关键日志分析：</strong></p>
+<p>从Redis节点日志中发现了以下关键信息（时间点：2025-12-20 06:47-06:48）：</p>
+<pre class="line-numbers language-none"><code class="language-none">Asynchronous AOF fsync is taking too long (disk is busy?). 
+Writing the AOF buffer without waiting for fsync to complete, this may slow down Redis.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>这条警告在短时间内反复出现，表明Redis在进行AOF持久化时遇到了严重的磁盘IO瓶颈。</p>
+<p><strong>资源监控关键发现：</strong></p>
+<p>从CPU监控图可以清晰看到：</p>
+<ul>
+<li><strong>06:48:30时刻</strong>：CPU使用率突然飙升至100%</li>
+<li><strong>iowait占比高达8.4%</strong>：说明系统在等待磁盘IO操作完成</li>
+<li><strong>持续时间</strong>：高负载状态持续了一段时间才恢复</li>
+</ul>
+<p><strong>主从切换触发链路：</strong></p>
+<ol>
+<li><p><strong>持久化操作触发</strong>：</p>
+<ul>
+<li>日志显示Redis正在进行RDB持久化（<code>1000 changes in 60 seconds. Saving...</code>）</li>
+<li>同时进行AOF重写操作（<code>Background saving started by pid 32198</code>）</li>
+<li>创建临时AOF文件（<code>temp-rewriteaof-bg-32344.aof</code>）</li>
+</ul>
+</li>
+<li><p><strong>磁盘IO瓶颈</strong>：</p>
+<ul>
+<li>AOF fsync操作耗时过长，磁盘处于繁忙状态</li>
+<li>Fork操作的Copy-on-Write机制加剧了内存和IO压力</li>
+<li>日志显示Fork CoW达到30MB，峰值30MB</li>
+</ul>
+</li>
+<li><p><strong>主节点响应缓慢</strong>：</p>
+<ul>
+<li>CPU资源被持久化操作大量占用（100%使用率）</li>
+<li>主节点无法及时响应从节点的心跳请求</li>
+<li>从节点认为主节点不可用</li>
+</ul>
+</li>
+<li><p><strong>集群自动故障转移</strong>：</p>
+<ul>
+<li>日志显示：<code>failover auth denied to edb11b7514756aab7c2ddbe345f9e015269161Sd: its master is up</code></li>
+<li>随后进行配置变更：<code>Configuration change detected. Reconfiguring myself as a replica</code></li>
+<li>最终完成主从切换：<code>MASTER &lt;-&gt; REPLICA sync started</code></li>
+</ul>
+</li>
+</ol>
+<p><strong>根本原因总结：</strong></p>
+<p>此次主从切换的根本原因是<strong>Redis持久化操作（RDB+AOF重写）在高负载情况下触发了严重的磁盘IO瓶颈</strong>，导致：</p>
+<ul>
+<li>主节点CPU和IO资源被大量占用</li>
+<li>主节点无法及时响应集群心跳</li>
+<li>从节点判定主节点失效，触发自动故障转移</li>
+<li>集群执行主从切换以保证高可用性</li>
+</ul>
+<p>这是Redis集群在面对持久化压力时的正常自我保护机制，但由于应用侧未能及时感知拓扑变化，导致了后续的应用重启问题。</p>
+<h2 id="五、解决方案"><a href="#五、解决方案" class="headerlink" title="五、解决方案"></a>五、解决方案</h2><h3 id="5-1-临时解决措施"><a href="#5-1-临时解决措施" class="headerlink" title="5.1 临时解决措施"></a>5.1 临时解决措施</h3><p><strong>紧急修复：重启应用</strong></p>
+<p>重启受影响的应用实例，使其重新从Redis集群种子节点加载最新拓扑，直接解决缓存旧节点的问题。这是一种有效的应急处理措施，可以快速恢复服务。</p>
+<h3 id="5-2-根本解决方案"><a href="#5-2-根本解决方案" class="headerlink" title="5.2 根本解决方案"></a>5.2 根本解决方案</h3><p><strong>长期优化：开启Jedis集群拓扑自动刷新</strong></p>
+<p>修改Spring Redis配置，开启Jedis的拓扑自动刷新功能，让应用能够主动感知集群拓扑变化，从根本上解决此类问题：</p>
+<ol>
+<li>配置JedisCluster的<code>refresh</code>参数</li>
+<li>设置合理的刷新间隔时间</li>
+<li>启用集群节点变化监听机制</li>
+<li>优化健康检查逻辑，增加容错机制</li>
+</ol>
+<h3 id="5-3-方案实施"><a href="#5-3-方案实施" class="headerlink" title="5.3 方案实施"></a>5.3 方案实施</h3><p><strong>实施步骤：</strong></p>
+<ol>
+<li><p><strong>配置优化：</strong></p>
+<ul>
+<li>在Spring Boot配置文件中启用Jedis集群拓扑自动刷新</li>
+<li>调整健康检查超时时间和重试机制</li>
+<li>增加重试逻辑和熔断机制</li>
+</ul>
+</li>
+<li><p><strong>代码改造：</strong></p>
+<ul>
+<li>优化Redis客户端初始化逻辑</li>
+<li>增加集群节点状态检测机制</li>
+<li>实现优雅降级策略</li>
+</ul>
+</li>
+<li><p><strong>测试验证：</strong></p>
+<ul>
+<li>在测试环境模拟主从切换场景</li>
+<li>验证应用是否能正确感知集群变化</li>
+<li>确认健康检查机制的稳定性</li>
+</ul>
+</li>
+<li><p><strong>上线部署：</strong></p>
+<ul>
+<li>分批灰度发布配置变更</li>
+<li>监控上线后的系统表现</li>
+<li>准备回滚方案</li>
+</ul>
+</li>
+</ol>
+<h2 id="六、经验总结"><a href="#六、经验总结" class="headerlink" title="六、经验总结"></a>六、经验总结</h2><p>通过本次问题处理，我们得到了以下经验教训：</p>
+<h3 id="6-1-避免类似问题的措施"><a href="#6-1-避免类似问题的措施" class="headerlink" title="6.1 避免类似问题的措施"></a>6.1 避免类似问题的措施</h3><p><strong>应用层面：</strong></p>
+<ol>
+<li><strong>客户端优化：</strong> 启用Redis客户端的集群拓扑自动刷新功能</li>
+<li><strong>健康检查改进：</strong> 优化健康检查逻辑，增加容错和重试机制</li>
+<li><strong>配置管理：</strong> 建立完善的配置管理机制，确保关键参数正确设置</li>
+</ol>
+<p><strong>Redis层面：</strong></p>
+<ol>
+<li><p><strong>持久化优化：</strong> </p>
+<ul>
+<li>调整AOF重写触发条件，避免与RDB同时执行</li>
+<li>配置<code>no-appendfsync-on-rewrite yes</code>，在重写期间不执行fsync</li>
+<li>考虑使用Redis 7.0的Multi-Part AOF特性</li>
+</ul>
+</li>
+<li><p><strong>资源规划：</strong></p>
+<ul>
+<li>确保Redis服务器有足够的CPU和IO资源</li>
+<li>使用SSD磁盘提升IO性能</li>
+<li>合理配置<code>maxmemory</code>参数，避免Fork时的内存压力</li>
+</ul>
+</li>
+<li><p><strong>持久化策略：</strong></p>
+<ul>
+<li>根据业务特点选择合适的持久化策略（RDB&#x2F;AOF&#x2F;混合）</li>
+<li>错峰执行持久化操作，避开业务高峰期</li>
+<li>考虑在从节点进行持久化操作</li>
+</ul>
+</li>
+</ol>
+<h3 id="6-2-监控告警改进建议"><a href="#6-2-监控告警改进建议" class="headerlink" title="6.2 监控告警改进建议"></a>6.2 监控告警改进建议</h3><ol>
+<li><strong>增加专项监控：</strong> 监控Redis集群节点变化事件</li>
+<li><strong>完善告警策略：</strong> 区分瞬时故障和持续异常</li>
+<li><strong>建立关联分析：</strong> 关联Redis集群状态与应用健康状态</li>
+</ol>
+<h3 id="6-3-应急预案完善"><a href="#6-3-应急预案完善" class="headerlink" title="6.3 应急预案完善"></a>6.3 应急预案完善</h3><ol>
+<li><strong>标准化处理流程：</strong> 制定Redis集群故障应急处理手册</li>
+<li><strong>自动化恢复机制：</strong> 开发自动检测和恢复脚本</li>
+<li><strong>定期演练：</strong> 定期进行故障恢复演练</li>
+</ol>
+<h2 id="七、参考资料"><a href="#七、参考资料" class="headerlink" title="七、参考资料"></a>七、参考资料</h2><ol>
+<li>Redis官方文档 - 集群规范</li>
+<li>Spring Data Redis官方文档</li>
+<li>Jedis客户端使用指南</li>
+<li>Kubernetes健康检查最佳实践</li>
+<li>微服务架构下的故障处理模式</li>
+</ol>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn">逐光</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn/2025/12/20/redis/yi-ci-xian-shang-redis-ji-qun-jie-dian-zhu-cong-qie-huan-yin-qi-de-ying-yong-chong-qi-wen-ti-pai-cha-chu-li/">https://www.mpoom.cn/2025/12/20/redis/yi-ci-xian-shang-redis-ji-qun-jie-dian-zhu-cong-qie-huan-yin-qi-de-ying-yong-chong-qi-wen-ti-pai-cha-chu-li/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.mpoom.cn" target="_blank">逐光の博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Redis/">Redis</a><a class="post-meta__tags" href="/tags/%E9%9B%86%E7%BE%A4/">集群</a><a class="post-meta__tags" href="/tags/%E4%B8%BB%E4%BB%8E%E5%88%87%E6%8D%A2/">主从切换</a><a class="post-meta__tags" href="/tags/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">故障排查</a><a class="post-meta__tags" href="/tags/%E7%94%9F%E4%BA%A7%E9%97%AE%E9%A2%98/">生产问题</a></div><div class="post_share"><div class="social-share" data-image="/2025/12/20/redis/yi-ci-xian-shang-redis-ji-qun-jie-dian-zhu-cong-qie-huan-yin-qi-de-ying-yong-chong-qi-wen-ti-pai-cha-chu-li/redis%E9%9B%86%E7%BE%A4%E8%8A%82%E7%82%B9%E8%B5%84%E6%BA%90%E7%9B%91%E6%8E%A7.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="next-post pull-full"><a href="/2025/11/11/operations/yi-ci-sheng-chan-liu-liang-gong-ji-fang-yu-yu-jie-jue-fang-an/" title="一次生产流量攻击防御与解决方案"><img class="cover" src="/2025/11/11/operations/yi-ci-sheng-chan-liu-liang-gong-ji-fang-yu-yu-jie-jue-fang-an/%E6%B5%81%E9%87%8F%E6%94%BB%E5%87%BB.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">一次生产流量攻击防御与解决方案</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2023/05/07/k8s/kube-prometheus-jian-kong-redis/" title="Kube-Prometheus监控Redis（三）"><img class="cover" src="/2023/05/07/k8s/kube-prometheus-jian-kong-redis/k8s.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-05-07</div><div class="title">Kube-Prometheus监控Redis（三）</div></div></a></div><div><a href="/2020/12/25/redis/redis-shao-bing-mo-shi-he-ji-qun-mo-shi/" title="Redis哨兵模式和集群模式"><img class="cover" src="/2020/12/25/redis/redis-shao-bing-mo-shi-he-ji-qun-mo-shi/redis%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6%E5%8F%8Asentinel%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84%E5%9B%BE.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-12-25</div><div class="title">Redis哨兵模式和集群模式</div></div></a></div><div><a href="/2020/12/30/redis/wei-shi-me-redis-ji-qun-shi-yong-16384-ge-ha-xi-cao/" title="为什么Redis集群使用16384个哈希槽"><img class="cover" src="/2020/12/30/redis/wei-shi-me-redis-ji-qun-shi-yong-16384-ge-ha-xi-cao/cover.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-12-30</div><div class="title">为什么Redis集群使用16384个哈希槽</div></div></a></div><div><a href="/2024/12/30/prometheus/redis-ji-qun-jian-kong-pei-zhi-helm-bu-shu-fang-an/" title="Redis集群监控配置-Helm部署方案"><img class="cover" src="/2024/12/30/prometheus/redis-ji-qun-jian-kong-pei-zhi-helm-bu-shu-fang-an/Redis%E7%9B%91%E6%8E%A7%E9%87%87%E9%9B%86%E6%96%B9%E5%BC%8F%E5%AF%B9%E6%AF%94%E8%AF%B4%E6%98%8E.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-12-30</div><div class="title">Redis集群监控配置-Helm部署方案</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E9%97%AE%E9%A2%98%E8%83%8C%E6%99%AF"><span class="toc-number">1.</span> <span class="toc-text">一、问题背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E9%97%AE%E9%A2%98%E7%8E%B0%E8%B1%A1"><span class="toc-number">2.</span> <span class="toc-text">二、问题现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B"><span class="toc-number">3.</span> <span class="toc-text">三、排查过程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E5%88%9D%E6%AD%A5%E5%88%86%E6%9E%90"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 初步分析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E6%B7%B1%E5%85%A5%E6%8E%92%E6%9F%A5"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 深入排查</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E6%A0%B9%E5%9B%A0%E5%AE%9A%E4%BD%8D"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 根因定位</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%97%AE%E9%A2%98%E5%88%86%E6%9E%90"><span class="toc-number">4.</span> <span class="toc-text">四、问题分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E6%8A%80%E6%9C%AF%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 技术原理分析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E4%B8%BA%E4%BB%80%E4%B9%88%E6%8A%A5%E9%94%99%E4%BC%9A%E2%80%9D%E6%8C%81%E7%BB%AD%E2%80%9D%EF%BC%9F"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 为什么报错会”持续”？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-Redis%E4%B8%BB%E4%BB%8E%E5%88%87%E6%8D%A2%E7%9A%84%E6%A0%B9%E6%9C%AC%E5%8E%9F%E5%9B%A0%E5%88%86%E6%9E%90"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 Redis主从切换的根本原因分析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="toc-number">5.</span> <span class="toc-text">五、解决方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E4%B8%B4%E6%97%B6%E8%A7%A3%E5%86%B3%E6%8E%AA%E6%96%BD"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 临时解决措施</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E6%A0%B9%E6%9C%AC%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 根本解决方案</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-%E6%96%B9%E6%A1%88%E5%AE%9E%E6%96%BD"><span class="toc-number">5.3.</span> <span class="toc-text">5.3 方案实施</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E7%BB%8F%E9%AA%8C%E6%80%BB%E7%BB%93"><span class="toc-number">6.</span> <span class="toc-text">六、经验总结</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E9%81%BF%E5%85%8D%E7%B1%BB%E4%BC%BC%E9%97%AE%E9%A2%98%E7%9A%84%E6%8E%AA%E6%96%BD"><span class="toc-number">6.1.</span> <span class="toc-text">6.1 避免类似问题的措施</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-%E7%9B%91%E6%8E%A7%E5%91%8A%E8%AD%A6%E6%94%B9%E8%BF%9B%E5%BB%BA%E8%AE%AE"><span class="toc-number">6.2.</span> <span class="toc-text">6.2 监控告警改进建议</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-%E5%BA%94%E6%80%A5%E9%A2%84%E6%A1%88%E5%AE%8C%E5%96%84"><span class="toc-number">6.3.</span> <span class="toc-text">6.3 应急预案完善</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-number">7.</span> <span class="toc-text">七、参考资料</span></a></li></ol></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2017 - 2025 By 逐光</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div></div></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.min.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"><script>function loadValine () {
+  function initValine () {
+    const valine = new Valine(Object.assign({
+      el: '#vcomment',
+      appId: 'f5WSKiyRgMriw1qIicgn1Dbu-gzGzoHsz',
+      appKey: 'c9Jx92rNNJ0RzzaxLNCqu4rR',
+      avatar: 'monsterid',
+      serverURLs: '',
+      emojiMaps: "",
+      path: window.location.pathname,
+      visitor: false
+    }, null))
+  }
+
+  if (typeof Valine === 'function') initValine() 
+  else getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js').then(initValine)
+}
+
+if ('Valine' === 'Valine' || !true) {
+  if (true) btf.loadComment(document.getElementById('vcomment'),loadValine)
+  else setTimeout(loadValine, 0)
+} else {
+  function loadOtherComment () {
+    loadValine()
+  }
+}</script></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script>((window.gitter = {}).chat = {}).options = {
+  room: 'blog-mpoom/community',
+};
+
+if (false) {
+  function chatBtnHide () {
+    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'none'
+  }
+
+  function chatBtnShow () {
+    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'block'
+  }
+}
+</script><script src="https://sidecar.gitter.im/dist/sidecar.v1.js" async="async" defer="defer"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
