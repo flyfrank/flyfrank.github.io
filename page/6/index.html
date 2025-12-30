@@ -1,13 +1,102 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="I hear and I forget. I see and I remember. I do and I understand."><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/page/6/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="I hear and I forget. I see and I remember. I do and I understand."><script type="application/ld+json"></script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/page/6/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
   root: '/',
   algolia: undefined,
-  localSearch: {"path":"/search.xml","preload":false,"languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  localSearch: undefined,
   translate: undefined,
-  noticeOutdate: undefined,
-  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
   copy: {
     success: '复制成功',
-    error: '复制错误',
+    error: '复制失败',
     noSupport: '浏览器不支持'
   },
   relativeDate: {
@@ -15,7 +104,7 @@
     post: false
   },
   runtime: '',
-  date_suffix: {
+  dateSuffix: {
     just: '刚刚',
     min: '分钟前',
     hour: '小时前',
@@ -23,199 +112,137 @@
     month: '个月前'
   },
   copyright: undefined,
-  lightbox: 'fancybox',
+  lightbox: 'null',
   Snackbar: undefined,
-  source: {
-    justifiedGallery: {
-      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
-      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
-    }
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
   },
   isPhotoFigcaption: false,
-  islazyload: false,
+  islazyloadPlugin: false,
   isAnchor: false,
   percent: {
     toc: true,
     rightside: false,
-  }
+  },
+  autoDarkmode: false
 }</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
   title: '逐光の博客',
-  isPost: false,
-  isHome: true,
   isHighlightShrink: false,
   isToc: false,
-  postUpdate: '2025-12-23 19:11:07'
-}</script><noscript><style type="text/css">
-  #nav {
-    opacity: 1
-  }
-  .justified-gallery img {
-    opacity: 1
-  }
-
-  #recent-posts time,
-  #post-meta time {
-    display: inline !important
-  }
-</style></noscript><script>(win=>{
-    win.saveToLocal = {
-      set: function setWithExpiry(key, value, ttl) {
-        if (ttl === 0) return
-        const now = new Date()
-        const expiryDay = ttl * 86400000
-        const item = {
-          value: value,
-          expiry: now.getTime() + expiryDay,
-        }
-        localStorage.setItem(key, JSON.stringify(item))
-      },
-
-      get: function getWithExpiry(key) {
-        const itemStr = localStorage.getItem(key)
-
-        if (!itemStr) {
-          return undefined
-        }
-        const item = JSON.parse(itemStr)
-        const now = new Date()
-
-        if (now.getTime() > item.expiry) {
-          localStorage.removeItem(key)
-          return undefined
-        }
-        return item.value
-      }
-    }
-  
-    win.getScript = url => new Promise((resolve, reject) => {
-      const script = document.createElement('script')
-      script.src = url
-      script.async = true
-      script.onerror = reject
-      script.onload = script.onreadystatechange = function() {
-        const loadState = this.readyState
-        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
-        script.onload = script.onreadystatechange = null
-        resolve()
-      }
-      document.head.appendChild(script)
-    })
-  
-      win.activateDarkMode = function () {
-        document.documentElement.setAttribute('data-theme', 'dark')
-        if (document.querySelector('meta[name="theme-color"]') !== null) {
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
-        }
-      }
-      win.activateLightMode = function () {
-        document.documentElement.setAttribute('data-theme', 'light')
-        if (document.querySelector('meta[name="theme-color"]') !== null) {
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
-        }
-      }
-      const t = saveToLocal.get('theme')
-    
-          if (t === 'dark') activateDarkMode()
-          else if (t === 'light') activateLightMode()
-        
-      const asideStatus = saveToLocal.get('aside-status')
-      if (asideStatus !== undefined) {
-        if (asideStatus === 'hide') {
-          document.documentElement.classList.add('hide-aside')
-        } else {
-          document.documentElement.classList.remove('hide-aside')
-        }
-      }
-    
-    const detectApple = () => {
-      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
-        document.documentElement.classList.add('apple')
-      }
-    }
-    detectApple()
-    })(window)</script><meta name="generator" content="Hexo 5.4.2"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/images/theme/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">104</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">170</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">19</div></a></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="page" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">逐光の博客</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div class="recent-posts" id="recent-posts"><div class="recent-post-item"><div class="post_cover left"><a href="/2022/01/18/thought/zhang-yi-ming-niu-bi-de-ren-zhao-fang-fa-sha-bi-de-ren-zhao-jie-kou/" title="张一鸣：牛逼的人找方法，傻逼的人找借口"><img class="post-bg" src="/2022/01/18/thought/zhang-yi-ming-niu-bi-de-ren-zhao-fang-fa-sha-bi-de-ren-zhao-jie-kou/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="张一鸣：牛逼的人找方法，傻逼的人找借口"></a></div><div class="recent-post-info"><a class="article-title" href="/2022/01/18/thought/zhang-yi-ming-niu-bi-de-ren-zhao-fang-fa-sha-bi-de-ren-zhao-jie-kou/" title="张一鸣：牛逼的人找方法，傻逼的人找借口">张一鸣：牛逼的人找方法，傻逼的人找借口</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2022-01-17T16:00:00.000Z" title="发表于 2022-01-18 00:00:00">2022-01-18</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/thought/">thought</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/%E5%BC%A0%E4%B8%80%E9%B8%A3/">张一鸣</a></span></div><div class="content">
-转载说明内容来源：本文为公众号仟语仟寻（ID：huoqian2014）首发，转载自笔记侠（ID：Notesman）原文地址：张一鸣：牛逼的人找方法，傻逼的人找借口
-
-伴随成长，我们会遇到很多问题，在不断思考，今天读到的这篇文章中许多观点引起了我的共鸣，更从中看到了一些值得去探索的方法。
-
-商业思维编者按：这几天抽空把张一鸣所有的微博看了一遍，2010年的微博是他30岁左右时候发的，那时候他刚创业没多久，在微博上认真分享自己的思考和观点。到了2012年附近，开始做今日头条。从他的微博中，我试图找到他成功的钥匙，仅仅是这些只言片语，我都觉得对我的启发很大。一个有趣的故事是，早年张一鸣曾把马化腾的所有微博读了一遍；而今天，张一鸣的微博也被人仔细研读，试图摸索出他成就背后的思维逻辑。围观他的微博，结论就是张一鸣真的太厉害了，发现他说得最多的关键词：延迟满足感，自控，理性，反省，创新，学习。本文是从他微博中摘录的231句话，绝大多数都是他创业初期的思考，我们可以看下10年前的想创业的张一鸣在想什么，在思考什么，是怎么鞭策自己的。有点长，希望大家耐心看完，一定会有所收获的。
-
-一、关于成长1.人 ...</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2022/01/17/distributed/fen-bu-shi-id-sheng-cheng-fang-an/" title="分布式ID生成方案"><img class="post-bg" src="/2022/01/17/distributed/fen-bu-shi-id-sheng-cheng-fang-an/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="分布式ID生成方案"></a></div><div class="recent-post-info"><a class="article-title" href="/2022/01/17/distributed/fen-bu-shi-id-sheng-cheng-fang-an/" title="分布式ID生成方案">分布式ID生成方案</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2022-01-16T16:00:00.000Z" title="发表于 2022-01-17 00:00:00">2022-01-17</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8FID/">分布式ID</a></span></div><div class="content">一、问题背景由于MySQL的单表数据量超过了千万级别，需要根据日期对数据库进行水平分表，分表后需要保证每个分表Id的全局唯一性，原来单表使用自增保证Id的有序性和唯一性，分表后需要生成全局唯一的Id。
-所以接下来讨论一下分布式Id的生成方案，以及各种方案的优缺点等。
-二、分布式ID生成方案2.1 UUID
-A universally unique identifier (UUID) is a 128-bit label used for information in computer systems. The term globally unique identifier (GUID) is also used通用唯一识别码（英语：Universally Unique Identifier，缩写：UUID）是用于计算机体系中以识别信息的一个128位标识符。
-
-根据标准方法生成，不依赖中央机构的注册和分配，UUID具有唯一性，这与其他大多数编号方案不同。重复UUID码概率接近零，可以忽略不计。通用唯一识别码-维基百科
-2.1.1 UUID定义UUID是由一个16进制下的32位数所构成，故 ...</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2022/01/07/mysql/mysql-suo-yin-he-bing-you-hua/" title="MySQL索引合并优化"><img class="post-bg" src="/2022/01/07/mysql/mysql-suo-yin-he-bing-you-hua/mysql.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="MySQL索引合并优化"></a></div><div class="recent-post-info"><a class="article-title" href="/2022/01/07/mysql/mysql-suo-yin-he-bing-you-hua/" title="MySQL索引合并优化">MySQL索引合并优化</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2022-01-06T16:00:00.000Z" title="发表于 2022-01-07 00:00:00">2022-01-07</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/MySQL/">MySQL</a><span class="article-meta-link">•</span><a class="article-meta__tags" href="/tags/%E7%B4%A2%E5%BC%95%E5%90%88%E5%B9%B6/">索引合并</a></span></div><div class="content">一、问题背景之前遇到过一个关于MySQL索引的面试题，问题如下：
-
-一张数据库表t其中有3列为a、b、c，分别为每一个列单独建立一个二级索引，那么现在有一个查询条件select * from t where a=? and b=? and c=?请问上述SQL语句，MySQL存储引擎在执行查询的时候，哪些索引将会被使用到？
-
-当时一顿分析，还谈到了MySQL基于成本估算的优化，认为MySQL优化器先基于a、b、c三个列的索引区分度，选择索引区分度较高的索引进行扫描，根据第一个索引的扫描结果，如果第一个索引的扫描结果集高于一个固定量级，则继续选择第二个索引进行扫描，依次判断是否需要使用第三个索引，如果第一个索引的扫描结果集小于一个固定量级，则直接根据第一个索引的扫描结果集进行回表查询到列记录，再根据未使用到的2列进行过滤。
-最后得出的结果是：a、b、c 3个索引都可能被使用到，具体使用到哪些索引，取决于3个索引的区分度以及表的数据量。
-正确答案上面的问题应该用索引合并优化的原理来分析，上述的SQL的where条件满足了索引合并优化中的Index Merge Intersection Ac ...</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2021/12/28/java/intellij-idea-kuai-jie-jian-shi-yong/" title="IntelliJ IDEA快捷键使用"><img class="post-bg" src="/2021/12/28/java/intellij-idea-kuai-jie-jian-shi-yong/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="IntelliJ IDEA快捷键使用"></a></div><div class="recent-post-info"><a class="article-title" href="/2021/12/28/java/intellij-idea-kuai-jie-jian-shi-yong/" title="IntelliJ IDEA快捷键使用">IntelliJ IDEA快捷键使用</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2021-12-27T16:00:00.000Z" title="发表于 2021-12-28 00:00:00">2021-12-28</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/Java/">Java</a><span class="article-meta-link">•</span><a class="article-meta__tags" href="/tags/IDEA/">IDEA</a><span class="article-meta-link">•</span><a class="article-meta__tags" href="/tags/%E5%BF%AB%E6%8D%B7%E9%94%AE/">快捷键</a></span></div><div class="content">工具用得好，下班下得早Ctrl + Alt + T使用if，if&#x2F;else, while, do&#x2F;while, for, try&#x2F;catch, try&#x2F;finally, try&#x2F;catch&#x2F;finally, synchronized, Runnalbe 包围代码块
-Alt + Enter代码快速补全、包引入、临时变量生成等
-Ctrl + Alt + M将代码块提取到一个方法
-Ctrl + Shift + 上下方向键上下移动单行代码和代码块
-Class.new + （Alt + Enter）Class.new创建一个Class类型的匿名对象，Alt + Enter将匿名对象赋值给一个新建的变量
-instance.try根据instance实例对象快速生成try&#x2F;catch代码块
-</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2021/12/20/mysql/linux-fu-wu-qi-chong-qi-hou-mysqld.service-wei-chuang-jian-mysqld.pid-fu-mu-lu-wen-ti/" title="Linux服务器重启后mysqld.service未创建/var/run/mysqld"><img class="post-bg" src="/2021/12/20/mysql/linux-fu-wu-qi-chong-qi-hou-mysqld.service-wei-chuang-jian-mysqld.pid-fu-mu-lu-wen-ti/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Linux服务器重启后mysqld.service未创建/var/run/mysqld"></a></div><div class="recent-post-info"><a class="article-title" href="/2021/12/20/mysql/linux-fu-wu-qi-chong-qi-hou-mysqld.service-wei-chuang-jian-mysqld.pid-fu-mu-lu-wen-ti/" title="Linux服务器重启后mysqld.service未创建/var/run/mysqld">Linux服务器重启后mysqld.service未创建/var/run/mysqld</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2021-12-19T16:00:00.000Z" title="发表于 2021-12-20 00:00:00">2021-12-20</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/MySQL/">MySQL</a></span></div><div class="content">一、问题背景开发环境的数据库服务器重启后，启动MySQl服务报错，错误如下：
-[ERROR] &#x2F;usr&#x2F;sbin&#x2F;mysqld: Can&#39;t create&#x2F;write to file &#39;&#x2F;var&#x2F;run&#x2F;mysqld&#x2F;mysqld.pid&#39; (Errcode: 2 - No such file or directory)
-[ERROR] Can&#39;t start server: can&#39;t create PID file: No such file or directory
-之前看到上面错误日志都是手动创建/var/run/mysqld目录，然后将目录的属主修改为mysql用户，如下：
-mkdir -p &#x2F;var&#x2F;run&#x2F;mysqld
-chown mysql:mysql &#x2F;var&#x2F;run&#x2F;mysqld
-上面方式，每次服务器重启后都要重新执行，所以分析一下问题原因，探索一种永久的解决方案。
-
-MySQL版本信息m ...</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2021/09/23/reprint/zen-me-yong-fu-ge-xing-wei-mo-xing-zhan-sheng-tuo-yan-zheng/" title="怎么用“福格行为模型”战胜拖延症?"><img class="post-bg" src="/2021/09/23/reprint/zen-me-yong-fu-ge-xing-wei-mo-xing-zhan-sheng-tuo-yan-zheng/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="怎么用“福格行为模型”战胜拖延症?"></a></div><div class="recent-post-info"><a class="article-title" href="/2021/09/23/reprint/zen-me-yong-fu-ge-xing-wei-mo-xing-zhan-sheng-tuo-yan-zheng/" title="怎么用“福格行为模型”战胜拖延症?">怎么用“福格行为模型”战胜拖延症?</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2021-09-22T16:00:00.000Z" title="发表于 2021-09-23 00:00:00">2021-09-23</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E8%BD%AC%E8%BD%BD/">转载</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/%E7%A6%8F%E6%A0%BC%E8%A1%8C%E4%B8%BA%E6%A8%A1%E5%9E%8B/">福格行为模型</a><span class="article-meta-link">•</span><a class="article-meta__tags" href="/tags/%E6%8B%96%E5%BB%B6%E7%97%87/">拖延症</a></span></div><div class="content">
-说明：本文转载自 怎么用“福格行为模型”战胜拖延症？
-
-去年年底，我们有一期节目是讨论新年该立一个什么样的flag才人间值得，当时我给你的提议是：立一个不光自己变好，也要让别人从中受益的flag。
-老实说，设定这样一个目标并不难，难的是如何完成它。我看到一个说法很有意思，说当代人立flag的现状是“今年立的flag，就是完成去年承诺的、前年没做到的、大前年立下的flag”，你说说，这让人情何以堪啊。于是，有人干脆就不敢定目标了，怕打脸。
-到底是什么阻碍我们完成这些目标呢？除了客观原因之外，我想最大的拦路虎就是拖延症了。我身边很多朋友都饱受拖延症的困扰，包括我自己。明明是重要的事，也制定了计划，却总是无法按时完成。更可怕的是，打脸多了，自我评价变低，还容易掉入负面情绪的旋涡。
-要怎么打败拖延症呢？我最近在36氪的神译局栏目里看到一篇文章，很受启发。文章来自一个国外专门研究拖延症的网站，叫Deprocrastination，标题是《如何用福格行为模型治疗拖延症》（How to stop procrastinating by using the Fogg Behavior Model）。读 ...</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2021/09/06/rockermq/rocketmq-zhong-consumefromwhere-xiang-jie/" title="RocketMQ中ConsumeFromWhere详解"><img class="post-bg" src="/2021/09/06/rockermq/rocketmq-zhong-consumefromwhere-xiang-jie/RocketMQ.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="RocketMQ中ConsumeFromWhere详解"></a></div><div class="recent-post-info"><a class="article-title" href="/2021/09/06/rockermq/rocketmq-zhong-consumefromwhere-xiang-jie/" title="RocketMQ中ConsumeFromWhere详解">RocketMQ中ConsumeFromWhere详解</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2021-09-05T16:00:00.000Z" title="发表于 2021-09-06 00:00:00">2021-09-06</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">消息队列</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/RocketMQ/">RocketMQ</a><span class="article-meta-link">•</span><a class="article-meta__tags" href="/tags/ConsumeFromWhere/">ConsumeFromWhere</a></span></div><div class="content">一、ConsumeFromWhereRocketMQ的Consumer有一个consumeFromWhere属性，表示Consumer启动后将从哪个位置开始消费消息，该属性取值有以下情况：
-/**
- * Consuming point on consumer booting. There are three consuming points:
- * CONSUME_FROM_LAST_OFFSET: consumer clients pick up where it stopped previously. If it were a newly booting up consumer client, according aging of the consumer group, there are two cases:
- * if the consumer group is created so recently that the earliest message being subscribed has yet expired, which means the consumer grou ...</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2021/09/05/rockermq/rocketmq-zhong-de-consumer-ji-consumergroup-xiang-jie/" title="RocketMQ中的Consumer及ConsumerGroup详解"><img class="post-bg" src="/2021/09/05/rockermq/rocketmq-zhong-de-consumer-ji-consumergroup-xiang-jie/RocketMQ%E8%AE%A2%E9%98%85%E5%85%B3%E7%B3%BB.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="RocketMQ中的Consumer及ConsumerGroup详解"></a></div><div class="recent-post-info"><a class="article-title" href="/2021/09/05/rockermq/rocketmq-zhong-de-consumer-ji-consumergroup-xiang-jie/" title="RocketMQ中的Consumer及ConsumerGroup详解">RocketMQ中的Consumer及ConsumerGroup详解</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2021-09-04T16:00:00.000Z" title="发表于 2021-09-05 00:00:00">2021-09-05</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">消息队列</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/RocketMQ/">RocketMQ</a><span class="article-meta-link">•</span><a class="article-meta__tags" href="/tags/Consumer/">Consumer</a><span class="article-meta-link">•</span><a class="article-meta__tags" href="/tags/ConsumerGroup/">ConsumerGroup</a></span></div><div class="content">一、基本概念消息消费者（Consumer）负责消费消息，一般是后台系统负责异步消费。一个消息消费者会从Broker服务器拉取消息、并将其提供给应用程序。从用户应用的角度而言提供了两种消费形式：拉取式消费、推动式消费。
-消费者组（Consumer Group）同一类Consumer的集合，这类Consumer通常消费同一类消息且消费逻辑一致。消费者组使得在消息消费方面，实现负载均衡和容错的目标变得非常容易。要注意的是，消费者组的消费者实例必须订阅完全相同的Topic。RocketMQ 支持两种消息模式：集群消费（Clustering）和广播消费（Broadcasting）。
-集群消费（Clustering）集群消费模式下,相同Consumer Group的每个Consumer实例平均分摊消息。
-广播消费（Broadcasting）广播消费模式下，相同Consumer Group的每个Consumer实例都接收全量的消息。
-二、订阅关系一致订阅关系一致指的是同一个消费者Group ID下所有Consumer实例所订阅的Topic、Tag必须完全一致。如果订阅关系不一致，消息消费的逻辑就会混 ...</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2021/08/25/middleware/nacos-jian-jie-ji-shi-yong/" title="Nacos简介及使用"><img class="post-bg" src="/2021/08/25/middleware/nacos-jian-jie-ji-shi-yong/cover.svg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Nacos简介及使用"></a></div><div class="recent-post-info"><a class="article-title" href="/2021/08/25/middleware/nacos-jian-jie-ji-shi-yong/" title="Nacos简介及使用">Nacos简介及使用</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2021-08-24T16:00:00.000Z" title="发表于 2021-08-25 00:00:00">2021-08-25</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E4%B8%AD%E9%97%B4%E4%BB%B6/">中间件</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/Nacos/">Nacos</a></span></div><div class="content">《Nacos简介及使用》
-
-    
-      
-        您的浏览器不支持显示PDF文件
-        📥 点击这里下载PDF文件
-      
-    
-  </div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2021/06/08/book/deng-xiao-ping-shi-dai/" title="《邓小平时代》"><img class="post-bg" src="/images/%E9%82%93%E5%B0%8F%E5%B9%B3%E6%97%B6%E4%BB%A3.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="《邓小平时代》"></a></div><div class="recent-post-info"><a class="article-title" href="/2021/06/08/book/deng-xiao-ping-shi-dai/" title="《邓小平时代》">《邓小平时代》</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2021-06-07T16:00:00.000Z" title="发表于 2021-06-08 00:00:00">2021-06-08</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/book/">book</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/%E9%82%93%E5%B0%8F%E5%B9%B3%E6%97%B6%E4%BB%A3/">邓小平时代</a></span></div><div class="content">《邓小平时代》—— 这是世界上第一本全面研究和记述邓小平政治生涯的著作
-不知不觉中发现自己对历史的兴趣越来越浓厚，不但把《明朝那些事儿》读了第二遍，而且为了对中国历史有一个更全面的认识，去看了朋友推荐的《中国通史》这部百集纪录片，直到现在用了半年时间看完了这本《邓小平时代》。唐太宗曾说过：“以铜为镜，可以正衣冠；以史为镜，可以知兴替；以人为镜，可以明得失”。在历史的长河中，可以发现人类社会在不同时期仍有许多共同点，从而窥探到我们生活的社会的一些运行规律。
-看完这本书后很多不曾明白的事情顿时豁然开朗，而邓小平跌宕起伏的人生以及其个人品质深深的折服了我，在我迷茫不知所措的时候，又多了一盏指引的明灯。
-本想在这里总结一下邓小平的一生以及对中国乃至世界的影响，但是发现自己知识浅薄，对于介绍邓小平的书籍及文献仅读过此书。毛主席曾说：“没有调查，没有发言权”。于是作罢，就单单写写自己在此书中的收获吧。
-不争论，先尝试，见效之后再推广邓小平被称为改革开放的总设计师，但是在改革开放的工作中并不是一帆风顺的，在推行改革开放主要面临的阻力来自于当时的保守派，他们担心改革开放会使资本主义复辟。在这个方面，邓 ...</div></div></div><nav id="pagination"><div class="pagination"><a class="extend prev" rel="prev" href="/page/5/#content-inner"><i class="fas fa-chevron-left fa-fw"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/5/#content-inner">5</a><span class="page-number current">6</span><a class="page-number" href="/page/7/#content-inner">7</a><span class="space">&hellip;</span><a class="page-number" href="/page/11/#content-inner">11</a><a class="extend next" rel="next" href="/page/7/#content-inner"><i class="fas fa-chevron-right fa-fw"></i></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/images/theme/avatar.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">逐光</div><div class="author-info__description">I hear and I forget. I see and I remember. I do and I understand.</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">104</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">170</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">19</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/flyfrank"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">如有问题，欢迎留言沟通</div></div><div class="sticky_layout"><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/12/20/redis/yi-ci-xian-shang-redis-ji-qun-jie-dian-zhu-cong-qie-huan-yin-qi-de-ying-yong-chong-qi-wen-ti-pai-cha-chu-li/" title="一次线上Redis集群节点主从切换引起的应用重启问题排查处理">一次线上Redis集群节点主从切换引起的应用重启问题排查处理</a><time datetime="2025-12-19T16:00:00.000Z" title="发表于 2025-12-20 00:00:00">2025-12-20</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/11/11/operations/yi-ci-sheng-chan-liu-liang-gong-ji-fang-yu-yu-jie-jue-fang-an/" title="一次生产流量攻击防御与解决方案">一次生产流量攻击防御与解决方案</a><time datetime="2025-11-10T16:00:00.000Z" title="发表于 2025-11-11 00:00:00">2025-11-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/03/26/thought/31-sui-zhan-zai-ren-sheng-shi-zi-lu-kou-yi-ci-shen-du-jie-pou-gao-bie-jiao-lu-mi-mang/" title="站在31岁的人生十字路口，我选择放下焦虑，与自己和解">站在31岁的人生十字路口，我选择放下焦虑，与自己和解</a><time datetime="2025-03-25T16:00:00.000Z" title="发表于 2025-03-26 00:00:00">2025-03-26</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/12/30/prometheus/jmx-exporter-xu-ni-ji-jvm-jian-kong-cai-ji-bu-shu/" title="JMX-Exporter虚拟机JVM监控采集部署">JMX-Exporter虚拟机JVM监控采集部署</a><time datetime="2024-12-29T16:00:00.000Z" title="发表于 2024-12-30 00:00:00">2024-12-30</time></div></div></div></div><div class="card-widget card-categories"><div class="item-headline">
+  pageType: 'home'
+}</script><meta name="generator" content="Hexo 5.4.2"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/images/theme/avatar.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">105</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">175</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">19</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="page" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">逐光の博客</span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><h1 class="title-seo">逐光の博客</h1></header><main class="layout" id="content-inner"><div class="recent-posts nc" id="recent-posts"><div class="recent-post-items"><div class="recent-post-item"><div class="post_cover left"><a href="/2022/01/18/distributed/xue-hua-suan-fa-yuan-ma-fen-xi-ji-shi-jian/" title="雪花算法源码分析及实践"><img class="post-bg" src="/2022/01/18/distributed/xue-hua-suan-fa-yuan-ma-fen-xi-ji-shi-jian/snowflake.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="雪花算法源码分析及实践"></a></div><div class="recent-post-info"><a class="article-title" href="/2022/01/18/distributed/xue-hua-suan-fa-yuan-ma-fen-xi-ji-shi-jian/" title="雪花算法源码分析及实践">雪花算法源码分析及实践</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2022-01-17T16:00:00.000Z" title="发表于 2022-01-18 00:00:00">2022-01-18</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/%E9%9B%AA%E8%8A%B1%E7%AE%97%E6%B3%95/">雪花算法</a></span></div><div class="content">一、雪花算法简介雪花算法（Snowflake）是一种生成分布式全局唯一ID的算法，这种算法由Twitter创建并开源。 雪花算法由64位的二进制组成，刚好可以用一个Long类型存储，一共包含四个部分：    符号 时间戳 数据中心和机器ID 序列号    1 bit 41 bits 10 bits 12 bits    1位是符号位，没有被使用，始终是0 41位是时间戳，具体到毫秒，表示现在至1970年以来的毫秒数，最多可用69年 10位是数据中心和机器ID，10位最多可以表示1024台机器 12位是序列号，表示毫秒内生成的序列号，每毫秒最多可生成4096个ID  二、雪花算法源码(java) 雪花算法Java版本源码来自beyondfengyu的github：Snowflake  &#x2F;**  * twitter的snowflake算法 -- java实现  *   * @author beyond  * @date 2016&#x2F;11&#x2F;26  *&#x2F; public class SnowFlake &#123;      &#x2F;**     ...</div></div></div><div class="recent-post-item"><div class="post_cover right"><a href="/2022/01/18/thought/zhang-yi-ming-niu-bi-de-ren-zhao-fang-fa-sha-bi-de-ren-zhao-jie-kou/" title="张一鸣：牛逼的人找方法，傻逼的人找借口"><img class="post-bg" src="/2022/01/18/thought/zhang-yi-ming-niu-bi-de-ren-zhao-fang-fa-sha-bi-de-ren-zhao-jie-kou/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="张一鸣：牛逼的人找方法，傻逼的人找借口"></a></div><div class="recent-post-info"><a class="article-title" href="/2022/01/18/thought/zhang-yi-ming-niu-bi-de-ren-zhao-fang-fa-sha-bi-de-ren-zhao-jie-kou/" title="张一鸣：牛逼的人找方法，傻逼的人找借口">张一鸣：牛逼的人找方法，傻逼的人找借口</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2022-01-17T16:00:00.000Z" title="发表于 2022-01-18 00:00:00">2022-01-18</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/thought/">thought</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/%E5%BC%A0%E4%B8%80%E9%B8%A3/">张一鸣</a></span></div><div class="content"> 转载说明内容来源：本文为公众号仟语仟寻（ID：huoqian2014）首发，转载自笔记侠（ID：Notesman）原文地址：张一鸣：牛逼的人找方法，傻逼的人找借口  伴随成长，我们会遇到很多问题，在不断思考，今天读到的这篇文章中许多观点引起了我的共鸣，更从中看到了一些值得去探索的方法。  商业思维编者按：这几天抽空把张一鸣所有的微博看了一遍，2010年的微博是他30岁左右时候发的，那时候他刚创业没多久，在微博上认真分享自己的思考和观点。到了2012年附近，开始做今日头条。从他的微博中，我试图找到他成功的钥匙，仅仅是这些只言片语，我都觉得对我的启发很大。一个有趣的故事是，早年张一鸣曾把马化腾的所有微博读了一遍；而今天，张一鸣的微博也被人仔细研读，试图摸索出他成就背后的思维逻辑。围观他的微博，结论就是张一鸣真的太厉害了，发现他说得最多的关键词：延迟满足感，自控，理性，反省，创新，学习。本文是从他微博中摘录的231句话，绝大多数都是他创业初期的思考，我们可以看下10年前的想创业的张一鸣在想什么，在思考什么，是怎么鞭策自己的。有点长，希望大家耐心看完，一定会有所收获的。  一、关于成长...</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2022/01/17/distributed/fen-bu-shi-id-sheng-cheng-fang-an/" title="分布式ID生成方案"><img class="post-bg" src="/2022/01/17/distributed/fen-bu-shi-id-sheng-cheng-fang-an/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="分布式ID生成方案"></a></div><div class="recent-post-info"><a class="article-title" href="/2022/01/17/distributed/fen-bu-shi-id-sheng-cheng-fang-an/" title="分布式ID生成方案">分布式ID生成方案</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2022-01-16T16:00:00.000Z" title="发表于 2022-01-17 00:00:00">2022-01-17</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8FID/">分布式ID</a></span></div><div class="content">一、问题背景由于MySQL的单表数据量超过了千万级别，需要根据日期对数据库进行水平分表，分表后需要保证每个分表Id的全局唯一性，原来单表使用自增保证Id的有序性和唯一性，分表后需要生成全局唯一的Id。 所以接下来讨论一下分布式Id的生成方案，以及各种方案的优缺点等。 二、分布式ID生成方案2.1 UUID A universally unique identifier (UUID) is a 128-bit label used for information in computer systems. The term globally unique identifier (GUID) is also used通用唯一识别码（英语：Universally Unique Identifier，缩写：UUID）是用于计算机体系中以识别信息的一个128位标识符。  根据标准方法生成，不依赖中央机构的注册和分配，UUID具有唯一性，这与其他大多数编号方案不同。重复UUID码概率接近零，可以忽略不计。通用唯一识别码-维基百科 2.1.1 UUID定义UUID是由一个16进制下的32位数所构...</div></div></div><div class="recent-post-item"><div class="post_cover right"><a href="/2022/01/07/mysql/mysql-suo-yin-he-bing-you-hua/" title="MySQL索引合并优化"><img class="post-bg" src="/2022/01/07/mysql/mysql-suo-yin-he-bing-you-hua/mysql.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="MySQL索引合并优化"></a></div><div class="recent-post-info"><a class="article-title" href="/2022/01/07/mysql/mysql-suo-yin-he-bing-you-hua/" title="MySQL索引合并优化">MySQL索引合并优化</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2022-01-06T16:00:00.000Z" title="发表于 2022-01-07 00:00:00">2022-01-07</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/MySQL/">MySQL</a><span class="article-meta-link">•</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/%E7%B4%A2%E5%BC%95%E5%90%88%E5%B9%B6/">索引合并</a></span></div><div class="content">一、问题背景之前遇到过一个关于MySQL索引的面试题，问题如下：  一张数据库表t其中有3列为a、b、c，分别为每一个列单独建立一个二级索引，那么现在有一个查询条件select * from t where a=? and b=? and c=?请问上述SQL语句，MySQL存储引擎在执行查询的时候，哪些索引将会被使用到？  当时一顿分析，还谈到了MySQL基于成本估算的优化，认为MySQL优化器先基于a、b、c三个列的索引区分度，选择索引区分度较高的索引进行扫描，根据第一个索引的扫描结果，如果第一个索引的扫描结果集高于一个固定量级，则继续选择第二个索引进行扫描，依次判断是否需要使用第三个索引，如果第一个索引的扫描结果集小于一个固定量级，则直接根据第一个索引的扫描结果集进行回表查询到列记录，再根据未使用到的2列进行过滤。 最后得出的结果是：a、b、c 3个索引都可能被使用到，具体使用到哪些索引，取决于3个索引的区分度以及表的数据量。 正确答案上面的问题应该用索引合并优化的原理来分析，上述的SQL的where条件满足了索引合并优化中的Index Merge Intersection...</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2021/12/28/java/intellij-idea-kuai-jie-jian-shi-yong/" title="IntelliJ IDEA快捷键使用"><img class="post-bg" src="/2021/12/28/java/intellij-idea-kuai-jie-jian-shi-yong/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="IntelliJ IDEA快捷键使用"></a></div><div class="recent-post-info"><a class="article-title" href="/2021/12/28/java/intellij-idea-kuai-jie-jian-shi-yong/" title="IntelliJ IDEA快捷键使用">IntelliJ IDEA快捷键使用</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2021-12-27T16:00:00.000Z" title="发表于 2021-12-28 00:00:00">2021-12-28</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/Java/">Java</a><span class="article-meta-link">•</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/IDEA/">IDEA</a><span class="article-meta-link">•</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/%E5%BF%AB%E6%8D%B7%E9%94%AE/">快捷键</a></span></div><div class="content">工具用得好，下班下得早Ctrl + Alt + T使用if，if&#x2F;else, while, do&#x2F;while, for, try&#x2F;catch, try&#x2F;finally, try&#x2F;catch&#x2F;finally, synchronized, Runnalbe 包围代码块 Alt + Enter代码快速补全、包引入、临时变量生成等 Ctrl + Alt + M将代码块提取到一个方法 Ctrl + Shift + 上下方向键上下移动单行代码和代码块 Class.new + （Alt + Enter）Class.new创建一个Class类型的匿名对象，Alt + Enter将匿名对象赋值给一个新建的变量 instance.try根据instance实例对象快速生成try&#x2F;catch代码块 </div></div></div><div class="recent-post-item"><div class="post_cover right"><a href="/2021/12/20/mysql/linux-fu-wu-qi-chong-qi-hou-mysqld.service-wei-chuang-jian-mysqld.pid-fu-mu-lu-wen-ti/" title="Linux服务器重启后mysqld.service未创建/var/run/mysqld"><img class="post-bg" src="/2021/12/20/mysql/linux-fu-wu-qi-chong-qi-hou-mysqld.service-wei-chuang-jian-mysqld.pid-fu-mu-lu-wen-ti/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Linux服务器重启后mysqld.service未创建/var/run/mysqld"></a></div><div class="recent-post-info"><a class="article-title" href="/2021/12/20/mysql/linux-fu-wu-qi-chong-qi-hou-mysqld.service-wei-chuang-jian-mysqld.pid-fu-mu-lu-wen-ti/" title="Linux服务器重启后mysqld.service未创建/var/run/mysqld">Linux服务器重启后mysqld.service未创建/var/run/mysqld</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2021-12-19T16:00:00.000Z" title="发表于 2021-12-20 00:00:00">2021-12-20</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/MySQL/">MySQL</a></span></div><div class="content">一、问题背景开发环境的数据库服务器重启后，启动MySQl服务报错，错误如下： [ERROR] &#x2F;usr&#x2F;sbin&#x2F;mysqld: Can&#39;t create&#x2F;write to file &#39;&#x2F;var&#x2F;run&#x2F;mysqld&#x2F;mysqld.pid&#39; (Errcode: 2 - No such file or directory) [ERROR] Can&#39;t start server: can&#39;t create PID file: No such file or directory 之前看到上面错误日志都是手动创建/var/run/mysqld目录，然后将目录的属主修改为mysql用户，如下： mkdir -p &#x2F;var&#x2F;run&#x2F;mysqld chown mysql:mysql &#x2F;var&#x2F;run&#x2F;mysqld 上面方式，每次服务器重启后都要重新执行，所以分析一下问题原因，探索一种永久的解决方案。  MySQL版本...</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2021/09/23/reprint/zen-me-yong-fu-ge-xing-wei-mo-xing-zhan-sheng-tuo-yan-zheng/" title="怎么用“福格行为模型”战胜拖延症?"><img class="post-bg" src="/2021/09/23/reprint/zen-me-yong-fu-ge-xing-wei-mo-xing-zhan-sheng-tuo-yan-zheng/cover.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="怎么用“福格行为模型”战胜拖延症?"></a></div><div class="recent-post-info"><a class="article-title" href="/2021/09/23/reprint/zen-me-yong-fu-ge-xing-wei-mo-xing-zhan-sheng-tuo-yan-zheng/" title="怎么用“福格行为模型”战胜拖延症?">怎么用“福格行为模型”战胜拖延症?</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2021-09-22T16:00:00.000Z" title="发表于 2021-09-23 00:00:00">2021-09-23</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E8%BD%AC%E8%BD%BD/">转载</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/%E7%A6%8F%E6%A0%BC%E8%A1%8C%E4%B8%BA%E6%A8%A1%E5%9E%8B/">福格行为模型</a><span class="article-meta-link">•</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/%E6%8B%96%E5%BB%B6%E7%97%87/">拖延症</a></span></div><div class="content"> 说明：本文转载自 怎么用“福格行为模型”战胜拖延症？  去年年底，我们有一期节目是讨论新年该立一个什么样的flag才人间值得，当时我给你的提议是：立一个不光自己变好，也要让别人从中受益的flag。 老实说，设定这样一个目标并不难，难的是如何完成它。我看到一个说法很有意思，说当代人立flag的现状是“今年立的flag，就是完成去年承诺的、前年没做到的、大前年立下的flag”，你说说，这让人情何以堪啊。于是，有人干脆就不敢定目标了，怕打脸。 到底是什么阻碍我们完成这些目标呢？除了客观原因之外，我想最大的拦路虎就是拖延症了。我身边很多朋友都饱受拖延症的困扰，包括我自己。明明是重要的事，也制定了计划，却总是无法按时完成。更可怕的是，打脸多了，自我评价变低，还容易掉入负面情绪的旋涡。 要怎么打败拖延症呢？我最近在36氪的神译局栏目里看到一篇文章，很受启发。文章来自一个国外专门研究拖延症的网站，叫Deprocrastination，标题是《如何用福格行为模型治疗拖延症》（How to stop procrastinating by using the Fogg Behavior Model...</div></div></div><div class="recent-post-item"><div class="post_cover right"><a href="/2021/09/06/rockermq/rocketmq-zhong-consumefromwhere-xiang-jie/" title="RocketMQ中ConsumeFromWhere详解"><img class="post-bg" src="/2021/09/06/rockermq/rocketmq-zhong-consumefromwhere-xiang-jie/RocketMQ.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="RocketMQ中ConsumeFromWhere详解"></a></div><div class="recent-post-info"><a class="article-title" href="/2021/09/06/rockermq/rocketmq-zhong-consumefromwhere-xiang-jie/" title="RocketMQ中ConsumeFromWhere详解">RocketMQ中ConsumeFromWhere详解</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2021-09-05T16:00:00.000Z" title="发表于 2021-09-06 00:00:00">2021-09-06</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">消息队列</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/RocketMQ/">RocketMQ</a><span class="article-meta-link">•</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/ConsumeFromWhere/">ConsumeFromWhere</a></span></div><div class="content">一、ConsumeFromWhereRocketMQ的Consumer有一个consumeFromWhere属性，表示Consumer启动后将从哪个位置开始消费消息，该属性取值有以下情况： /**  * Consuming point on consumer booting. There are three consuming points:  * CONSUME_FROM_LAST_OFFSET: consumer clients pick up where it stopped previously. If it were a newly booting up consumer client, according aging of the consumer group, there are two cases:  * if the consumer group is created so recently that the earliest message being subscribed has yet expired, which means the consumer g...</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2021/09/05/rockermq/rocketmq-zhong-de-consumer-ji-consumergroup-xiang-jie/" title="RocketMQ中的Consumer及ConsumerGroup详解"><img class="post-bg" src="/2021/09/05/rockermq/rocketmq-zhong-de-consumer-ji-consumergroup-xiang-jie/RocketMQ%E8%AE%A2%E9%98%85%E5%85%B3%E7%B3%BB.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="RocketMQ中的Consumer及ConsumerGroup详解"></a></div><div class="recent-post-info"><a class="article-title" href="/2021/09/05/rockermq/rocketmq-zhong-de-consumer-ji-consumergroup-xiang-jie/" title="RocketMQ中的Consumer及ConsumerGroup详解">RocketMQ中的Consumer及ConsumerGroup详解</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2021-09-04T16:00:00.000Z" title="发表于 2021-09-05 00:00:00">2021-09-05</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">消息队列</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/RocketMQ/">RocketMQ</a><span class="article-meta-link">•</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/Consumer/">Consumer</a><span class="article-meta-link">•</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/ConsumerGroup/">ConsumerGroup</a></span></div><div class="content">一、基本概念消息消费者（Consumer）负责消费消息，一般是后台系统负责异步消费。一个消息消费者会从Broker服务器拉取消息、并将其提供给应用程序。从用户应用的角度而言提供了两种消费形式：拉取式消费、推动式消费。 消费者组（Consumer Group）同一类Consumer的集合，这类Consumer通常消费同一类消息且消费逻辑一致。消费者组使得在消息消费方面，实现负载均衡和容错的目标变得非常容易。要注意的是，消费者组的消费者实例必须订阅完全相同的Topic。RocketMQ 支持两种消息模式：集群消费（Clustering）和广播消费（Broadcasting）。 集群消费（Clustering）集群消费模式下,相同Consumer Group的每个Consumer实例平均分摊消息。 广播消费（Broadcasting）广播消费模式下，相同Consumer Group的每个Consumer实例都接收全量的消息。 二、订阅关系一致订阅关系一致指的是同一个消费者Group ID下所有Consumer实例所订阅的Topic、Tag必须完全一致。如果订阅关系不一致，消息消费的逻辑...</div></div></div><div class="recent-post-item"><div class="post_cover right"><a href="/2021/08/25/middleware/nacos-jian-jie-ji-shi-yong/" title="Nacos简介及使用"><img class="post-bg" src="/2021/08/25/middleware/nacos-jian-jie-ji-shi-yong/cover.svg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Nacos简介及使用"></a></div><div class="recent-post-info"><a class="article-title" href="/2021/08/25/middleware/nacos-jian-jie-ji-shi-yong/" title="Nacos简介及使用">Nacos简介及使用</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2021-08-24T16:00:00.000Z" title="发表于 2021-08-25 00:00:00">2021-08-25</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E4%B8%AD%E9%97%B4%E4%BB%B6/">中间件</a></span><span class="article-meta tags"><span class="article-meta-separator">|</span><i class="fas fa-tag"></i><a class="article-meta__tags" href="/tags/Nacos/">Nacos</a></span></div><div class="content">《Nacos简介及使用》                      您的浏览器不支持显示PDF文件         📥 点击这里下载PDF文件               </div></div></div></div><nav id="pagination"><div class="pagination"><a class="extend prev" rel="prev" href="/page/5/#content-inner"><i class="fas fa-chevron-left fa-fw"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/5/#content-inner">5</a><span class="page-number current">6</span><a class="page-number" href="/page/7/#content-inner">7</a><span class="space">&hellip;</span><a class="page-number" href="/page/11/#content-inner">11</a><a class="extend next" rel="next" href="/page/7/#content-inner"><i class="fas fa-chevron-right fa-fw"></i></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/images/theme/avatar.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">逐光</div><div class="author-info-description">I hear and I forget. I see and I remember. I do and I understand.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">105</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">175</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">19</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/flyfrank"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">如有问题，欢迎留言沟通</div></div><div class="sticky_layout"><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/12/29/thought/cong-nian-di-ren-cai-pan-dian-ping-wei-xi-kan-da-gong-ren-wei-shi-me-yao-ba-zi-ji-chan-pin-hua/" title="从年底人才盘点评委席，看打工人为什么要把自己&quot;产品化&quot;">从年底人才盘点评委席，看打工人为什么要把自己&quot;产品化&quot;</a><time datetime="2025-12-28T16:00:00.000Z" title="发表于 2025-12-29 00:00:00">2025-12-29</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/12/20/redis/yi-ci-xian-shang-redis-ji-qun-jie-dian-zhu-cong-qie-huan-yin-qi-de-ying-yong-chong-qi-wen-ti-pai-cha-chu-li/" title="一次线上Redis集群节点主从切换引起的应用重启问题排查处理">一次线上Redis集群节点主从切换引起的应用重启问题排查处理</a><time datetime="2025-12-19T16:00:00.000Z" title="发表于 2025-12-20 00:00:00">2025-12-20</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/11/11/operations/yi-ci-sheng-chan-liu-liang-gong-ji-fang-yu-yu-jie-jue-fang-an/" title="一次生产流量攻击防御与解决方案">一次生产流量攻击防御与解决方案</a><time datetime="2025-11-10T16:00:00.000Z" title="发表于 2025-11-11 00:00:00">2025-11-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/03/26/thought/31-sui-zhan-zai-ren-sheng-shi-zi-lu-kou-yi-ci-shen-du-jie-pou-gao-bie-jiao-lu-mi-mang/" title="站在31岁的人生十字路口，我选择放下焦虑，与自己和解">站在31岁的人生十字路口，我选择放下焦虑，与自己和解</a><time datetime="2025-03-25T16:00:00.000Z" title="发表于 2025-03-26 00:00:00">2025-03-26</time></div></div></div></div><div class="card-widget card-categories"><div class="item-headline">
             <i class="fas fa-folder-open"></i>
             <span>分类</span>
             <a class="card-more-btn" href="/categories/" title="查看更多">
-    <i class="fas fa-angle-right"></i></a>
-            </div>
-            <ul class="card-category-list" id="aside-cat-list">
-            <li class="card-category-list-item "><a class="card-category-list-link" href="/categories/Java/"><span class="card-category-list-name">Java</span><span class="card-category-list-count">1</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/K8s/"><span class="card-category-list-name">K8s</span><span class="card-category-list-count">1</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/book/"><span class="card-category-list-name">book</span><span class="card-category-list-count">13</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/k8s/"><span class="card-category-list-name">k8s</span><span class="card-category-list-count">6</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/middleware/"><span class="card-category-list-name">middleware</span><span class="card-category-list-count">1</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/spring/"><span class="card-category-list-name">spring</span><span class="card-category-list-count">1</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/thought/"><span class="card-category-list-name">thought</span><span class="card-category-list-count">9</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E4%B8%AD%E9%97%B4%E4%BB%B6/"><span class="card-category-list-name">中间件</span><span class="card-category-list-count">1</span></a></li>
-            </ul></div><div class="card-widget card-tags"><div class="item-headline"><i class="fas fa-tags"></i><span>标签</span></div><div class="card-tag-cloud"><a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 1.15em; color: rgb(63, 97, 36)">动态规划</a><a href="/tags/%E9%9B%B6%E4%B8%80%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 1.15em; color: rgb(95, 5, 162)">零一背包问题</a><a href="/tags/%E4%B8%80%E5%88%86%E9%92%9F%E7%BB%8F%E7%90%86%E4%BA%BA/" style="font-size: 1.15em; color: rgb(30, 89, 188)">一分钟经理人</a><a href="/tags/%E4%BA%BA%E9%97%B4%E5%A4%B1%E6%A0%BC/" style="font-size: 1.15em; color: rgb(84, 23, 50)">人间失格</a><a href="/tags/%E4%BD%A0%E7%9A%84%E5%96%84%E8%89%AF%E5%BF%85%E9%A1%BB%E6%9C%89%E7%82%B9%E9%94%8B%E8%8A%92/" style="font-size: 1.15em; color: rgb(6, 155, 8)">你的善良必须有点锋芒</a><a href="/tags/%E3%80%8A%E4%BD%A0%E8%A6%81%E5%A6%82%E4%BD%95%E8%A1%A1%E9%87%8F%E4%BD%A0%E7%9A%84%E4%BA%BA%E7%94%9F%E3%80%8B/" style="font-size: 1.15em; color: rgb(105, 53, 17)">《你要如何衡量你的人生》</a><a href="/tags/%E5%8E%9F%E7%94%9F%E5%AE%B6%E5%BA%AD/" style="font-size: 1.15em; color: rgb(133, 56, 125)">原生家庭</a><a href="/tags/%E5%85%B3%E9%94%AE%E5%AF%B9%E8%AF%9D/" style="font-size: 1.15em; color: rgb(179, 141, 118)">关键对话</a><a href="/tags/%E5%8F%AF%E7%88%B1%E7%9A%84%E8%AF%85%E5%92%92/" style="font-size: 1.15em; color: rgb(59, 76, 140)">可爱的诅咒</a><a href="/tags/%E8%AF%BB%E4%B9%A6/" style="font-size: 1.15em; color: rgb(178, 101, 185)">读书</a><a href="/tags/%E6%B4%BB%E5%87%BA%E7%94%9F%E5%91%BD%E7%9A%84%E6%84%8F%E4%B9%89/" style="font-size: 1.15em; color: rgb(171, 23, 62)">活出生命的意义</a><a href="/tags/%E8%83%BD%E5%8A%9B%E9%99%B7%E9%98%B1/" style="font-size: 1.15em; color: rgb(18, 172, 28)">能力陷阱</a><a href="/tags/%E8%A2%AB%E8%AE%A8%E5%8E%8C%E7%9A%84%E5%8B%87%E6%B0%94/" style="font-size: 1.15em; color: rgb(99, 135, 104)">被讨厌的勇气</a><a href="/tags/%E9%82%93%E5%B0%8F%E5%B9%B3%E6%97%B6%E4%BB%A3/" style="font-size: 1.15em; color: rgb(147, 181, 96)">邓小平时代</a><a href="/tags/java/" style="font-size: 1.45em; color: rgb(177, 23, 51)">java</a><a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 1.15em; color: rgb(61, 25, 44)">设计模式</a><a href="/tags/%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F/" style="font-size: 1.15em; color: rgb(186, 111, 112)">策略模式</a><a href="/tags/%E9%87%91%E5%AD%97%E5%A1%94%E5%8E%9F%E7%90%86/" style="font-size: 1.15em; color: rgb(75, 77, 102)">金字塔原理</a><a href="/tags/%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C%E7%AE%97%E6%B3%95/" style="font-size: 1.15em; color: rgb(51, 80, 41)">一致性哈希算法</a><a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" style="font-size: 1.3em; color: rgb(7, 2, 81)">分布式</a></div></div><div class="card-widget card-archives"><div class="item-headline"><i class="fas fa-archive"></i><span>归档</span><a class="card-more-btn" href="/archives/" title="查看更多">
-    <i class="fas fa-angle-right"></i></a></div><ul class="card-archive-list"><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2025/12/"><span class="card-archive-list-date">十二月 2025</span><span class="card-archive-list-count">1</span></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2025/11/"><span class="card-archive-list-date">十一月 2025</span><span class="card-archive-list-count">1</span></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2025/03/"><span class="card-archive-list-date">三月 2025</span><span class="card-archive-list-count">1</span></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/12/"><span class="card-archive-list-date">十二月 2024</span><span class="card-archive-list-count">5</span></a></li></ul></div><div class="card-widget card-webinfo"><div class="item-headline"><i class="fas fa-chart-line"></i><span>网站资讯</span></div><div class="webinfo"><div class="webinfo-item"><div class="item-name">文章数目 :</div><div class="item-count">104</div></div><div class="webinfo-item"><div class="item-name">本站总字数 :</div><div class="item-count">219.5k</div></div><div class="webinfo-item"><div class="item-name">本站访客数 :</div><div class="item-count" id="busuanzi_value_site_uv"><i class="fa-solid fa-spinner fa-spin"></i></div></div><div class="webinfo-item"><div class="item-name">本站总访问量 :</div><div class="item-count" id="busuanzi_value_site_pv"><i class="fa-solid fa-spinner fa-spin"></i></div></div><div class="webinfo-item"><div class="item-name">最后更新时间 :</div><div class="item-count" id="last-push-date" data-lastPushDate="2025-12-23T11:11:07.581Z"><i class="fa-solid fa-spinner fa-spin"></i></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2017 - 2025 By 逐光</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div></div></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.min.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+      <i class="fas fa-angle-right"></i></a>
+          </div>
+          <ul class="card-category-list" id="aside-cat-list">
+            <li class="card-category-list-item "><a class="card-category-list-link" href="/categories/Java/"><span class="card-category-list-name">Java</span><span class="card-category-list-count">1</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/K8s/"><span class="card-category-list-name">K8s</span><span class="card-category-list-count">1</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/book/"><span class="card-category-list-name">book</span><span class="card-category-list-count">13</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/k8s/"><span class="card-category-list-name">k8s</span><span class="card-category-list-count">6</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/middleware/"><span class="card-category-list-name">middleware</span><span class="card-category-list-count">1</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/spring/"><span class="card-category-list-name">spring</span><span class="card-category-list-count">1</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/thought/"><span class="card-category-list-name">thought</span><span class="card-category-list-count">10</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E4%B8%AD%E9%97%B4%E4%BB%B6/"><span class="card-category-list-name">中间件</span><span class="card-category-list-count">1</span></a></li>
+          </ul></div><div class="card-widget card-tags"><div class="item-headline"><i class="fas fa-tags"></i><span>标签</span></div><div class="card-tag-cloud"><a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 1.15em; color: rgb(146, 62, 86);">动态规划</a><a href="/tags/%E9%9B%B6%E4%B8%80%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 1.15em; color: rgb(75, 54, 50);">零一背包问题</a><a href="/tags/%E4%B8%80%E5%88%86%E9%92%9F%E7%BB%8F%E7%90%86%E4%BA%BA/" style="font-size: 1.15em; color: rgb(199, 105, 80);">一分钟经理人</a><a href="/tags/%E4%BA%BA%E9%97%B4%E5%A4%B1%E6%A0%BC/" style="font-size: 1.15em; color: rgb(113, 85, 50);">人间失格</a><a href="/tags/%E4%BD%A0%E7%9A%84%E5%96%84%E8%89%AF%E5%BF%85%E9%A1%BB%E6%9C%89%E7%82%B9%E9%94%8B%E8%8A%92/" style="font-size: 1.15em; color: rgb(194, 50, 66);">你的善良必须有点锋芒</a><a href="/tags/%E3%80%8A%E4%BD%A0%E8%A6%81%E5%A6%82%E4%BD%95%E8%A1%A1%E9%87%8F%E4%BD%A0%E7%9A%84%E4%BA%BA%E7%94%9F%E3%80%8B/" style="font-size: 1.15em; color: rgb(134, 129, 96);">《你要如何衡量你的人生》</a><a href="/tags/%E5%8E%9F%E7%94%9F%E5%AE%B6%E5%BA%AD/" style="font-size: 1.15em; color: rgb(50, 114, 127);">原生家庭</a><a href="/tags/%E5%85%B3%E9%94%AE%E5%AF%B9%E8%AF%9D/" style="font-size: 1.15em; color: rgb(90, 132, 50);">关键对话</a><a href="/tags/%E5%8F%AF%E7%88%B1%E7%9A%84%E8%AF%85%E5%92%92/" style="font-size: 1.15em; color: rgb(162, 66, 50);">可爱的诅咒</a><a href="/tags/%E6%B4%BB%E5%87%BA%E7%94%9F%E5%91%BD%E7%9A%84%E6%84%8F%E4%B9%89/" style="font-size: 1.15em; color: rgb(76, 83, 61);">活出生命的意义</a><a href="/tags/%E8%AF%BB%E4%B9%A6/" style="font-size: 1.15em; color: rgb(52, 126, 175);">读书</a><a href="/tags/%E8%83%BD%E5%8A%9B%E9%99%B7%E9%98%B1/" style="font-size: 1.15em; color: rgb(142, 109, 57);">能力陷阱</a><a href="/tags/%E8%A2%AB%E8%AE%A8%E5%8E%8C%E7%9A%84%E5%8B%87%E6%B0%94/" style="font-size: 1.15em; color: rgb(190, 68, 188);">被讨厌的勇气</a><a href="/tags/%E9%82%93%E5%B0%8F%E5%B9%B3%E6%97%B6%E4%BB%A3/" style="font-size: 1.15em; color: rgb(50, 63, 103);">邓小平时代</a><a href="/tags/%E9%87%91%E5%AD%97%E5%A1%94%E5%8E%9F%E7%90%86/" style="font-size: 1.15em; color: rgb(85, 146, 50);">金字塔原理</a><a href="/tags/java/" style="font-size: 1.45em; color: rgb(157, 122, 50);">java</a><a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 1.15em; color: rgb(50, 133, 50);">设计模式</a><a href="/tags/%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F/" style="font-size: 1.15em; color: rgb(187, 50, 155);">策略模式</a><a href="/tags/%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C%E7%AE%97%E6%B3%95/" style="font-size: 1.15em; color: rgb(50, 50, 173);">一致性哈希算法</a><a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" style="font-size: 1.3em; color: rgb(53, 50, 50);">分布式</a></div></div><div class="card-widget card-archives">
+    <div class="item-headline">
+      <i class="fas fa-archive"></i>
+      <span>归档</span>
+      <a class="card-more-btn" href="/archives/"
+            title="查看更多">
+            <i class="fas fa-angle-right"></i>
+          </a>
+    </div>
+  
+    <ul class="card-archive-list">
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2025/12/">
+            <span class="card-archive-list-date">
+              十二月 2025
+            </span>
+            <span class="card-archive-list-count">2</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2025/11/">
+            <span class="card-archive-list-date">
+              十一月 2025
+            </span>
+            <span class="card-archive-list-count">1</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2025/03/">
+            <span class="card-archive-list-date">
+              三月 2025
+            </span>
+            <span class="card-archive-list-count">1</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2024/12/">
+            <span class="card-archive-list-date">
+              十二月 2024
+            </span>
+            <span class="card-archive-list-count">5</span>
+          </a>
+        </li>
+      
+    </ul>
+  </div><div class="card-widget card-webinfo"><div class="item-headline"><i class="fas fa-chart-line"></i><span>网站信息</span></div><div class="webinfo"><div class="webinfo-item"><div class="item-name">文章数目 :</div><div class="item-count">105</div></div><div class="webinfo-item"><div class="item-name">本站总字数 :</div><div class="item-count">223.5k</div></div><div class="webinfo-item"><div class="item-name">本站访客数 :</div><div class="item-count" id="busuanzi_value_site_uv"><i class="fa-solid fa-spinner fa-spin"></i></div></div><div class="webinfo-item"><div class="item-name">本站总浏览量 :</div><div class="item-count" id="busuanzi_value_site_pv"><i class="fa-solid fa-spinner fa-spin"></i></div></div><div class="webinfo-item"><div class="item-name">最后更新时间 :</div><div class="item-count" id="last-push-date" data-lastPushDate="2025-12-30T02:06:16.607Z"><i class="fa-solid fa-spinner fa-spin"></i></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2017 - 2025 By 逐光</span></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><div class="js-pjax"><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (false) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
 POWERMODE.shake = true;
 POWERMODE.mobile = false;
 document.body.addEventListener('input', POWERMODE);
-</script><script>((window.gitter = {}).chat = {}).options = {
-  room: 'blog-mpoom/community',
-};
-
-if (false) {
-  function chatBtnHide () {
-    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'none'
-  }
-
-  function chatBtnShow () {
-    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'block'
-  }
-}
-</script><script src="https://sidecar.gitter.im/dist/sidecar.v1.js" async="async" defer="defer"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

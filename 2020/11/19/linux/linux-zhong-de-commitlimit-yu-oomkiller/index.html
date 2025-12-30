@@ -1,13 +1,117 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>Linux中的CommitLimit与OOM Killer | 逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="一、背景说明在测试过程中遇到一个Java进程由于申请内存过大导致被Linux OOM killer杀掉的问题，所以来分析一下Linux中的CommitLimit与OMM killer机制。 二、Linux内存分配机制　　Linux系统允许程序申请比系统可用内存更多的内存空间，这个特性叫做 overc"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/2020/11/19/linux/linux-zhong-de-commitlimit-yu-oomkiller/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Linux中的CommitLimit与OOM Killer | 逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="一、背景说明在测试过程中遇到一个Java进程由于申请内存过大导致被Linux OOM killer杀掉的问题，所以来分析一下Linux中的CommitLimit与OMM killer机制。 二、Linux内存分配机制　　Linux系统允许程序申请比系统可用内存更多的内存空间，这个特性叫做 ov..."><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Linux中的CommitLimit与OOM Killer",
+  "url": "https://www.mpoom.cn/2020/11/19/linux/linux-zhong-de-commitlimit-yu-oomkiller/",
+  "image": "https://www.mpoom.cn/2020/11/19/linux/linux-zhong-de-commitlimit-yu-oomkiller/oom1.png",
+  "datePublished": "2020-11-18T16:00:00.000Z",
+  "dateModified": "2020-11-18T16:00:00.000Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "逐光",
+      "url": "https://www.mpoom.cn"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/2020/11/19/linux/linux-zhong-de-commitlimit-yu-oomkiller/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
   root: '/',
   algolia: undefined,
-  localSearch: {"path":"/search.xml","preload":false,"languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  localSearch: undefined,
   translate: undefined,
-  noticeOutdate: undefined,
-  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
   copy: {
     success: '复制成功',
-    error: '复制错误',
+    error: '复制失败',
     noSupport: '浏览器不支持'
   },
   relativeDate: {
@@ -15,7 +119,7 @@
     post: false
   },
   runtime: '',
-  date_suffix: {
+  dateSuffix: {
     just: '刚刚',
     min: '分钟前',
     hour: '小时前',
@@ -23,117 +127,26 @@
     month: '个月前'
   },
   copyright: undefined,
-  lightbox: 'fancybox',
+  lightbox: 'null',
   Snackbar: undefined,
-  source: {
-    justifiedGallery: {
-      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
-      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
-    }
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
   },
   isPhotoFigcaption: false,
-  islazyload: false,
+  islazyloadPlugin: false,
   isAnchor: false,
   percent: {
     toc: true,
     rightside: false,
-  }
+  },
+  autoDarkmode: false
 }</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
   title: 'Linux中的CommitLimit与OOM Killer',
-  isPost: true,
-  isHome: false,
   isHighlightShrink: false,
   isToc: true,
-  postUpdate: '2025-12-23 19:11:07'
-}</script><noscript><style type="text/css">
-  #nav {
-    opacity: 1
-  }
-  .justified-gallery img {
-    opacity: 1
-  }
-
-  #recent-posts time,
-  #post-meta time {
-    display: inline !important
-  }
-</style></noscript><script>(win=>{
-    win.saveToLocal = {
-      set: function setWithExpiry(key, value, ttl) {
-        if (ttl === 0) return
-        const now = new Date()
-        const expiryDay = ttl * 86400000
-        const item = {
-          value: value,
-          expiry: now.getTime() + expiryDay,
-        }
-        localStorage.setItem(key, JSON.stringify(item))
-      },
-
-      get: function getWithExpiry(key) {
-        const itemStr = localStorage.getItem(key)
-
-        if (!itemStr) {
-          return undefined
-        }
-        const item = JSON.parse(itemStr)
-        const now = new Date()
-
-        if (now.getTime() > item.expiry) {
-          localStorage.removeItem(key)
-          return undefined
-        }
-        return item.value
-      }
-    }
-  
-    win.getScript = url => new Promise((resolve, reject) => {
-      const script = document.createElement('script')
-      script.src = url
-      script.async = true
-      script.onerror = reject
-      script.onload = script.onreadystatechange = function() {
-        const loadState = this.readyState
-        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
-        script.onload = script.onreadystatechange = null
-        resolve()
-      }
-      document.head.appendChild(script)
-    })
-  
-      win.activateDarkMode = function () {
-        document.documentElement.setAttribute('data-theme', 'dark')
-        if (document.querySelector('meta[name="theme-color"]') !== null) {
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
-        }
-      }
-      win.activateLightMode = function () {
-        document.documentElement.setAttribute('data-theme', 'light')
-        if (document.querySelector('meta[name="theme-color"]') !== null) {
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
-        }
-      }
-      const t = saveToLocal.get('theme')
-    
-          if (t === 'dark') activateDarkMode()
-          else if (t === 'light') activateLightMode()
-        
-      const asideStatus = saveToLocal.get('aside-status')
-      if (asideStatus !== undefined) {
-        if (asideStatus === 'hide') {
-          document.documentElement.classList.add('hide-aside')
-        } else {
-          document.documentElement.classList.remove('hide-aside')
-        }
-      }
-    
-    const detectApple = () => {
-      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
-        document.documentElement.classList.add('apple')
-      }
-    }
-    detectApple()
-    })(window)</script><meta name="generator" content="Hexo 5.4.2"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/images/theme/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">104</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">170</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">19</div></a></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">逐光の博客</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">Linux中的CommitLimit与OOM Killer</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2020-11-18T16:00:00.000Z" title="发表于 2020-11-19 00:00:00">2020-11-19</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-12-23T11:11:07.772Z" title="更新于 2025-12-23 19:11:07">2025-12-23</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%90%8E%E7%AB%AF/">后端</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">1.6k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>5分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="Linux中的CommitLimit与OOM Killer"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><h1 id="一、背景说明"><a href="#一、背景说明" class="headerlink" title="一、背景说明"></a>一、背景说明</h1><p>在测试过程中遇到一个Java进程由于申请内存过大导致被Linux OOM killer杀掉的问题，所以来分析一下Linux中的CommitLimit与OMM killer机制。</p>
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 5.4.2"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/images/theme/avatar.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">105</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">175</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">19</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">逐光の博客</span></a><a class="nav-page-title" href="/"><span class="site-name">Linux中的CommitLimit与OOM Killer</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">Linux中的CommitLimit与OOM Killer</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2020-11-18T16:00:00.000Z" title="发表于 2020-11-19 00:00:00">2020-11-19</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-12-30T02:06:16.696Z" title="更新于 2025-12-30 10:06:16">2025-12-30</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%90%8E%E7%AB%AF/">后端</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">1.6k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>5分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><h1 id="一、背景说明"><a href="#一、背景说明" class="headerlink" title="一、背景说明"></a>一、背景说明</h1><p>在测试过程中遇到一个Java进程由于申请内存过大导致被Linux OOM killer杀掉的问题，所以来分析一下Linux中的CommitLimit与OMM killer机制。</p>
 <h1 id="二、Linux内存分配机制"><a href="#二、Linux内存分配机制" class="headerlink" title="二、Linux内存分配机制"></a>二、Linux内存分配机制</h1><p>　　Linux系统允许程序申请比系统可用内存更多的内存空间，这个特性叫做 <code>overcommit</code> 特性，这样做可能是为了系统的优化，因为不是所有的程序申请了内存就会立刻使用，当真正的使用时，系统可能已经回收了一些内存。为了避免内存的浪费，在分配页面时，Linux 采用的是按需分配物理页面的方式。譬如说，某个进程调用malloc()申请了一块小内存，这时内核会分配一个虚拟页面，但这个页面不会映射到实际的物理页面。<br><img src="/2020/11/19/linux/linux-zhong-de-commitlimit-yu-oomkiller/oom1.png" alt="OS内存分配"><br>从图中可以看到，当程序首次访问这个虚拟页面时，会触发一个缺页异常 (page fault)。这时内核会分配一个物理页面，让虚拟页面映射到这个物理页面，同时更新进程的页表 (page table)。</p>
 <h2 id="2-1-Linux的Memory-Overcommit"><a href="#2-1-Linux的Memory-Overcommit" class="headerlink" title="2.1 Linux的Memory Overcommit"></a>2.1 Linux的Memory Overcommit</h2><p>这种按需分配物理页面的方式，可以大大节省物理内存的使用，但有时会导致 Memory Overcommit。所谓 Memory Overcommit，也就是说，所有进程使用的虚拟内存超过了系统的物理内存和交换空间的总和。默认情况下，Linux 是允许 Memory Overcommit 的。并且在大多数情况下，Memory Overcommit 也是安全的，因为很多进程只是申请了很多内存，但实际使用到的内存并不多。</p>
 <p>但万一很多进程都使用了申请来的大部分内存，就可能导致物理内存和交换空间不够用了，这时内核的 OOM Killer 就会出马，它会选择杀掉一个或多个进程，这样就能腾出一些内存给其它进程使用。</p>
@@ -214,46 +227,112 @@ Nov 19 16:24:31 localhost kernel: Killed process 26980 (java) total-vm:14316628k
 
 
 <h2 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h2><p><a target="_blank" rel="noopener" href="http://linuxperf.com/?p=102">理解LINUX的MEMORY OVERCOMMIT</a><br><a target="_blank" rel="noopener" href="http://senlinzhan.github.io/2017/07/03/oom-killer/">Linux 的 OOM Killer 机制分析</a><br><a target="_blank" rel="noopener" href="https://learning-kernel.readthedocs.io/en/latest/mem-management.html">内存管理</a><br><a target="_blank" rel="noopener" href="https://dev.to/rrampage/surviving-the-linux-oom-killer-2ki9">Surviving the Linux OOM Killer</a></p>
-</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn">逐光</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn/2020/11/19/linux/linux-zhong-de-commitlimit-yu-oomkiller/">https://www.mpoom.cn/2020/11/19/linux/linux-zhong-de-commitlimit-yu-oomkiller/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.mpoom.cn" target="_blank">逐光の博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Java/">Java</a><a class="post-meta__tags" href="/tags/Linux/">Linux</a><a class="post-meta__tags" href="/tags/CommitLimit/">CommitLimit</a><a class="post-meta__tags" href="/tags/OOM-killer/">OOM killer</a></div><div class="post_share"><div class="social-share" data-image="/2020/11/19/linux/linux-zhong-de-commitlimit-yu-oomkiller/oom1.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2020/11/26/rockermq/rocketmq-she-ji-yuan-li-fen-xi/" title="RocketMQ设计原理分析"><img class="cover" src="/2020/11/26/rockermq/rocketmq-she-ji-yuan-li-fen-xi/RocketMQ.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">RocketMQ设计原理分析</div></div></a></div><div class="next-post pull-right"><a href="/2020/11/19/linux/tu-ran-xiao-shi-de-java-jin-cheng/" title="突然消失的Java进程"><img class="cover" src="/2020/11/19/linux/tu-ran-xiao-shi-de-java-jin-cheng/cover.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">突然消失的Java进程</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2019/07/06/java/concurrenthashmap-yuan-ma-jie-xi/" title="ConcurrentHashMap源码解析"><img class="cover" src="/2019/07/06/java/concurrenthashmap-yuan-ma-jie-xi/cover.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2019-07-06</div><div class="title">ConcurrentHashMap源码解析</div></div></a></div><div><a href="/2019/07/06/java/hashmap-yuan-ma-jie-xi/" title="HashMap源码解析"><img class="cover" src="/2019/07/06/java/hashmap-yuan-ma-jie-xi/cover.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2019-07-06</div><div class="title">HashMap源码解析</div></div></a></div><div><a href="/2021/12/28/java/intellij-idea-kuai-jie-jian-shi-yong/" title="IntelliJ IDEA快捷键使用"><img class="cover" src="/2021/12/28/java/intellij-idea-kuai-jie-jian-shi-yong/cover.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2021-12-28</div><div class="title">IntelliJ IDEA快捷键使用</div></div></a></div><div><a href="/2022/01/20/java/java-zhong-yi-ge-dui-xiang-zhan-yong-duo-shao-ge-zi-jie/" title="Java中一个对象占用多少个字节"><img class="cover" src="/2022/01/20/java/java-zhong-yi-ge-dui-xiang-zhan-yong-duo-shao-ge-zi-jie/markoop.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-01-20</div><div class="title">Java中一个对象占用多少个字节</div></div></a></div><div><a href="/2020/07/09/java/java-he-http-de-na-xie-shi-si-https-he-zheng-shu/" title="Java 和 HTTP 的那些事（四） HTTPS 和 证书"><img class="cover" src="/2020/07/09/java/java-he-http-de-na-xie-shi-si-https-he-zheng-shu/cover.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-07-09</div><div class="title">Java 和 HTTP 的那些事（四） HTTPS 和 证书</div></div></a></div><div><a href="/2018/07/26/java/java-zhong-de-qiang-yin-yong-ruan-yin-yong-ruo-yin-yong-he-xu-yin-yong/" title="Java中的强引用、软引用、弱引用和虚引用"><img class="cover" src="/2018/07/26/java/java-zhong-de-qiang-yin-yong-ruan-yin-yong-ruo-yin-yong-he-xu-yin-yong/cover.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2018-07-26</div><div class="title">Java中的强引用、软引用、弱引用和虚引用</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E8%83%8C%E6%99%AF%E8%AF%B4%E6%98%8E"><span class="toc-number">1.</span> <span class="toc-text">一、背景说明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E3%80%81Linux%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E6%9C%BA%E5%88%B6"><span class="toc-number">2.</span> <span class="toc-text">二、Linux内存分配机制</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-Linux%E7%9A%84Memory-Overcommit"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 Linux的Memory Overcommit</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E6%89%8D%E7%AE%97-overcommit%EF%BC%9F"><span class="toc-number">2.1.1.</span> <span class="toc-text">如何才算 overcommit？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CommitLimit%E8%AE%A1%E7%AE%97%E6%96%B9%E5%BC%8F"><span class="toc-number">2.1.2.</span> <span class="toc-text">CommitLimit计算方式</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-Linux-OOM-Killer"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 Linux OOM Killer</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#OOM-Killer%E5%A6%82%E4%BD%95%E9%80%89%E6%8B%A9%E8%BF%9B%E7%A8%8B%EF%BC%9F"><span class="toc-number">2.2.1.</span> <span class="toc-text">OOM Killer如何选择进程？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%E8%BF%9B%E7%A8%8B%E8%A2%ABOOM-Killer%E6%9D%80%E6%AD%BB%EF%BC%9F"><span class="toc-number">2.2.2.</span> <span class="toc-text">如何避免进程被OOM Killer杀死？</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#oom-score-adj"><span class="toc-number">2.2.2.1.</span> <span class="toc-text">oom_score_adj</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#oom-adj"><span class="toc-number">2.2.2.2.</span> <span class="toc-text">oom_adj</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%98%BE%E7%A4%BA%E6%89%80%E6%9C%89%E6%AD%A3%E5%9C%A8%E8%BF%90%E8%A1%8C%E7%9A%84%E8%BF%9B%E7%A8%8B%E7%9A%84OOM%E5%88%86%E6%95%B0"><span class="toc-number">2.2.2.3.</span> <span class="toc-text">显示所有正在运行的进程的OOM分数</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%A3%80%E6%9F%A5%E8%BF%9B%E7%A8%8B%E6%98%AF%E5%90%A6%E5%B7%B2%E8%A2%ABOOM%E6%9D%80%E6%AD%BB"><span class="toc-number">2.2.2.4.</span> <span class="toc-text">检查进程是否已被OOM杀死</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%AB%A0"><span class="toc-number">2.3.</span> <span class="toc-text">参考文章</span></a></li></ol></li></ol></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2017 - 2025 By 逐光</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div></div></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.min.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"><script>function loadValine () {
-  function initValine () {
-    const valine = new Valine(Object.assign({
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn">逐光</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn/2020/11/19/linux/linux-zhong-de-commitlimit-yu-oomkiller/">https://www.mpoom.cn/2020/11/19/linux/linux-zhong-de-commitlimit-yu-oomkiller/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://www.mpoom.cn" target="_blank">逐光の博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Java/">Java</a><a class="post-meta__tags" href="/tags/Linux/">Linux</a><a class="post-meta__tags" href="/tags/CommitLimit/">CommitLimit</a><a class="post-meta__tags" href="/tags/OOM-killer/">OOM killer</a></div><div class="post-share"><div class="social-share" data-image="/2020/11/19/linux/linux-zhong-de-commitlimit-yu-oomkiller/oom1.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2020/11/19/linux/tu-ran-xiao-shi-de-java-jin-cheng/" title="突然消失的Java进程"><img class="cover" src="/2020/11/19/linux/tu-ran-xiao-shi-de-java-jin-cheng/cover.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">突然消失的Java进程</div></div><div class="info-2"><div class="info-item-1">一、背景说明在一次大批量数据测试时，一个Java服务模块突然宕掉，并且连续出现了好几次。检查服务已经开启了打印堆栈信息-XX:+HeapDumpOnOutOfMemoryError,但是在服务器运行目录下并没有发现.hprof文件生成。服务器总内存为16G，当前Java服务设置的内存为：-Xms5000M -Xmx8000M。 二、原因分析Java进程突然被干掉无外乎以下三种情况：  Linux OOM killer 杀死了Java进程 JVM自身故障 JVM OOM导致进程退出  2.1 Linux 的OOM killerLinux内核有一个OOM(out of memory) killer机制，当系统内存严重不足时，OOM killer会选择一个或多个进程杀死。关于OOM killer机制可参考上一篇文章Linux中的CommitLimit与OOM Killer.。因此，当java进程突然消失时，首先怀疑是不是被OOM killer杀掉了。  查看系统日志文件/var/log/messages  $egrep -i &#39;killed process&#39; &#x2F...</div></div></div></a><a class="pagination-related" href="/2020/10/29/rockermq/rocketmq-zhong-mmap-yuan-li-fen-xi-ji-shi-yong/" title="RocketMQ中Mmap原理分析及使用"><img class="cover" src="/2020/10/29/rockermq/rocketmq-zhong-mmap-yuan-li-fen-xi-ji-shi-yong/Linux%E5%86%85%E5%AD%98%E6%98%A0%E5%B0%84mmap.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">RocketMQ中Mmap原理分析及使用</div></div><div class="info-2"><div class="info-item-1">一、Mmap基础概念Mmap是一种内存映射文件的方法，即将一个文件或者其它对象映射到进程的地址空间，实现文件磁盘地址和进程虚拟地址空间中一段虚拟地址的一一对映关系。实现这样的映射关系后，进程就可以采用指针的方式读写操作这一段内存，而系统会自动回写脏页面到对应的文件磁盘上，即完成了对文件的操作而不必再调用read,write等系统调用函数。相反，内核空间对这段区域的修改也直接反映用户空间，从而可以实现不同进程间的文件共享。 二、Mmap内存映射原理  mmap内存映射的实现过程，总的来说可以分为三个阶段：  （一）进程启动映射过程，并在虚拟地址空间中为映射创建虚拟映射区域 1、进程在用户空间调用库函数mmap，原型：void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t offset); 2、在当前进程的虚拟地址空间中，寻找一段空闲的满足要求的连续的虚拟地址 3、为此虚拟区分配一个vm_area_struct结构，接着对这个结构的各个域进行了初始化 4、将新建的虚拟区结构（vm_area_s...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2021/03/01/java/java-zhong-suo-fen-lei/" title="Java中锁分类"><img class="cover" src="/2021/03/01/java/java-zhong-suo-fen-lei/Java%E4%B8%BB%E6%B5%81%E9%94%81.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-03-01</div><div class="info-item-2">Java中锁分类</div></div><div class="info-2"><div class="info-item-1">一、Java中主流锁  上图摘自：美团技术团队：不可不说的Java“锁”事  1.1 乐观锁 VS 悲观锁乐观锁与悲观锁是一种广义上的概念，体现了看待线程同步的不同角度。在Java和数据库中都有此概念对应的实际应用。 先说概念。对于同一个数据的并发操作，悲观锁认为自己在使用数据的时候一定有别的线程来修改数据，因此在获取数据的时候会先加锁，确保数据不会被别的线程修改。Java中，synchronized关键字和Lock的实现类都是悲观锁。 而乐观锁认为自己在使用数据时不会有别的线程修改数据，所以不会添加锁，只是在更新数据的时候去判断之前有没有别的线程更新了这个数据。如果这个数据没有被更新，当前线程将自己修改的数据成功写入。如果数据已经被其他线程更新，则根据不同的实现方式执行不同的操作（例如报错或者自动重试）。 乐观锁在Java中是通过使用无锁编程来实现，最常采用的是CAS算法，Java原子类中的递增操作就通过CAS自旋实现的。 特点： 悲观锁适合写操作多的场景，先加锁可以保证写操作时数据正确。 乐观锁适合读操作多的场景，不加锁的特点能够使其读操作的性能大幅提升  问题：（1） AB...</div></div></div></a><a class="pagination-related" href="/2020/11/30/linux/yi-ci-java-jin-cheng-wu-li-nei-cun-zhan-yong-chao-guo-zui-da-dui-nei-cun-fen-xi/" title="一次Java进程物理内存占用超过最大堆内存分析"><img class="cover" src="/2020/11/30/linux/yi-ci-java-jin-cheng-wu-li-nei-cun-zhan-yong-chao-guo-zui-da-dui-nei-cun-fen-xi/top.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2020-11-30</div><div class="info-item-2">一次Java进程物理内存占用超过最大堆内存分析</div></div><div class="info-2"><div class="info-item-1">一、背景说明项目测试过程中，测试人员反馈使用Excel导入100万号码时报错，通过Top命令查看到该java进程占用物理内存大小为3.4G，而且内存持续占用，一直没有释放，怀疑是不是有内存泄露的情况。  PS：上图为后续重新截的图,比第一次物理内存占用小  JVM配置参数如下：  server.java.opts&#x3D;-d64 -XX:MaxPermSize&#x3D;192M -Xms3000M -Xmx3000M -XX:+HeapDumpOnOutOfMemoryError 二、问题排查查看日志发现出现了OOM, 报错信息未：java.lang.OutOfMemoryError: GC overhead limit exceeded，并生成了堆内存快照文件java_pid31734.hprof。通过jVisualVM工具分析java_pid31734.hprof文件。  java进程发生OOM时生成的堆内存快照文件大小为3.4G。  由于在项目中使用POI去读取Excel文件的，从内存快照中可以看到大量的内存被POI相关的对象占用。 发生OOM后java进程并没有退出...</div></div></div></a><a class="pagination-related" href="/2022/01/20/java/java-zhong-yi-ge-dui-xiang-zhan-yong-duo-shao-ge-zi-jie/" title="Java中一个对象占用多少个字节"><img class="cover" src="/2022/01/20/java/java-zhong-yi-ge-dui-xiang-zhan-yong-duo-shao-ge-zi-jie/markoop.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2022-01-20</div><div class="info-item-2">Java中一个对象占用多少个字节</div></div><div class="info-2"><div class="info-item-1"> 说明：本文内容参考文章:码辣架构-Java对象的内存布局，详解内容请阅读原文。  一、问题背景在开发过程中，我们经常使用JVM进行缓存一些数据来提高程序的性能，但是我们需要对缓存的数据进行大小估算，防止产生OOM问题，为保证估算的准确性，需要了解一个Java对象在内存中具体占用多少个字节。 二、一个Java对象的组成   组成部分 对象头（object header） 实例数据（Instance Data） 对齐填充（Padding）    说明 包括了关于堆对象的布局、类型、GC状态、同步状态和标识哈希码的基本信息。Java对象和vm内部对象都有一个共同的对象头格式。 主要是存放类的数据信息，父类的信息，对象字段属性信息。 为了字节对齐，填充的数据，不是必须的。   大小 12 byte 基本类型数据类型和引用类型的大小 对象大小不满足8byte的倍数时进行填充    提示：JDK6之后默认都是开始指针压缩的，所以对象头中mark word占用8个byte，klass pointer占用4个byte  object header Common structure at the...</div></div></div></a><a class="pagination-related" href="/2023/12/02/java/linux-shang-shi-yong-jmeter-jin-xing-ya-ce/" title="Linux上使用JMeter进行压测"><img class="cover" src="/2023/12/02/java/linux-shang-shi-yong-jmeter-jin-xing-ya-ce/%E6%80%A7%E8%83%BD%E5%8E%8B%E6%B5%8B.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2023-12-02</div><div class="info-item-2">Linux上使用JMeter进行压测</div></div><div class="info-2"><div class="info-item-1">背景简介JMeter是我们日常开发中最常用的压测工具，我们经常会直接在本地启动JMeter对本地或远程应用进行简单的压测。但是这种压测场景下得出的压测结果并不严谨，受以下两方面影响：  本地机器硬件配置差，压测中本机的性能最先达到瓶颈 本地机器和远程服务端网络延时较高，导致压测性能比预期差所以我们做一些简单的验证可以在本地直接启动JMeter进行压测，但是如果要做真实的性能测试，需要使用专用的压测服务器对服务端应用进行压测。而压测服务器一般都是Linux系统，所以需要在Linux系统上使用JMeter进行操作。  JMeter配置下载JMeter压测工具登录Linux压测服务器，下载JMeter压测工具，官网下载地址。 curl -O https:&#x2F;&#x2F;dlcdn.apache.org&#x2F;&#x2F;jmeter&#x2F;binaries&#x2F;apache-jmeter-5.6.2.zip 注意：请确保压测服务器已经安装了JDK1.8 解压并配置JMeter 说明：配置JMeter环境变量是为了方便在任意路劲下使用jmeter命令，如果不配置环境...</div></div></div></a><a class="pagination-related" href="/2022/07/13/java/ssh-shi-yong-x11-zhuan-fa-yin-qi-de-yi-chang/" title="SSH使用X11转发引起的异常"><img class="cover" src="/2022/07/13/java/ssh-shi-yong-x11-zhuan-fa-yin-qi-de-yi-chang/xshell-config.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2022-07-13</div><div class="info-item-2">SSH使用X11转发引起的异常</div></div><div class="info-2"><div class="info-item-1">一、问题背景测试同学在测试导出Excel功能时报错，异常日志如下： java.util.concurrent.ExecutionException: java.awt.AWTError: Can&#39;t connect to X11 window server using &#39;localhost:10.0&#39; as the value of the DISPLAY variable.         at java.util.concurrent.FutureTask.report(FutureTask.java:122)         at java.util.concurrent.FutureTask.get(FutureTask.java:192)         at com.xuanwu.ds.service.impl.export.async.ExportWorker.run(ExportWorker.java:76)         at java.util.concurrent.ThreadPoolExecutor.runWorker(Threa...</div></div></div></a><a class="pagination-related" href="/2018/07/26/java/java-zhong-de-qiang-yin-yong-ruan-yin-yong-ruo-yin-yong-he-xu-yin-yong/" title="Java中的强引用、软引用、弱引用和虚引用"><img class="cover" src="/2018/07/26/java/java-zhong-de-qiang-yin-yong-ruan-yin-yong-ruo-yin-yong-he-xu-yin-yong/cover.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2018-07-26</div><div class="info-item-2">Java中的强引用、软引用、弱引用和虚引用</div></div><div class="info-2"><div class="info-item-1">Java中的强引用、软引用、弱引用和虚引用Java执行GC判断对象是否存活有两种方式其中一种是引用计数。  引用计数：Java堆中每一个对象都有一个引用计数属性，引用每新增1次计数加1，引用每释放1次计数减1。  在JDK 1.2以前的版本中，若一个对象不被任何变量引用，那么程序就无法再使用这个对象。也就是说，只有对象处于(reachable)可达状态，程序才能使用它。 从JDK 1.2版本开始，对象的引用被划分为4种级别，从而使程序能更加灵活地控制对象的生命周期。  Java中4种引用的级别和强度由高到低依次为：强引用 -&gt; 软引用 -&gt; 弱引用 -&gt; 虚引用     引用类型 被垃圾回收时间 用途 生存时间 案例    强引用 从来不会 对象的一般状态 JVM停止运行时终止 通过new或反射创建的引用对象   软引用 当内存不足时 对象缓存 内存不足时终止    弱引用 正常垃圾回收时 对象缓存 垃圾回收后终止    虚引用 正常垃圾回收时 跟踪对象的垃圾回收 垃圾回收后终止 DirectByteBuffer堆外内存释放   参考文章 理解Java的强引用、...</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E8%83%8C%E6%99%AF%E8%AF%B4%E6%98%8E"><span class="toc-number">1.</span> <span class="toc-text">一、背景说明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E3%80%81Linux%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E6%9C%BA%E5%88%B6"><span class="toc-number">2.</span> <span class="toc-text">二、Linux内存分配机制</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-Linux%E7%9A%84Memory-Overcommit"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 Linux的Memory Overcommit</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E6%89%8D%E7%AE%97-overcommit%EF%BC%9F"><span class="toc-number">2.1.1.</span> <span class="toc-text">如何才算 overcommit？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CommitLimit%E8%AE%A1%E7%AE%97%E6%96%B9%E5%BC%8F"><span class="toc-number">2.1.2.</span> <span class="toc-text">CommitLimit计算方式</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-Linux-OOM-Killer"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 Linux OOM Killer</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#OOM-Killer%E5%A6%82%E4%BD%95%E9%80%89%E6%8B%A9%E8%BF%9B%E7%A8%8B%EF%BC%9F"><span class="toc-number">2.2.1.</span> <span class="toc-text">OOM Killer如何选择进程？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%E8%BF%9B%E7%A8%8B%E8%A2%ABOOM-Killer%E6%9D%80%E6%AD%BB%EF%BC%9F"><span class="toc-number">2.2.2.</span> <span class="toc-text">如何避免进程被OOM Killer杀死？</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#oom-score-adj"><span class="toc-number">2.2.2.1.</span> <span class="toc-text">oom_score_adj</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#oom-adj"><span class="toc-number">2.2.2.2.</span> <span class="toc-text">oom_adj</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%98%BE%E7%A4%BA%E6%89%80%E6%9C%89%E6%AD%A3%E5%9C%A8%E8%BF%90%E8%A1%8C%E7%9A%84%E8%BF%9B%E7%A8%8B%E7%9A%84OOM%E5%88%86%E6%95%B0"><span class="toc-number">2.2.2.3.</span> <span class="toc-text">显示所有正在运行的进程的OOM分数</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%A3%80%E6%9F%A5%E8%BF%9B%E7%A8%8B%E6%98%AF%E5%90%A6%E5%B7%B2%E8%A2%ABOOM%E6%9D%80%E6%AD%BB"><span class="toc-number">2.2.2.4.</span> <span class="toc-text">检查进程是否已被OOM杀死</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%AB%A0"><span class="toc-number">2.3.</span> <span class="toc-text">参考文章</span></a></li></ol></li></ol></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2017 - 2025 By 逐光</span></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="前往评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><div class="js-pjax"><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (false) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = null
+
+  const initValine = (el, path) => {
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyValine = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+
+    const valineConfig = {
       el: '#vcomment',
       appId: 'f5WSKiyRgMriw1qIicgn1Dbu-gzGzoHsz',
       appKey: 'c9Jx92rNNJ0RzzaxLNCqu4rR',
       avatar: 'monsterid',
       serverURLs: '',
       emojiMaps: "",
-      path: window.location.pathname,
-      visitor: false
-    }, null))
+      visitor: false,
+      ...option,
+      path: isShuoshuo ? path : (option && option.path) || window.location.pathname
+    }
+
+    new Valine(valineConfig)
   }
 
-  if (typeof Valine === 'function') initValine() 
-  else getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js').then(initValine)
-}
-
-if ('Valine' === 'Valine' || !true) {
-  if (true) btf.loadComment(document.getElementById('vcomment'),loadValine)
-  else setTimeout(loadValine, 0)
-} else {
-  function loadOtherComment () {
-    loadValine()
+  const loadValine = async (el, path) => {
+    if (typeof Valine === 'function') {
+      initValine(el, path)
+    } else {
+      await btf.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.3/dist/Valine.min.js')
+      initValine(el, path)
+    }
   }
-}</script></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+
+  if (isShuoshuo) {
+    'Valine' === 'Valine'
+      ? window.shuoshuoComment = { loadComment: loadValine }
+      : window.loadOtherComment = loadValine
+    return
+  }
+
+  if ('Valine' === 'Valine' || !true) {
+    if (true) btf.loadComment(document.getElementById('vcomment'),loadValine)
+    else setTimeout(loadValine, 0)
+  } else {
+    window.loadOtherComment = loadValine
+  }
+})()</script></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
 POWERMODE.shake = true;
 POWERMODE.mobile = false;
 document.body.addEventListener('input', POWERMODE);
-</script><script>((window.gitter = {}).chat = {}).options = {
-  room: 'blog-mpoom/community',
-};
-
-if (false) {
-  function chatBtnHide () {
-    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'none'
-  }
-
-  function chatBtnShow () {
-    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'block'
-  }
-}
-</script><script src="https://sidecar.gitter.im/dist/sidecar.v1.js" async="async" defer="defer"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

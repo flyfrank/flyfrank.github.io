@@ -1,13 +1,117 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>深度解读 RocketMQ 存储机制 | 逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="在《阿里开发者》公众号看到这篇文章，深度解析了RocketMQ的存储机制，对理解RocketMQ存储原理及进行性能优化很有帮助。原文地址：深度解读 RocketMQ 存储机制  RocketMQ 实现了灵活的多分区和多副本机制，有效的避免了集群内单点故障对于整体服务可用性的影响。存储机制和高可用策"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/2022/06/19/rockermq/shen-du-jie-du-rocketmq-cun-chu-ji-zhi/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>深度解读 RocketMQ 存储机制 | 逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content=" 在《阿里开发者》公众号看到这篇文章，深度解析了RocketMQ的存储机制，对理解RocketMQ存储原理及进行性能优化很有帮助。原文地址：深度解读 RocketMQ 存储机制  RocketMQ 实现了灵活的多分区和多副本机制，有效的避免了集群内单点故障对于整体服务可用性的影响。存储机制和高..."><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "深度解读 RocketMQ 存储机制",
+  "url": "https://www.mpoom.cn/2022/06/19/rockermq/shen-du-jie-du-rocketmq-cun-chu-ji-zhi/",
+  "image": "https://www.mpoom.cn/2022/06/19/rockermq/shen-du-jie-du-rocketmq-cun-chu-ji-zhi/RocketMQ.png",
+  "datePublished": "2022-06-18T16:00:00.000Z",
+  "dateModified": "2022-06-18T16:00:00.000Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "逐光",
+      "url": "https://www.mpoom.cn"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/2022/06/19/rockermq/shen-du-jie-du-rocketmq-cun-chu-ji-zhi/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
   root: '/',
   algolia: undefined,
-  localSearch: {"path":"/search.xml","preload":false,"languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  localSearch: undefined,
   translate: undefined,
-  noticeOutdate: undefined,
-  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
   copy: {
     success: '复制成功',
-    error: '复制错误',
+    error: '复制失败',
     noSupport: '浏览器不支持'
   },
   relativeDate: {
@@ -15,7 +119,7 @@
     post: false
   },
   runtime: '',
-  date_suffix: {
+  dateSuffix: {
     just: '刚刚',
     min: '分钟前',
     hour: '小时前',
@@ -23,162 +127,137 @@
     month: '个月前'
   },
   copyright: undefined,
-  lightbox: 'fancybox',
+  lightbox: 'null',
   Snackbar: undefined,
-  source: {
-    justifiedGallery: {
-      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
-      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
-    }
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
   },
   isPhotoFigcaption: false,
-  islazyload: false,
+  islazyloadPlugin: false,
   isAnchor: false,
   percent: {
     toc: true,
     rightside: false,
-  }
+  },
+  autoDarkmode: false
 }</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
   title: '深度解读 RocketMQ 存储机制',
-  isPost: true,
-  isHome: false,
   isHighlightShrink: false,
   isToc: false,
-  postUpdate: '2025-12-23 19:11:07'
-}</script><noscript><style type="text/css">
-  #nav {
-    opacity: 1
-  }
-  .justified-gallery img {
-    opacity: 1
-  }
-
-  #recent-posts time,
-  #post-meta time {
-    display: inline !important
-  }
-</style></noscript><script>(win=>{
-    win.saveToLocal = {
-      set: function setWithExpiry(key, value, ttl) {
-        if (ttl === 0) return
-        const now = new Date()
-        const expiryDay = ttl * 86400000
-        const item = {
-          value: value,
-          expiry: now.getTime() + expiryDay,
-        }
-        localStorage.setItem(key, JSON.stringify(item))
-      },
-
-      get: function getWithExpiry(key) {
-        const itemStr = localStorage.getItem(key)
-
-        if (!itemStr) {
-          return undefined
-        }
-        const item = JSON.parse(itemStr)
-        const now = new Date()
-
-        if (now.getTime() > item.expiry) {
-          localStorage.removeItem(key)
-          return undefined
-        }
-        return item.value
-      }
-    }
-  
-    win.getScript = url => new Promise((resolve, reject) => {
-      const script = document.createElement('script')
-      script.src = url
-      script.async = true
-      script.onerror = reject
-      script.onload = script.onreadystatechange = function() {
-        const loadState = this.readyState
-        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
-        script.onload = script.onreadystatechange = null
-        resolve()
-      }
-      document.head.appendChild(script)
-    })
-  
-      win.activateDarkMode = function () {
-        document.documentElement.setAttribute('data-theme', 'dark')
-        if (document.querySelector('meta[name="theme-color"]') !== null) {
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
-        }
-      }
-      win.activateLightMode = function () {
-        document.documentElement.setAttribute('data-theme', 'light')
-        if (document.querySelector('meta[name="theme-color"]') !== null) {
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
-        }
-      }
-      const t = saveToLocal.get('theme')
-    
-          if (t === 'dark') activateDarkMode()
-          else if (t === 'light') activateLightMode()
-        
-      const asideStatus = saveToLocal.get('aside-status')
-      if (asideStatus !== undefined) {
-        if (asideStatus === 'hide') {
-          document.documentElement.classList.add('hide-aside')
-        } else {
-          document.documentElement.classList.remove('hide-aside')
-        }
-      }
-    
-    const detectApple = () => {
-      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
-        document.documentElement.classList.add('apple')
-      }
-    }
-    detectApple()
-    })(window)</script><meta name="generator" content="Hexo 5.4.2"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/images/theme/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">104</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">170</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">19</div></a></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">逐光の博客</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">深度解读 RocketMQ 存储机制</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2022-06-18T16:00:00.000Z" title="发表于 2022-06-19 00:00:00">2022-06-19</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-12-23T11:11:07.710Z" title="更新于 2025-12-23 19:11:07">2025-12-23</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">消息队列</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">230</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>1分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="深度解读 RocketMQ 存储机制"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><blockquote>
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 5.4.2"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/images/theme/avatar.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">105</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">175</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">19</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">逐光の博客</span></a><a class="nav-page-title" href="/"><span class="site-name">深度解读 RocketMQ 存储机制</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">深度解读 RocketMQ 存储机制</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2022-06-18T16:00:00.000Z" title="发表于 2022-06-19 00:00:00">2022-06-19</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-12-30T02:06:16.763Z" title="更新于 2025-12-30 10:06:16">2025-12-30</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">消息队列</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">230</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>1分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><blockquote>
 <p>在《阿里开发者》公众号看到这篇文章，深度解析了RocketMQ的存储机制，对理解RocketMQ存储原理及进行性能优化很有帮助。<br>原文地址：<a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/PzDO-UCLzxqDbFoHbS47Sg">深度解读 RocketMQ 存储机制</a></p>
 </blockquote>
 <p>RocketMQ 实现了灵活的多分区和多副本机制，有效的避免了集群内单点故障对于整体服务可用性的影响。存储机制和高可用策略是 RocketMQ 稳定性的核心，社区上关于 RocketMQ 目前存储实现的分析与讨论一直是一个热议的话题。本文想从一个不一样的视角，着重于谈谈我眼中的这种存储实现是在解决哪些复杂的问题，因此我从本文最初的版本中删去了冗杂的代码细节分析，由浅入深的分析存储机制的缺陷与优化方向。</p>
 <div class="btn-center">
 <a class="btn-beautify outline blue larger" target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/PzDO-UCLzxqDbFoHbS47Sg" title="查看原文"><i class="far fa-hand-point-right"></i><span>查看原文</span></a>
-</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn">逐光</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn/2022/06/19/rockermq/shen-du-jie-du-rocketmq-cun-chu-ji-zhi/">https://www.mpoom.cn/2022/06/19/rockermq/shen-du-jie-du-rocketmq-cun-chu-ji-zhi/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.mpoom.cn" target="_blank">逐光の博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/RocketMQ/">RocketMQ</a></div><div class="post_share"><div class="social-share" data-image="/2022/06/19/rockermq/shen-du-jie-du-rocketmq-cun-chu-ji-zhi/RocketMQ.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2022/07/13/java/ssh-shi-yong-x11-zhuan-fa-yin-qi-de-yi-chang/" title="SSH使用X11转发引起的异常"><img class="cover" src="/2022/07/13/java/ssh-shi-yong-x11-zhuan-fa-yin-qi-de-yi-chang/xshell-config.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">SSH使用X11转发引起的异常</div></div></a></div><div class="next-post pull-right"><a href="/2022/05/15/book/ni-de-shan-liang-bi-xu-you-dian-feng-mang/" title="《你的善良必须有点锋芒》"><img class="cover" src="/images/book/%E4%BD%A0%E7%9A%84%E5%96%84%E8%89%AF%E5%BF%85%E9%A1%BB%E6%9C%89%E7%82%B9%E9%94%8B%E8%8A%92.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">《你的善良必须有点锋芒》</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2023/05/08/k8s/kube-prometheus-jian-kong-rocketmq/" title="Kube-Prometheus监控RocketMQ（四）"><img class="cover" src="/2023/05/08/k8s/kube-prometheus-jian-kong-rocketmq/k8s.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-05-08</div><div class="title">Kube-Prometheus监控RocketMQ（四）</div></div></a></div><div><a href="/2021/09/06/rockermq/rocketmq-zhong-consumefromwhere-xiang-jie/" title="RocketMQ中ConsumeFromWhere详解"><img class="cover" src="/2021/09/06/rockermq/rocketmq-zhong-consumefromwhere-xiang-jie/RocketMQ.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-06</div><div class="title">RocketMQ中ConsumeFromWhere详解</div></div></a></div><div><a href="/2020/10/29/rockermq/rocketmq-zhong-mmap-yuan-li-fen-xi-ji-shi-yong/" title="RocketMQ中Mmap原理分析及使用"><img class="cover" src="/2020/10/29/rockermq/rocketmq-zhong-mmap-yuan-li-fen-xi-ji-shi-yong/Linux%E5%86%85%E5%AD%98%E6%98%A0%E5%B0%84mmap.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-10-29</div><div class="title">RocketMQ中Mmap原理分析及使用</div></div></a></div><div><a href="/2020/09/10/rockermq/rocketmq-xiao-xi-cun-chu/" title="RocketMQ消息存储"><img class="cover" src="/2020/09/10/rockermq/rocketmq-xiao-xi-cun-chu/rocketmq_design_1.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-09-10</div><div class="title">RocketMQ消息存储</div></div></a></div><div><a href="/2021/09/05/rockermq/rocketmq-zhong-de-consumer-ji-consumergroup-xiang-jie/" title="RocketMQ中的Consumer及ConsumerGroup详解"><img class="cover" src="/2021/09/05/rockermq/rocketmq-zhong-de-consumer-ji-consumergroup-xiang-jie/RocketMQ%E8%AE%A2%E9%98%85%E5%85%B3%E7%B3%BB.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-05</div><div class="title">RocketMQ中的Consumer及ConsumerGroup详解</div></div></a></div><div><a href="/2020/11/26/rockermq/rocketmq-she-ji-yuan-li-fen-xi/" title="RocketMQ设计原理分析"><img class="cover" src="/2020/11/26/rockermq/rocketmq-she-ji-yuan-li-fen-xi/RocketMQ.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-11-26</div><div class="title">RocketMQ设计原理分析</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/images/theme/avatar.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">逐光</div><div class="author-info__description">I hear and I forget. I see and I remember. I do and I understand.</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">104</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">170</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">19</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/flyfrank"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">如有问题，欢迎留言沟通</div></div><div class="sticky_layout"><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/12/20/redis/yi-ci-xian-shang-redis-ji-qun-jie-dian-zhu-cong-qie-huan-yin-qi-de-ying-yong-chong-qi-wen-ti-pai-cha-chu-li/" title="一次线上Redis集群节点主从切换引起的应用重启问题排查处理">一次线上Redis集群节点主从切换引起的应用重启问题排查处理</a><time datetime="2025-12-19T16:00:00.000Z" title="发表于 2025-12-20 00:00:00">2025-12-20</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/11/11/operations/yi-ci-sheng-chan-liu-liang-gong-ji-fang-yu-yu-jie-jue-fang-an/" title="一次生产流量攻击防御与解决方案">一次生产流量攻击防御与解决方案</a><time datetime="2025-11-10T16:00:00.000Z" title="发表于 2025-11-11 00:00:00">2025-11-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/03/26/thought/31-sui-zhan-zai-ren-sheng-shi-zi-lu-kou-yi-ci-shen-du-jie-pou-gao-bie-jiao-lu-mi-mang/" title="站在31岁的人生十字路口，我选择放下焦虑，与自己和解">站在31岁的人生十字路口，我选择放下焦虑，与自己和解</a><time datetime="2025-03-25T16:00:00.000Z" title="发表于 2025-03-26 00:00:00">2025-03-26</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/12/30/prometheus/jmx-exporter-xu-ni-ji-jvm-jian-kong-cai-ji-bu-shu/" title="JMX-Exporter虚拟机JVM监控采集部署">JMX-Exporter虚拟机JVM监控采集部署</a><time datetime="2024-12-29T16:00:00.000Z" title="发表于 2024-12-30 00:00:00">2024-12-30</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2017 - 2025 By 逐光</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div></div></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.min.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"><script>function loadValine () {
-  function initValine () {
-    const valine = new Valine(Object.assign({
+</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn">逐光</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn/2022/06/19/rockermq/shen-du-jie-du-rocketmq-cun-chu-ji-zhi/">https://www.mpoom.cn/2022/06/19/rockermq/shen-du-jie-du-rocketmq-cun-chu-ji-zhi/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://www.mpoom.cn" target="_blank">逐光の博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/RocketMQ/">RocketMQ</a></div><div class="post-share"><div class="social-share" data-image="/2022/06/19/rockermq/shen-du-jie-du-rocketmq-cun-chu-ji-zhi/RocketMQ.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2022/07/13/java/ssh-shi-yong-x11-zhuan-fa-yin-qi-de-yi-chang/" title="SSH使用X11转发引起的异常"><img class="cover" src="/2022/07/13/java/ssh-shi-yong-x11-zhuan-fa-yin-qi-de-yi-chang/xshell-config.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">SSH使用X11转发引起的异常</div></div><div class="info-2"><div class="info-item-1">一、问题背景测试同学在测试导出Excel功能时报错，异常日志如下： java.util.concurrent.ExecutionException: java.awt.AWTError: Can&#39;t connect to X11 window server using &#39;localhost:10.0&#39; as the value of the DISPLAY variable.         at java.util.concurrent.FutureTask.report(FutureTask.java:122)         at java.util.concurrent.FutureTask.get(FutureTask.java:192)         at com.xuanwu.ds.service.impl.export.async.ExportWorker.run(ExportWorker.java:76)         at java.util.concurrent.ThreadPoolExecutor.runWorker(Threa...</div></div></div></a><a class="pagination-related" href="/2022/05/15/book/ni-de-shan-liang-bi-xu-you-dian-feng-mang/" title="《你的善良必须有点锋芒》"><img class="cover" src="/images/book/%E4%BD%A0%E7%9A%84%E5%96%84%E8%89%AF%E5%BF%85%E9%A1%BB%E6%9C%89%E7%82%B9%E9%94%8B%E8%8A%92.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">《你的善良必须有点锋芒》</div></div><div class="info-2"><div class="info-item-1"> 你的善良，必须有点锋芒，否则等于零 —— 【美】拉尔夫·瓦尔多·爱默生   写在前面的话曾经听到过这样的一句话：God helps those who help themselves,翻译后的意思是：上帝只救自救者。佛经有一句相似的话：众生皆苦，唯有自渡。随着成长我开始逐渐理解这两句话的意思，想要追寻幸福的人生，必须要学会自救或者自渡。在成长的道路上，我们会遇见许多迷茫和困惑，阻碍我们的前进和成长之路，或许我们都希望有人能够帮助我们克服困难，但是问题的根本原因是我们始终过不去自己心中的那一关，就这样不断陷入内心的煎熬之中。看到这本书的时候一下子就被这本书的名字吸引，但是书阅读后发现，书中的内容犹如空中楼阁，这里更建议大家去读：《被讨厌的勇气》、《可爱的诅咒》以及《自卑与超越》，这些书籍结合心理学的知识，分析了问题的本质，结合切实的案例提供了解决之法。虽然这本书中更多是鸡汤，但是书中提到的很多现象值得我们思考探讨一下。 诚知此恨人人有，贫贱夫妻百事哀 《遣悲怀三首·其二》 唐·元稹 昔日戏言身后事，今朝都到眼前来。 衣裳已施行看尽，针线犹存未忍开。 尚想旧情怜婢仆，也曾因梦送钱财...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2023/05/08/k8s/kube-prometheus-jian-kong-rocketmq/" title="Kube-Prometheus监控RocketMQ（四）"><img class="cover" src="/2023/05/08/k8s/kube-prometheus-jian-kong-rocketmq/k8s.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2023-05-08</div><div class="info-item-2">Kube-Prometheus监控RocketMQ（四）</div></div><div class="info-2"><div class="info-item-1">一、概述本文介绍如何使用 Kube-Prometheus 监控 RocketMQ。通过部署 RocketMQ Exporter，将 RocketMQ 的消息队列指标暴露给 Prometheus 进行采集和监控。 核心组件：  RocketMQ Exporter：用于暴露 RocketMQ 指标的 Exporter ServiceMonitor：Prometheus Operator 的 CRD，用于服务发现和指标采集配置  二、部署 RocketMQ Exporter2.1 创建 Deployment通过 Deployment 部署 RocketMQ Exporter，需要配置 NameServer 地址。 apiVersion: apps/v1 kind: Deployment metadata:   labels:    app.kubernetes.io/component: exporter    app.kubernetes.io/name: rocketmq-exporter    app.kubernetes.io/part-of: kube-prometheus ...</div></div></div></a><a class="pagination-related" href="/2020/11/26/rockermq/rocketmq-she-ji-yuan-li-fen-xi/" title="RocketMQ设计原理分析"><img class="cover" src="/2020/11/26/rockermq/rocketmq-she-ji-yuan-li-fen-xi/RocketMQ.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2020-11-26</div><div class="info-item-2">RocketMQ设计原理分析</div></div><div class="info-2"><div class="info-item-1">RocketMQ设计原理分析——技术分享PPT                      您的浏览器不支持显示PDF文件         📥 点击这里下载PDF文件               </div></div></div></a><a class="pagination-related" href="/2020/09/10/rockermq/rocketmq-xiao-xi-cun-chu/" title="RocketMQ消息存储"><img class="cover" src="/2020/09/10/rockermq/rocketmq-xiao-xi-cun-chu/rocketmq_design_1.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2020-09-10</div><div class="info-item-2">RocketMQ消息存储</div></div><div class="info-2"><div class="info-item-1">一、消息存储架构图 二、消息存储2.1 消息存储文件   文件名称 作用 文件大小 文件格式 说明    CommitLog 消息主体以及元数据的存储主体 单个文件大小默认1G 消息顺序写入文件，当文件满了，写入下一个文件 文件名为20位，如一个文件名为00000000000000000000代表以一个文件，起始偏移量为0，文件大小为1G&#x3D;1073741824，后面新增文件的名称基于上一个文件名累加1G，起始偏移量从上一个文件继续累计。   ConsumeQueue 消息消费队列 每个条目20个字节，单个文件由30W个条目组成 每一个条目共20个字节，分别为8字节的commitlog物理偏移量、4字节的消息长度、8字节tag hashcode 单个文件由30W个条目组成，可以像数组一样随机访问每一个条目，每个ConsumeQueue文件大小约5.72M   IndexFile 索引文件 固定的单个IndexFile文件大小约为400M，一个IndexFile可以保存 2000W个索引 IndexFile的底层存储设计为在文件系统中实现HashMap结构 rocketmq...</div></div></div></a><a class="pagination-related" href="/2021/09/05/rockermq/rocketmq-zhong-de-consumer-ji-consumergroup-xiang-jie/" title="RocketMQ中的Consumer及ConsumerGroup详解"><img class="cover" src="/2021/09/05/rockermq/rocketmq-zhong-de-consumer-ji-consumergroup-xiang-jie/RocketMQ%E8%AE%A2%E9%98%85%E5%85%B3%E7%B3%BB.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-05</div><div class="info-item-2">RocketMQ中的Consumer及ConsumerGroup详解</div></div><div class="info-2"><div class="info-item-1">一、基本概念消息消费者（Consumer）负责消费消息，一般是后台系统负责异步消费。一个消息消费者会从Broker服务器拉取消息、并将其提供给应用程序。从用户应用的角度而言提供了两种消费形式：拉取式消费、推动式消费。 消费者组（Consumer Group）同一类Consumer的集合，这类Consumer通常消费同一类消息且消费逻辑一致。消费者组使得在消息消费方面，实现负载均衡和容错的目标变得非常容易。要注意的是，消费者组的消费者实例必须订阅完全相同的Topic。RocketMQ 支持两种消息模式：集群消费（Clustering）和广播消费（Broadcasting）。 集群消费（Clustering）集群消费模式下,相同Consumer Group的每个Consumer实例平均分摊消息。 广播消费（Broadcasting）广播消费模式下，相同Consumer Group的每个Consumer实例都接收全量的消息。 二、订阅关系一致订阅关系一致指的是同一个消费者Group ID下所有Consumer实例所订阅的Topic、Tag必须完全一致。如果订阅关系不一致，消息消费的逻辑...</div></div></div></a><a class="pagination-related" href="/2021/09/06/rockermq/rocketmq-zhong-consumefromwhere-xiang-jie/" title="RocketMQ中ConsumeFromWhere详解"><img class="cover" src="/2021/09/06/rockermq/rocketmq-zhong-consumefromwhere-xiang-jie/RocketMQ.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-06</div><div class="info-item-2">RocketMQ中ConsumeFromWhere详解</div></div><div class="info-2"><div class="info-item-1">一、ConsumeFromWhereRocketMQ的Consumer有一个consumeFromWhere属性，表示Consumer启动后将从哪个位置开始消费消息，该属性取值有以下情况： /**  * Consuming point on consumer booting. There are three consuming points:  * CONSUME_FROM_LAST_OFFSET: consumer clients pick up where it stopped previously. If it were a newly booting up consumer client, according aging of the consumer group, there are two cases:  * if the consumer group is created so recently that the earliest message being subscribed has yet expired, which means the consumer g...</div></div></div></a><a class="pagination-related" href="/2020/10/29/rockermq/rocketmq-zhong-mmap-yuan-li-fen-xi-ji-shi-yong/" title="RocketMQ中Mmap原理分析及使用"><img class="cover" src="/2020/10/29/rockermq/rocketmq-zhong-mmap-yuan-li-fen-xi-ji-shi-yong/Linux%E5%86%85%E5%AD%98%E6%98%A0%E5%B0%84mmap.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2020-10-29</div><div class="info-item-2">RocketMQ中Mmap原理分析及使用</div></div><div class="info-2"><div class="info-item-1">一、Mmap基础概念Mmap是一种内存映射文件的方法，即将一个文件或者其它对象映射到进程的地址空间，实现文件磁盘地址和进程虚拟地址空间中一段虚拟地址的一一对映关系。实现这样的映射关系后，进程就可以采用指针的方式读写操作这一段内存，而系统会自动回写脏页面到对应的文件磁盘上，即完成了对文件的操作而不必再调用read,write等系统调用函数。相反，内核空间对这段区域的修改也直接反映用户空间，从而可以实现不同进程间的文件共享。 二、Mmap内存映射原理  mmap内存映射的实现过程，总的来说可以分为三个阶段：  （一）进程启动映射过程，并在虚拟地址空间中为映射创建虚拟映射区域 1、进程在用户空间调用库函数mmap，原型：void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t offset); 2、在当前进程的虚拟地址空间中，寻找一段空闲的满足要求的连续的虚拟地址 3、为此虚拟区分配一个vm_area_struct结构，接着对这个结构的各个域进行了初始化 4、将新建的虚拟区结构（vm_area_s...</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/images/theme/avatar.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">逐光</div><div class="author-info-description">I hear and I forget. I see and I remember. I do and I understand.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">105</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">175</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">19</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/flyfrank"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">如有问题，欢迎留言沟通</div></div><div class="sticky_layout"><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/12/29/thought/cong-nian-di-ren-cai-pan-dian-ping-wei-xi-kan-da-gong-ren-wei-shi-me-yao-ba-zi-ji-chan-pin-hua/" title="从年底人才盘点评委席，看打工人为什么要把自己&quot;产品化&quot;">从年底人才盘点评委席，看打工人为什么要把自己&quot;产品化&quot;</a><time datetime="2025-12-28T16:00:00.000Z" title="发表于 2025-12-29 00:00:00">2025-12-29</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/12/20/redis/yi-ci-xian-shang-redis-ji-qun-jie-dian-zhu-cong-qie-huan-yin-qi-de-ying-yong-chong-qi-wen-ti-pai-cha-chu-li/" title="一次线上Redis集群节点主从切换引起的应用重启问题排查处理">一次线上Redis集群节点主从切换引起的应用重启问题排查处理</a><time datetime="2025-12-19T16:00:00.000Z" title="发表于 2025-12-20 00:00:00">2025-12-20</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/11/11/operations/yi-ci-sheng-chan-liu-liang-gong-ji-fang-yu-yu-jie-jue-fang-an/" title="一次生产流量攻击防御与解决方案">一次生产流量攻击防御与解决方案</a><time datetime="2025-11-10T16:00:00.000Z" title="发表于 2025-11-11 00:00:00">2025-11-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/03/26/thought/31-sui-zhan-zai-ren-sheng-shi-zi-lu-kou-yi-ci-shen-du-jie-pou-gao-bie-jiao-lu-mi-mang/" title="站在31岁的人生十字路口，我选择放下焦虑，与自己和解">站在31岁的人生十字路口，我选择放下焦虑，与自己和解</a><time datetime="2025-03-25T16:00:00.000Z" title="发表于 2025-03-26 00:00:00">2025-03-26</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2017 - 2025 By 逐光</span></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><a id="to_comment" href="#post-comment" title="前往评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><div class="js-pjax"><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (false) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = null
+
+  const initValine = (el, path) => {
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyValine = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+
+    const valineConfig = {
       el: '#vcomment',
       appId: 'f5WSKiyRgMriw1qIicgn1Dbu-gzGzoHsz',
       appKey: 'c9Jx92rNNJ0RzzaxLNCqu4rR',
       avatar: 'monsterid',
       serverURLs: '',
       emojiMaps: "",
-      path: window.location.pathname,
-      visitor: false
-    }, null))
+      visitor: false,
+      ...option,
+      path: isShuoshuo ? path : (option && option.path) || window.location.pathname
+    }
+
+    new Valine(valineConfig)
   }
 
-  if (typeof Valine === 'function') initValine() 
-  else getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js').then(initValine)
-}
-
-if ('Valine' === 'Valine' || !true) {
-  if (true) btf.loadComment(document.getElementById('vcomment'),loadValine)
-  else setTimeout(loadValine, 0)
-} else {
-  function loadOtherComment () {
-    loadValine()
+  const loadValine = async (el, path) => {
+    if (typeof Valine === 'function') {
+      initValine(el, path)
+    } else {
+      await btf.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.3/dist/Valine.min.js')
+      initValine(el, path)
+    }
   }
-}</script></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+
+  if (isShuoshuo) {
+    'Valine' === 'Valine'
+      ? window.shuoshuoComment = { loadComment: loadValine }
+      : window.loadOtherComment = loadValine
+    return
+  }
+
+  if ('Valine' === 'Valine' || !true) {
+    if (true) btf.loadComment(document.getElementById('vcomment'),loadValine)
+    else setTimeout(loadValine, 0)
+  } else {
+    window.loadOtherComment = loadValine
+  }
+})()</script></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
 POWERMODE.shake = true;
 POWERMODE.mobile = false;
 document.body.addEventListener('input', POWERMODE);
-</script><script>((window.gitter = {}).chat = {}).options = {
-  room: 'blog-mpoom/community',
-};
-
-if (false) {
-  function chatBtnHide () {
-    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'none'
-  }
-
-  function chatBtnShow () {
-    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'block'
-  }
-}
-</script><script src="https://sidecar.gitter.im/dist/sidecar.v1.js" async="async" defer="defer"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

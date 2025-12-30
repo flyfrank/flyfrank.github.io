@@ -1,13 +1,117 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>10万TPS级消息发送管控平台架构设计与项目落地实践 | 逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="一、背景简介项目需要设计一个高并发的消息发送管控平台，实现业务消息发送安全管控。业务要求所有下发内容需要调用安全管控平台安全审核接口进行安全审核，根据管控策略进行放通、拦截及人工审核。目前线上日发送量峰值为30亿条左右，发送平均速度为3.47万条&amp;#x2F;秒,消息发送管控平台接口的TPS需要达到1"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/2024/06/01/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-jia-gou-she-ji-yu-xiang-mu-luo-di-shi-jian/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>10万TPS级消息发送管控平台架构设计与项目落地实践 | 逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="一、背景简介项目需要设计一个高并发的消息发送管控平台，实现业务消息发送安全管控。业务要求所有下发内容需要调用安全管控平台安全审核接口进行安全审核，根据管控策略进行放通、拦截及人工审核。目前线上日发送量峰值为30亿条左右，发送平均速度为3.47万条&amp;#x2F;秒,消息发送管控平台接口的TPS需要..."><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "10万TPS级消息发送管控平台架构设计与项目落地实践",
+  "url": "https://www.mpoom.cn/2024/06/01/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-jia-gou-she-ji-yu-xiang-mu-luo-di-shi-jian/",
+  "image": "https://www.mpoom.cn/2024/06/01/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-jia-gou-she-ji-yu-xiang-mu-luo-di-shi-jian/%E7%AE%A1%E6%8E%A7%E5%B9%B3%E5%8F%B0%E9%83%A8%E7%BD%B2%E6%9E%B6%E6%9E%84%E5%9B%BE.png",
+  "datePublished": "2024-05-31T16:00:00.000Z",
+  "dateModified": "2024-05-31T16:00:00.000Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "逐光",
+      "url": "https://www.mpoom.cn"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/2024/06/01/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-jia-gou-she-ji-yu-xiang-mu-luo-di-shi-jian/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
   root: '/',
   algolia: undefined,
-  localSearch: {"path":"/search.xml","preload":false,"languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  localSearch: undefined,
   translate: undefined,
-  noticeOutdate: undefined,
-  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
   copy: {
     success: '复制成功',
-    error: '复制错误',
+    error: '复制失败',
     noSupport: '浏览器不支持'
   },
   relativeDate: {
@@ -15,7 +119,7 @@
     post: false
   },
   runtime: '',
-  date_suffix: {
+  dateSuffix: {
     just: '刚刚',
     min: '分钟前',
     hour: '小时前',
@@ -23,117 +127,26 @@
     month: '个月前'
   },
   copyright: undefined,
-  lightbox: 'fancybox',
+  lightbox: 'null',
   Snackbar: undefined,
-  source: {
-    justifiedGallery: {
-      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
-      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
-    }
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
   },
   isPhotoFigcaption: false,
-  islazyload: false,
+  islazyloadPlugin: false,
   isAnchor: false,
   percent: {
     toc: true,
     rightside: false,
-  }
+  },
+  autoDarkmode: false
 }</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
   title: '10万TPS级消息发送管控平台架构设计与项目落地实践',
-  isPost: true,
-  isHome: false,
   isHighlightShrink: false,
   isToc: true,
-  postUpdate: '2025-12-23 19:11:07'
-}</script><noscript><style type="text/css">
-  #nav {
-    opacity: 1
-  }
-  .justified-gallery img {
-    opacity: 1
-  }
-
-  #recent-posts time,
-  #post-meta time {
-    display: inline !important
-  }
-</style></noscript><script>(win=>{
-    win.saveToLocal = {
-      set: function setWithExpiry(key, value, ttl) {
-        if (ttl === 0) return
-        const now = new Date()
-        const expiryDay = ttl * 86400000
-        const item = {
-          value: value,
-          expiry: now.getTime() + expiryDay,
-        }
-        localStorage.setItem(key, JSON.stringify(item))
-      },
-
-      get: function getWithExpiry(key) {
-        const itemStr = localStorage.getItem(key)
-
-        if (!itemStr) {
-          return undefined
-        }
-        const item = JSON.parse(itemStr)
-        const now = new Date()
-
-        if (now.getTime() > item.expiry) {
-          localStorage.removeItem(key)
-          return undefined
-        }
-        return item.value
-      }
-    }
-  
-    win.getScript = url => new Promise((resolve, reject) => {
-      const script = document.createElement('script')
-      script.src = url
-      script.async = true
-      script.onerror = reject
-      script.onload = script.onreadystatechange = function() {
-        const loadState = this.readyState
-        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
-        script.onload = script.onreadystatechange = null
-        resolve()
-      }
-      document.head.appendChild(script)
-    })
-  
-      win.activateDarkMode = function () {
-        document.documentElement.setAttribute('data-theme', 'dark')
-        if (document.querySelector('meta[name="theme-color"]') !== null) {
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
-        }
-      }
-      win.activateLightMode = function () {
-        document.documentElement.setAttribute('data-theme', 'light')
-        if (document.querySelector('meta[name="theme-color"]') !== null) {
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
-        }
-      }
-      const t = saveToLocal.get('theme')
-    
-          if (t === 'dark') activateDarkMode()
-          else if (t === 'light') activateLightMode()
-        
-      const asideStatus = saveToLocal.get('aside-status')
-      if (asideStatus !== undefined) {
-        if (asideStatus === 'hide') {
-          document.documentElement.classList.add('hide-aside')
-        } else {
-          document.documentElement.classList.remove('hide-aside')
-        }
-      }
-    
-    const detectApple = () => {
-      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
-        document.documentElement.classList.add('apple')
-      }
-    }
-    detectApple()
-    })(window)</script><meta name="generator" content="Hexo 5.4.2"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/images/theme/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">104</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">170</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">19</div></a></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">逐光の博客</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">10万TPS级消息发送管控平台架构设计与项目落地实践</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-05-31T16:00:00.000Z" title="发表于 2024-06-01 00:00:00">2024-06-01</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-12-23T11:11:07.663Z" title="更新于 2025-12-23 19:11:07">2025-12-23</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">832</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>2分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="10万TPS级消息发送管控平台架构设计与项目落地实践"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><h1 id="一、背景简介"><a href="#一、背景简介" class="headerlink" title="一、背景简介"></a>一、背景简介</h1><p>项目需要设计一个高并发的消息发送管控平台，实现业务消息发送安全管控。业务要求所有下发内容需要调用安全管控平台安全审核接口进行安全审核，根据管控策略进行放通、拦截及人工审核。目前线上日发送量峰值为30亿条左右，发送平均速度为3.47万条&#x2F;秒,消息发送管控平台接口的TPS需要达到10万级别。</p>
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 5.4.2"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/images/theme/avatar.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">105</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">175</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">19</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">逐光の博客</span></a><a class="nav-page-title" href="/"><span class="site-name">10万TPS级消息发送管控平台架构设计与项目落地实践</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">10万TPS级消息发送管控平台架构设计与项目落地实践</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-05-31T16:00:00.000Z" title="发表于 2024-06-01 00:00:00">2024-06-01</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-12-30T02:06:16.806Z" title="更新于 2025-12-30 10:06:16">2025-12-30</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">832</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>2分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><h1 id="一、背景简介"><a href="#一、背景简介" class="headerlink" title="一、背景简介"></a>一、背景简介</h1><p>项目需要设计一个高并发的消息发送管控平台，实现业务消息发送安全管控。业务要求所有下发内容需要调用安全管控平台安全审核接口进行安全审核，根据管控策略进行放通、拦截及人工审核。目前线上日发送量峰值为30亿条左右，发送平均速度为3.47万条&#x2F;秒,消息发送管控平台接口的TPS需要达到10万级别。</p>
 <h2 id="1-1-管控策略"><a href="#1-1-管控策略" class="headerlink" title="1.1 管控策略"></a>1.1 管控策略</h2><p>基于业务需求管控平台提供管控能力及管控策略配置，平台部分管控功能如下：</p>
 <ul>
 <li>消息发送频次管控</li>
@@ -198,46 +211,112 @@
 <h2 id="3-1-Redis集群规格"><a href="#3-1-Redis集群规格" class="headerlink" title="3.1 Redis集群规格"></a>3.1 Redis集群规格</h2><p><font color="red">说明：原Redis使用主备实例64G内存规格，但是由于每次请求至少访问2次Redis，在10万TPS情况下，Redis成为性能瓶颈，所以调整为Redis集群，详细说明见后续文档。</font><br><img src="/2024/06/01/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-jia-gou-she-ji-yu-xiang-mu-luo-di-shi-jian/redis%E9%9B%86%E7%BE%A4%E8%A7%84%E6%A0%BC.png" alt="Redis集群规格"></p>
 <h2 id="3-2-弹性负载均衡规格"><a href="#3-2-弹性负载均衡规格" class="headerlink" title="3.2 弹性负载均衡规格"></a>3.2 弹性负载均衡规格</h2><p><font color="red">说明： 华为云ELB（弹性负载均衡）中型II默认带宽为400M，管控服务http请求TPS到达10W后带宽将突破500M，需要联系管理员增加带宽至500M以上。</font><br><img src="/2024/06/01/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-jia-gou-she-ji-yu-xiang-mu-luo-di-shi-jian/elb%E8%A7%84%E6%A0%BC.png" alt="elb规格"></p>
 <h1 id="四、性能压测"><a href="#四、性能压测" class="headerlink" title="四、性能压测"></a>四、性能压测</h1><p><font color="red">说明：本截图为4000并发下的压测结果，将并发设置为5000后TPS可以达到10W。由于压测客户端设置的最大并发为10W，所以压测结果的最大值不会超过10W。</font><br><img src="/2024/06/01/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-jia-gou-she-ji-yu-xiang-mu-luo-di-shi-jian/%E5%8E%8B%E6%B5%8B%E7%BB%93%E6%9E%9C.jpg" alt="压测结果"></p>
-</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn">逐光</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn/2024/06/01/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-jia-gou-she-ji-yu-xiang-mu-luo-di-shi-jian/">https://www.mpoom.cn/2024/06/01/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-jia-gou-she-ji-yu-xiang-mu-luo-di-shi-jian/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://www.mpoom.cn" target="_blank">逐光の博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/">高并发</a><a class="post-meta__tags" href="/tags/10%E4%B8%87TPS/">10万TPS</a><a class="post-meta__tags" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/">架构设计</a></div><div class="post_share"><div class="social-share" data-image="/2024/06/01/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-jia-gou-she-ji-yu-xiang-mu-luo-di-shi-jian/%E7%AE%A1%E6%8E%A7%E5%B9%B3%E5%8F%B0%E9%83%A8%E7%BD%B2%E6%9E%B6%E6%9E%84%E5%9B%BE.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/06/08/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-xing-neng-ya-ce-yu-you-hua/" title="10万TPS级高并发系统——性能压测与优化"><img class="cover" src="/2024/06/08/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-xing-neng-ya-ce-yu-you-hua/%E6%80%A7%E8%83%BD%E5%8E%8B%E6%B5%8B.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">10万TPS级高并发系统——性能压测与优化</div></div></a></div><div class="next-post pull-right"><a href="/2024/05/25/java/base-li-lun-yu-cap/" title="Base理论与CAP"><img class="cover" src="/2024/05/25/java/base-li-lun-yu-cap/cap.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">Base理论与CAP</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/06/22/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-10-wan-liang-ji-wen-ben-guan-jian-zi-pi-pei-guo-lu/" title="10万TPS级高并发系统——10万量级文本关键字匹配过滤"><img class="cover" src="/2024/06/22/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-10-wan-liang-ji-wen-ben-guan-jian-zi-pi-pei-guo-lu/HighConcurrency.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-22</div><div class="title">10万TPS级高并发系统——10万量级文本关键字匹配过滤</div></div></a></div><div><a href="/2024/06/15/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-30-yi-ji-fa-song-liang-pin-ci-guan-kong/" title="10万TPS级高并发系统——30亿级发送量频次管控（一）"><img class="cover" src="/2024/06/15/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-30-yi-ji-fa-song-liang-pin-ci-guan-kong/HighConcurrency.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-15</div><div class="title">10万TPS级高并发系统——30亿级发送量频次管控（一）</div></div></a></div><div><a href="/2024/06/08/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-2-yi-ji-hei-ming-dan-guo-lu/" title="10万TPS级高并发系统——2亿级黑名单过滤"><img class="cover" src="/2024/06/08/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-2-yi-ji-hei-ming-dan-guo-lu/HighConcurrency.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-08</div><div class="title">10万TPS级高并发系统——2亿级黑名单过滤</div></div></a></div><div><a href="/2024/06/08/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-xing-neng-ya-ce-yu-you-hua/" title="10万TPS级高并发系统——性能压测与优化"><img class="cover" src="/2024/06/08/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-xing-neng-ya-ce-yu-you-hua/%E6%80%A7%E8%83%BD%E5%8E%8B%E6%B5%8B.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-08</div><div class="title">10万TPS级高并发系统——性能压测与优化</div></div></a></div><div><a href="/2024/06/08/distributed/si-chong-jing-dian-de-xian-liu-suan-fa/" title="四种经典的限流算法"><img class="cover" src="/2024/06/08/distributed/si-chong-jing-dian-de-xian-liu-suan-fa/%E6%BC%8F%E6%A1%B6%E7%AE%97%E6%B3%95.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-08</div><div class="title">四种经典的限流算法</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E8%83%8C%E6%99%AF%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">一、背景简介</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E7%AE%A1%E6%8E%A7%E7%AD%96%E7%95%A5"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 管控策略</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1"><span class="toc-number">2.</span> <span class="toc-text">二、架构设计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 业务架构图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E9%83%A8%E7%BD%B2%E6%9E%B6%E6%9E%84%E5%9B%BE"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 部署架构图</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%A7%84%E6%A0%BC"><span class="toc-number">3.</span> <span class="toc-text">三、服务器规格</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-Redis%E9%9B%86%E7%BE%A4%E8%A7%84%E6%A0%BC"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 Redis集群规格</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%BC%B9%E6%80%A7%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E8%A7%84%E6%A0%BC"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 弹性负载均衡规格</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%80%A7%E8%83%BD%E5%8E%8B%E6%B5%8B"><span class="toc-number">4.</span> <span class="toc-text">四、性能压测</span></a></li></ol></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2017 - 2025 By 逐光</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div></div></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.min.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"><script>function loadValine () {
-  function initValine () {
-    const valine = new Valine(Object.assign({
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn">逐光</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn/2024/06/01/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-jia-gou-she-ji-yu-xiang-mu-luo-di-shi-jian/">https://www.mpoom.cn/2024/06/01/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-jia-gou-she-ji-yu-xiang-mu-luo-di-shi-jian/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://www.mpoom.cn" target="_blank">逐光の博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E9%AB%98%E5%B9%B6%E5%8F%91/">高并发</a><a class="post-meta__tags" href="/tags/10%E4%B8%87TPS/">10万TPS</a><a class="post-meta__tags" href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/">架构设计</a></div><div class="post-share"><div class="social-share" data-image="/2024/06/01/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-jia-gou-she-ji-yu-xiang-mu-luo-di-shi-jian/%E7%AE%A1%E6%8E%A7%E5%B9%B3%E5%8F%B0%E9%83%A8%E7%BD%B2%E6%9E%B6%E6%9E%84%E5%9B%BE.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2024/06/08/distributed/si-chong-jing-dian-de-xian-liu-suan-fa/" title="四种经典的限流算法"><img class="cover" src="/2024/06/08/distributed/si-chong-jing-dian-de-xian-liu-suan-fa/%E6%BC%8F%E6%A1%B6%E7%AE%97%E6%B3%95.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">四种经典的限流算法</div></div><div class="info-2"><div class="info-item-1">在业务开发中经常遇到限流场景，本文主要介绍四种经典的限流算法：固定窗口计数器、滑动窗口计数器、漏桶算法、令牌桶算法，在做限流的场景时可以借鉴这几种经典的限流算法，掌握其使用场景级优缺点。 一、固定窗口计数器（Fixed Window）固定窗口计数器(Fixed Window)算法的实现思路非常简单，维护一个固定单位时间内的计数器，如果检测到单位时间已经过去就重置计数器为零。计数限首先维护一个计数器，将单位时间段当做一个窗口，计数器记录这个窗口接收请求的次数。  当次数少于限流阀值，就允许访问，并且计数器+1 当次数大于限流阀值，就拒绝访问 当前的时间窗口过去之后，计数器清零   二、 固定窗口算法的优缺点 优点：固定窗口算法非常简单，易于实现和理解，性能高。 缺点：存在明显的临界问题。  1.2 临界问题临界问题：假设限流阀值为5个请求，单位时间窗口是1s,如果我们在单位时间内的前0.8-1s和1-1.2s，分别并发5个请求。虽然都没有超过阀值，但是如果算0.8-1.2s,则并发数高达10，已经超过单位时间1s不超过5阀值的定义。 2.2 滑动窗口计数器（Sliding Wind...</div></div></div></a><a class="pagination-related" href="/2024/05/25/java/base-li-lun-yu-cap/" title="Base理论与CAP"><img class="cover" src="/2024/05/25/java/base-li-lun-yu-cap/cap.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">Base理论与CAP</div></div><div class="info-2"><div class="info-item-1">一、概念简介1.1 Base理论BASE 是 Basically Available（基本可用）、Soft-state（软状态） 和 Eventually Consistent（最终一致性） 三个短语的缩写。BASE 理论是对 CAP 中一致性 C 和可用性 A 权衡的结果，其来源于对大规模互联网系统分布式实践的总结，是基于 CAP 定理逐步演化而来的，它大大降低了我们对系统的要求。 1.2 CAP理论CAP 也就是 Consistency（一致性）、Availability（可用性）、Partition Tolerance（分区容错性） 这三个单词首字母组合。 二、Base理论 BASE 理论起源于 2008 年， 由 eBay 的架构师 Dan Pritchett 在 ACM 上发表。  2.1 简介BASE是“Basically Available, Soft state, Eventually consistent(基本可用、软状态、最终一致性)”的首字母缩写。其中的软状态和最终一致性这两种技巧擅于对付存在分区的场合，并因此提高了可用性。  Basically Avail...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2024/06/08/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-xing-neng-ya-ce-yu-you-hua/" title="10万TPS级高并发系统——性能压测与优化"><img class="cover" src="/2024/06/08/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-xing-neng-ya-ce-yu-you-hua/%E6%80%A7%E8%83%BD%E5%8E%8B%E6%B5%8B.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-08</div><div class="info-item-2">10万TPS级高并发系统——性能压测与优化</div></div><div class="info-2"><div class="info-item-1">一、压测准备1.1 系统背景消息发送管控平台需要支持10万TPS的接口调用，要求单次请求处理耗时在50ms以内。系统采用集群化部署，通过弹性负载均衡实现高可用和性能扩展。 核心技术指标：  目标TPS：10万 响应时间：≤50ms 日发送量：30亿条 平均发送速度：3.47万条&#x2F;秒  1.2 压测环境   组件 规格配置 数量    管控API服务 16核&#x2F;32GB&#x2F;500G高IO 15节点   Redis集群 256G&#x2F;32分片 32实例   MySQL数据库 16核&#x2F;32GB&#x2F;1TB超高IO 主从   负载均衡器 中型II&#x2F;500M带宽 1台   压测客户端 8核&#x2F;16GB 3台   1.3 压测工具选型选用 JMeter 作为压测工具：  支持高并发场景 可视化报表 分布式压测 插件丰富  二、压测方案设计2.1 压测场景场景一：基础功能压测  并发用户数：1000 → 3000 → 5000 持续时间：每阶段10分钟 目标：验证基础性能  场景二：峰值压测  并发用户数：5000 持续时间：3...</div></div></div></a><a class="pagination-related" href="/2024/06/22/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-10-wan-liang-ji-wen-ben-guan-jian-zi-pi-pei-guo-lu/" title="10万TPS级高并发系统——10万量级文本关键字匹配过滤"><img class="cover" src="/2024/06/22/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-10-wan-liang-ji-wen-ben-guan-jian-zi-pi-pei-guo-lu/HighConcurrency.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-22</div><div class="info-item-2">10万TPS级高并发系统——10万量级文本关键字匹配过滤</div></div><div class="info-2"><div class="info-item-1">一、背景简介消息发送管控平台中有个很重要的能力就是文本关键字检测，比如检测一段话中是否含有法轮功等敏感字段，这就涉及到关键字匹配算法。在该项目中每条消息都要经过关键词过滤，通过后才能下发。关键字匹配有两种形式，分为单一关键字和逻辑关键字。 1.1 单一关键字单一关键字指单个单词，如：法轮功，炸金花，一条龙服务等涉恐、涉赌、涉黄等关键字，单个的关键字在系统数据库中的数量在9万+，消息下发时需要检测文本中是否包含数据库中单个关键字。 1.2 逻辑关键字逻辑关键字由多个单一关键字组合&amp;&amp;、||、!逻辑运算符，即匹配到的关键字满足逻辑关键字中的逻辑运算逻辑才进行管控。 例如：逻辑关键字点击&amp;&amp;登录&amp;&amp;!验证码, 表示内容包含点击、登录关键字并且不包含验证码关键字，如果文本中包含的内容符合该逻辑，则进行拦截管控。   二、性能要求消息发送管控平台关键字整体数据规模为10万量级，其中单一关键字数量为9万，逻辑关键字数量为1万。消息管控平台的安全审核接口整体的平均响应时间为50ms。 三、方案预研我们先分析梳理常用的关键词匹配算法，再根据上述业务...</div></div></div></a><a class="pagination-related" href="/2024/06/08/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-2-yi-ji-hei-ming-dan-guo-lu/" title="10万TPS级高并发系统——2亿级黑名单过滤"><img class="cover" src="/2024/06/08/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-2-yi-ji-hei-ming-dan-guo-lu/HighConcurrency.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-08</div><div class="info-item-2">10万TPS级高并发系统——2亿级黑名单过滤</div></div><div class="info-2"><div class="info-item-1">一、背景简介在消息发送管控平台中，黑名单过滤是保障消息发送安全的重要环节。系统需要对发送的每条消息进行黑名单检查，包括全局黑名单、账号级黑名单、投诉黑名单、退订黑名单等多种类型。在日发送量达到30亿条消息的场景下，黑名单数据规模庞大，系统需要支持2亿级黑名单数据的高效过滤。 1.1 技术挑战在2亿级黑名单数据规模下，传统的数据结构面临严重挑战：    存储方式 内存占用 查询性能 主要问题    HashMap&lt;String,Object&gt; ~20GB O(1) 内存占用过大，GC压力巨大   HashSet ~15GB O(1) 装箱拆箱开销，内存碎片   传统BitSet ~250MB O(1) 稀疏数据浪费严重，不支持分片   RoaringBitmap ~5-50MB O(1) 内存高效，压缩率高   核心问题：2亿个11位手机号码如果用传统HashMap存储，需要占用约20GB内存，这对系统资源是巨大的挑战。而且在高并发场景下，大量的HashMap查询会产生严重的GC问题，影响系统性能。   1.2 RoaringBitmap优势RoaringBitmap是...</div></div></div></a><a class="pagination-related" href="/2024/06/15/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-30-yi-ji-fa-song-liang-pin-ci-guan-kong/" title="10万TPS级高并发系统——30亿级发送量频次管控（一）"><img class="cover" src="/2024/06/15/high-concurrency/10-wan-tps-ji-gao-bing-fa-xi-tong-30-yi-ji-fa-song-liang-pin-ci-guan-kong/HighConcurrency.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-15</div><div class="info-item-2">10万TPS级高并发系统——30亿级发送量频次管控（一）</div></div><div class="info-2"><div class="info-item-1">一、背景简介在客户的业务场景中，需要在全局开启终端用户消息发送的频次管控，避免消息重复发送以及段时间内下发大量消息对终端用户进行信息轰炸，从而引起终端用户投诉。目前业务平台每日最高的消息发送量为30亿，去重后的消息接收人量在千万级到亿级，消息发送管控平台需要对每个消息接收人的消息发送时间进行缓存，并根据管控平台配置频次管控策略，检查最新下发的消息是否超过设置的频次，超过则进行拦截。  1.1 频次管控配置   限制项 限制频率 说明    接收频次管控 15次&#x2F;1分钟 任意1分钟内，对同一个接收人发送消息最多15次，超出次数会被限制。   接收频次管控 50次&#x2F;24小时 任意24小时内，对同一个接收人发送消息最多50次，超出次数会被限制。   内容频次管控 2次&#x2F;59秒 任意59秒内，对同一个接收人发送同一内容（内容完全相同）最多2次，超出次数会被限制。   内容频次管控 5次&#x2F;59分钟 任意59分钟内，对同一个接收人发送同一消息内容（内容完全相同）最多5次，超出次数会被限制。   二、需求分析基于上述业务场景，我们需要对每个消息接收者做消...</div></div></div></a><a class="pagination-related" href="/2024/06/08/distributed/si-chong-jing-dian-de-xian-liu-suan-fa/" title="四种经典的限流算法"><img class="cover" src="/2024/06/08/distributed/si-chong-jing-dian-de-xian-liu-suan-fa/%E6%BC%8F%E6%A1%B6%E7%AE%97%E6%B3%95.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-08</div><div class="info-item-2">四种经典的限流算法</div></div><div class="info-2"><div class="info-item-1">在业务开发中经常遇到限流场景，本文主要介绍四种经典的限流算法：固定窗口计数器、滑动窗口计数器、漏桶算法、令牌桶算法，在做限流的场景时可以借鉴这几种经典的限流算法，掌握其使用场景级优缺点。 一、固定窗口计数器（Fixed Window）固定窗口计数器(Fixed Window)算法的实现思路非常简单，维护一个固定单位时间内的计数器，如果检测到单位时间已经过去就重置计数器为零。计数限首先维护一个计数器，将单位时间段当做一个窗口，计数器记录这个窗口接收请求的次数。  当次数少于限流阀值，就允许访问，并且计数器+1 当次数大于限流阀值，就拒绝访问 当前的时间窗口过去之后，计数器清零   二、 固定窗口算法的优缺点 优点：固定窗口算法非常简单，易于实现和理解，性能高。 缺点：存在明显的临界问题。  1.2 临界问题临界问题：假设限流阀值为5个请求，单位时间窗口是1s,如果我们在单位时间内的前0.8-1s和1-1.2s，分别并发5个请求。虽然都没有超过阀值，但是如果算0.8-1.2s,则并发数高达10，已经超过单位时间1s不超过5阀值的定义。 2.2 滑动窗口计数器（Sliding Wind...</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E8%83%8C%E6%99%AF%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">一、背景简介</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E7%AE%A1%E6%8E%A7%E7%AD%96%E7%95%A5"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 管控策略</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1"><span class="toc-number">2.</span> <span class="toc-text">二、架构设计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 业务架构图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E9%83%A8%E7%BD%B2%E6%9E%B6%E6%9E%84%E5%9B%BE"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 部署架构图</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%A7%84%E6%A0%BC"><span class="toc-number">3.</span> <span class="toc-text">三、服务器规格</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-Redis%E9%9B%86%E7%BE%A4%E8%A7%84%E6%A0%BC"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 Redis集群规格</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%BC%B9%E6%80%A7%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E8%A7%84%E6%A0%BC"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 弹性负载均衡规格</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%80%A7%E8%83%BD%E5%8E%8B%E6%B5%8B"><span class="toc-number">4.</span> <span class="toc-text">四、性能压测</span></a></li></ol></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2017 - 2025 By 逐光</span></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="前往评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><div class="js-pjax"><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (false) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = null
+
+  const initValine = (el, path) => {
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyValine = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+
+    const valineConfig = {
       el: '#vcomment',
       appId: 'f5WSKiyRgMriw1qIicgn1Dbu-gzGzoHsz',
       appKey: 'c9Jx92rNNJ0RzzaxLNCqu4rR',
       avatar: 'monsterid',
       serverURLs: '',
       emojiMaps: "",
-      path: window.location.pathname,
-      visitor: false
-    }, null))
+      visitor: false,
+      ...option,
+      path: isShuoshuo ? path : (option && option.path) || window.location.pathname
+    }
+
+    new Valine(valineConfig)
   }
 
-  if (typeof Valine === 'function') initValine() 
-  else getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js').then(initValine)
-}
-
-if ('Valine' === 'Valine' || !true) {
-  if (true) btf.loadComment(document.getElementById('vcomment'),loadValine)
-  else setTimeout(loadValine, 0)
-} else {
-  function loadOtherComment () {
-    loadValine()
+  const loadValine = async (el, path) => {
+    if (typeof Valine === 'function') {
+      initValine(el, path)
+    } else {
+      await btf.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.3/dist/Valine.min.js')
+      initValine(el, path)
+    }
   }
-}</script></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+
+  if (isShuoshuo) {
+    'Valine' === 'Valine'
+      ? window.shuoshuoComment = { loadComment: loadValine }
+      : window.loadOtherComment = loadValine
+    return
+  }
+
+  if ('Valine' === 'Valine' || !true) {
+    if (true) btf.loadComment(document.getElementById('vcomment'),loadValine)
+    else setTimeout(loadValine, 0)
+  } else {
+    window.loadOtherComment = loadValine
+  }
+})()</script></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
 POWERMODE.shake = true;
 POWERMODE.mobile = false;
 document.body.addEventListener('input', POWERMODE);
-</script><script>((window.gitter = {}).chat = {}).options = {
-  room: 'blog-mpoom/community',
-};
-
-if (false) {
-  function chatBtnHide () {
-    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'none'
-  }
-
-  function chatBtnShow () {
-    document.getElementsByClassName('gitter-open-chat-button')[0].style.display= 'block'
-  }
-}
-</script><script src="https://sidecar.gitter.im/dist/sidecar.v1.js" async="async" defer="defer"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
