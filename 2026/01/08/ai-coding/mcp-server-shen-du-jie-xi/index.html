@@ -1,0 +1,705 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>MCP Server深度解析：AI应用的标准化协议 | 逐光の博客</title><meta name="author" content="逐光"><meta name="copyright" content="逐光"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="引言：AI应用集成的困境与突破在 AI 快速发展的今天，我们看到越来越多的 AI 应用涌现：从 Claude、ChatGPT 到各类垂直领域的 AI 助手。然而，每个 AI 应用都有自己的数据接入方式、API 标准和集成方法，这就像互联网早期各家公司都有自己的协议标准一样，导致开发者需要为每个..."><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "MCP Server深度解析：AI应用的标准化协议",
+  "url": "https://www.mpoom.cn/2026/01/08/ai-coding/mcp-server-shen-du-jie-xi/",
+  "image": "https://www.mpoom.cn/2026/01/08/ai-coding/mcp-server-shen-du-jie-xi/MCP-Server%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90.jpeg",
+  "datePublished": "2026-01-08T06:30:00.000Z",
+  "dateModified": "2026-01-08T06:30:00.000Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "逐光",
+      "url": "https://www.mpoom.cn"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.mpoom.cn/2026/01/08/ai-coding/mcp-server-shen-du-jie-xi/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'MCP Server深度解析：AI应用的标准化协议',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 5.4.2"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/images/theme/avatar.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">179</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">20</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">逐光の博客</span></a><a class="nav-page-title" href="/"><span class="site-name">MCP Server深度解析：AI应用的标准化协议</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/categories/book/"><i class="fa-fw fa fa-book"></i><span> 读书</span></a></div><div class="menus_item"><a class="site-page" href="/categories/thought/"><i class="fa-fw fa fa-lightbulb"></i><span> 思考感悟</span></a></div><div class="menus_item"><a class="site-page" href="/skills/"><i class="fa-fw fas fa-code"></i><span> 专业能力</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">MCP Server深度解析：AI应用的标准化协议</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-01-08T06:30:00.000Z" title="发表于 2026-01-08 14:30:00">2026-01-08</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-01-08T06:30:00.000Z" title="更新于 2026-01-08 14:30:00">2026-01-08</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/AI%E7%BC%96%E7%A8%8B/">AI编程</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">3.5k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>12分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><h2 id="引言：AI应用集成的困境与突破"><a href="#引言：AI应用集成的困境与突破" class="headerlink" title="引言：AI应用集成的困境与突破"></a>引言：AI应用集成的困境与突破</h2><p>在 AI 快速发展的今天，我们看到越来越多的 AI 应用涌现：从 Claude、ChatGPT 到各类垂直领域的 AI 助手。然而，每个 AI 应用都有自己的数据接入方式、API 标准和集成方法，这就像互联网早期各家公司都有自己的协议标准一样，导致开发者需要为每个 AI 应用单独适配。</p>
+<p>Anthropic 公司在 2024 年推出的 <strong>MCP (Model Context Protocol，模型上下文协议)</strong> 正是为了解决这一痛点而生。它提供了一套标准化的协议，让 AI 应用能够以统一的方式访问各类数据源和工具，就像 HTTP 协议统一了 Web 通信一样。</p>
+<span id="more"></span>
+<p><img src="/2026/01/08/ai-coding/mcp-server-shen-du-jie-xi/MCP-Server%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90.jpeg" alt="MCP-Server深度解析"></p>
+<h2 id="一、什么是-MCP-Server？"><a href="#一、什么是-MCP-Server？" class="headerlink" title="一、什么是 MCP Server？"></a>一、什么是 MCP Server？</h2><h3 id="1-1-MCP-Server-是什么：给-AI-的「能力网关」"><a href="#1-1-MCP-Server-是什么：给-AI-的「能力网关」" class="headerlink" title="1.1 MCP Server 是什么：给 AI 的「能力网关」"></a>1.1 MCP Server 是什么：给 AI 的「能力网关」</h3><p><strong>MCP Server</strong> 是基于 Model Context Protocol 协议实现的服务端程序，它充当 AI 应用与外部资源之间的桥梁。</p>
+<div class="mermaid-wrap"><pre class="mermaid-src" data-config="{}" hidden>
+    graph LR
+    A[AI应用&lt;br&#x2F;&gt;Claude&#x2F;ChatGPT] --&gt; B[MCP Client]
+    B --&gt; C[MCP Server]
+    C --&gt; D[数据库]
+    C --&gt; E[文件系统]
+    C --&gt; F[API服务]
+    C --&gt; G[业务系统]
+    
+    style A fill:#e3f2fd
+    style B fill:#fff9c4
+    style C fill:#e1f5e1
+    style D fill:#ffebee
+    style E fill:#ffebee
+    style F fill:#ffebee
+    style G fill:#ffebee
+  </pre></div>
+
+<p><strong>类比理解</strong>：</p>
+<ul>
+<li>如果把 AI 应用比作浏览器，MCP Server 就是 Web 服务器</li>
+<li>如果把 AI 应用比作手机 App，MCP Server 就是后端 API</li>
+<li>MCP Protocol 就是它们之间的”通信语言”</li>
+</ul>
+<h3 id="1-2-为什么需要-MCP：从插件地狱到标准协议"><a href="#1-2-为什么需要-MCP：从插件地狱到标准协议" class="headerlink" title="1.2 为什么需要 MCP：从插件地狱到标准协议"></a>1.2 为什么需要 MCP：从插件地狱到标准协议</h3><p><strong>传统方式的问题</strong>：每个 AI 应用都需要单独开发插件，导致代码重复、维护成本高。</p>
+<p><strong>使用 MCP 的优势</strong>：一次开发，所有支持 MCP 的 AI 应用都能使用。</p>
+<table>
+<thead>
+<tr>
+<th>对比维度</th>
+<th>传统插件方式</th>
+<th>MCP 方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>开发成本</strong></td>
+<td>每个 AI 应用单独开发</td>
+<td>一次开发，通用使用</td>
+</tr>
+<tr>
+<td><strong>维护成本</strong></td>
+<td>多套代码，分别维护</td>
+<td>单一代码库，统一维护</td>
+</tr>
+<tr>
+<td><strong>扩展性</strong></td>
+<td>添加新功能需多处修改</td>
+<td>在 MCP Server 统一扩展</td>
+</tr>
+<tr>
+<td><strong>标准化</strong></td>
+<td>各自标准，难以复用</td>
+<td>统一协议，开箱即用</td>
+</tr>
+<tr>
+<td><strong>生态发展</strong></td>
+<td>碎片化</td>
+<td>社区共建，快速增长</td>
+</tr>
+</tbody></table>
+<h2 id="二、MCP-Server-的三大核心能力"><a href="#二、MCP-Server-的三大核心能力" class="headerlink" title="二、MCP Server 的三大核心能力"></a>二、MCP Server 的三大核心能力</h2><p>MCP Server 提供三大核心能力：<strong>Resources（资源）</strong>、<strong>Tools（工具）</strong> 和 <strong>Prompts（提示词模板）</strong>。</p>
+<h3 id="2-1-Resources：让-AI-读懂你的数据"><a href="#2-1-Resources：让-AI-读懂你的数据" class="headerlink" title="2.1 Resources：让 AI 读懂你的数据"></a>2.1 Resources：让 AI 读懂你的数据</h3><p>Resources 让 AI 应用能够读取各类数据源的内容。</p>
+<p><strong>常见资源类型</strong>：</p>
+<ul>
+<li>📄 <strong>文件系统</strong>：访问本地文件和目录</li>
+<li>🗄️ <strong>数据库</strong>：读取 MySQL、PostgreSQL、MongoDB 数据</li>
+<li>🌐 <strong>Web 内容</strong>：抓取网页、API 数据</li>
+<li>📧 <strong>邮件系统</strong>：访问邮件内容</li>
+<li>📊 <strong>业务系统</strong>：CRM、ERP 等企业数据</li>
+</ul>
+<p><strong>使用示例</strong>：</p>
+<pre class="line-numbers language-none"><code class="language-none">用户：请读取项目目录下的 README.md 文件
+AI：正在访问文件... [调用 MCP Server Resources 能力]
+结果：README.md 内容已读取，包含项目介绍...<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="2-2-Tools：让-AI-真正「动手」"><a href="#2-2-Tools：让-AI-真正「动手」" class="headerlink" title="2.2 Tools：让 AI 真正「动手」"></a>2.2 Tools：让 AI 真正「动手」</h3><p>Tools 让 AI 应用能够执行各种操作和功能。</p>
+<p><strong>常见工具类型</strong>：</p>
+<ul>
+<li>🔍 <strong>搜索工具</strong>：Google Search、Bing Search</li>
+<li>💾 <strong>数据操作</strong>：CRUD 数据库操作</li>
+<li>📝 <strong>文件操作</strong>：创建、修改、删除文件</li>
+<li>🌐 <strong>API 调用</strong>：第三方服务集成</li>
+<li>🤖 <strong>自动化</strong>：执行脚本、触发工作流</li>
+</ul>
+<p><strong>使用示例</strong>：</p>
+<pre class="line-numbers language-none"><code class="language-none">用户：帮我查询一下最近一周注册的用户数量
+AI：正在查询数据库... [调用 MCP Server Tools 能力]
+结果：最近一周共有 156 位用户注册<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="2-3-Prompts：把高频任务固化成模板"><a href="#2-3-Prompts：把高频任务固化成模板" class="headerlink" title="2.3 Prompts：把高频任务固化成模板"></a>2.3 Prompts：把高频任务固化成模板</h3><p>Prompts 提供可复用的提示词模板，提升 AI 交互效率。</p>
+<p><strong>应用场景</strong>：</p>
+<ul>
+<li>📋 <strong>代码审查</strong>：自动化代码质量检查</li>
+<li>📝 <strong>文档生成</strong>：根据代码生成文档</li>
+<li>🐛 <strong>Bug 分析</strong>：分析错误日志和堆栈</li>
+<li>🎨 <strong>内容创作</strong>：博客、文案生成模板</li>
+<li>📊 <strong>数据分析</strong>：生成分析报告模板</li>
+</ul>
+<h2 id="三、MCP-Server-架构与通信机制"><a href="#三、MCP-Server-架构与通信机制" class="headerlink" title="三、MCP Server 架构与通信机制"></a>三、MCP Server 架构与通信机制</h2><h3 id="3-1-整体架构：AI-↔-MCP-↔-各类系统"><a href="#3-1-整体架构：AI-↔-MCP-↔-各类系统" class="headerlink" title="3.1 整体架构：AI ↔ MCP ↔ 各类系统"></a>3.1 整体架构：AI ↔ MCP ↔ 各类系统</h3><div class="mermaid-wrap"><pre class="mermaid-src" data-config="{}" hidden>
+    graph LR
+    subgraph AI层
+        A1[Claude&lt;br&#x2F;&gt;Desktop]
+        A2[其他&lt;br&#x2F;&gt;AI应用]
+    end
+    
+    subgraph 客户端层
+        B[MCP&lt;br&#x2F;&gt;Client SDK]
+    end
+    
+    subgraph 服务端层
+        C1[文件系统&lt;br&#x2F;&gt;Server]
+        C2[数据库&lt;br&#x2F;&gt;Server]
+        C3[API集成&lt;br&#x2F;&gt;Server]
+    end
+    
+    subgraph 资源层
+        D1[本地&lt;br&#x2F;&gt;文件]
+        D2[MySQL]
+        D3[REST&lt;br&#x2F;&gt;API]
+    end
+    
+    A1 --&gt; B
+    A2 --&gt; B
+    B --&gt; C1
+    B --&gt; C2
+    B --&gt; C3
+    C1 --&gt; D1
+    C2 --&gt; D2
+    C3 --&gt; D3
+    
+    style A1 fill:#e3f2fd
+    style A2 fill:#e3f2fd
+    style B fill:#fff9c4
+    style C1 fill:#e1f5e1
+    style C2 fill:#e1f5e1
+    style C3 fill:#e1f5e1
+    style D1 fill:#ffebee
+    style D2 fill:#ffebee
+    style D3 fill:#ffebee
+  </pre></div>
+
+<p><strong>架构说明</strong>：</p>
+<ol>
+<li><strong>AI 应用层</strong>：Claude Desktop 等支持 MCP 的 AI 应用</li>
+<li><strong>MCP Client SDK</strong>：内置在 AI 应用中，负责与 MCP Server 通信</li>
+<li><strong>MCP Server 层</strong>：各类功能的 MCP Server（文件、数据库、API 等）</li>
+<li><strong>资源层</strong>：实际的数据源和服务</li>
+</ol>
+<h3 id="3-2-通信方式：stdio-与-HTTP-SSE"><a href="#3-2-通信方式：stdio-与-HTTP-SSE" class="headerlink" title="3.2 通信方式：stdio 与 HTTP&#x2F;SSE"></a>3.2 通信方式：stdio 与 HTTP&#x2F;SSE</h3><p>MCP 使用 <strong>JSON-RPC 2.0</strong> 作为底层通信协议，支持两种传输方式：</p>
+<p><strong>1. 标准输入输出 (stdio)</strong></p>
+<ul>
+<li>适用场景：本地 MCP Server</li>
+<li>特点：简单、直接、无需网络</li>
+</ul>
+<p><strong>2. HTTP&#x2F;SSE (Server-Sent Events)</strong></p>
+<ul>
+<li>适用场景：远程 MCP Server</li>
+<li>特点：支持网络访问、可扩展</li>
+</ul>
+<h3 id="3-3-必须认识的关键消息类型"><a href="#3-3-必须认识的关键消息类型" class="headerlink" title="3.3 必须认识的关键消息类型"></a>3.3 必须认识的关键消息类型</h3><table>
+<thead>
+<tr>
+<th>消息类型</th>
+<th>方向</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>initialize</strong></td>
+<td>Client → Server</td>
+<td>初始化连接，协商能力</td>
+</tr>
+<tr>
+<td><strong>resources&#x2F;list</strong></td>
+<td>Client → Server</td>
+<td>列出可用资源</td>
+</tr>
+<tr>
+<td><strong>resources&#x2F;read</strong></td>
+<td>Client → Server</td>
+<td>读取特定资源内容</td>
+</tr>
+<tr>
+<td><strong>tools&#x2F;list</strong></td>
+<td>Client → Server</td>
+<td>列出可用工具</td>
+</tr>
+<tr>
+<td><strong>tools&#x2F;call</strong></td>
+<td>Client → Server</td>
+<td>调用特定工具</td>
+</tr>
+<tr>
+<td><strong>prompts&#x2F;list</strong></td>
+<td>Client → Server</td>
+<td>列出提示词模板</td>
+</tr>
+<tr>
+<td><strong>prompts&#x2F;get</strong></td>
+<td>Client → Server</td>
+<td>获取提示词内容</td>
+</tr>
+<tr>
+<td><strong>notifications</strong></td>
+<td>Server → Client</td>
+<td>服务端推送通知</td>
+</tr>
+</tbody></table>
+<h2 id="四、如何使用-MCP-Server"><a href="#四、如何使用-MCP-Server" class="headerlink" title="四、如何使用 MCP Server"></a>四、如何使用 MCP Server</h2><h3 id="4-1-在-Claude-Desktop-中快速接入-MCP-Server"><a href="#4-1-在-Claude-Desktop-中快速接入-MCP-Server" class="headerlink" title="4.1 在 Claude Desktop 中快速接入 MCP Server"></a>4.1 在 Claude Desktop 中快速接入 MCP Server</h3><p><strong>三步搞定：</strong></p>
+<ol>
+<li><strong>安装客户端</strong>：从 Claude 官网下载安装 Claude Desktop。</li>
+<li><strong>编辑配置文件</strong>：<ul>
+<li>macOS: <code>~/Library/Application Support/Claude/claude_desktop_config.json</code>  </li>
+<li>Windows: <code>%APPDATA%/Claude/claude_desktop_config.json</code></li>
+</ul>
+</li>
+</ol>
+<pre class="line-numbers language-json" data-language="json"><code class="language-json"><span class="token punctuation">&#123;</span>
+  <span class="token property">"mcpServers"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+    <span class="token property">"filesystem"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+      <span class="token property">"command"</span><span class="token operator">:</span> <span class="token string">"npx"</span><span class="token punctuation">,</span>
+      <span class="token property">"args"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"-y"</span><span class="token punctuation">,</span> <span class="token string">"@modelcontextprotocol/server-filesystem"</span><span class="token punctuation">,</span> <span class="token string">"/Users/username/Documents"</span><span class="token punctuation">]</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ol start="3">
+<li><strong>重启并验证</strong>：重启 Claude Desktop，随便问一句：「帮我列一下 Documents 目录下的文件」，确认能正常调用 filesystem Server 即可。</li>
+</ol>
+<h3 id="4-2-最小可行配置：先从-1～2-个-Server-开始"><a href="#4-2-最小可行配置：先从-1～2-个-Server-开始" class="headerlink" title="4.2 最小可行配置：先从 1～2 个 Server 开始"></a>4.2 最小可行配置：先从 1～2 个 Server 开始</h3><ul>
+<li>推荐起步组合：<ul>
+<li>本地文件：<code>@modelcontextprotocol/server-filesystem</code>（读写文档 &#x2F; 笔记 &#x2F; 代码）。</li>
+<li>二选一：<code>@modelcontextprotocol/server-github</code>（看代码仓库）或 <code>@modelcontextprotocol/server-postgres</code>（查业务数据）。</li>
+</ul>
+</li>
+<li>其余常见 Server（GitHub、Postgres、Slack 等）的安装命令和用途，已经在<strong>第 6 章</strong>做了表格汇总，这里不重复展开。</li>
+</ul>
+<h3 id="4-3-配置文件中需要关注的三个字段"><a href="#4-3-配置文件中需要关注的三个字段" class="headerlink" title="4.3 配置文件中需要关注的三个字段"></a>4.3 配置文件中需要关注的三个字段</h3><ul>
+<li><code>command</code>：启动 Server 的命令，一般写 <code>npx</code> 或 <code>node</code>。  </li>
+<li><code>args</code>：传给命令的参数，第一个通常是 Server 包名，其余是路径或其它参数。  </li>
+<li><code>env</code>：环境变量，用来传 Token、连接串等敏感信息（尽量不要写死在 args 里）。</li>
+</ul>
+<h3 id="4-4-AI-Agent-如何决定使用哪个-MCP-Server？（决策机制）"><a href="#4-4-AI-Agent-如何决定使用哪个-MCP-Server？（决策机制）" class="headerlink" title="4.4 AI Agent 如何决定使用哪个 MCP Server？（决策机制）"></a>4.4 AI Agent 如何决定使用哪个 MCP Server？（决策机制）</h3><p>从实现角度看，大多数支持 MCP 的 AI Agent（例如 Claude）在面对「选哪个 Server &#x2F; 工具」时，内部其实只做三件事：</p>
+<ol>
+<li><strong>能力发现（Capability Discovery）</strong><br>启动或加载配置时，Agent 会向所有已连接的 MCP Server 发送 <code>tools/list</code>，拿到每个工具的：<code>name</code>、<code>description</code> 和 <code>input schema</code>，相当于先建立一份「工具能力索引」。  </li>
+<li><strong>语义匹配（Semantic Routing）</strong><br>用户发出指令（如「帮我查一下上海的天气」）后，LLM 先理解意图，再在所有工具的 <code>description</code> 中做语义检索，挑出最相关的候选，并生成对应的 Tool Call，例如：</li>
+</ol>
+<pre class="line-numbers language-json" data-language="json"><code class="language-json"><span class="token punctuation">&#123;</span>
+  <span class="token property">"toolName"</span><span class="token operator">:</span> <span class="token string">"get_weather"</span><span class="token punctuation">,</span>
+  <span class="token property">"arguments"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+    <span class="token property">"city"</span><span class="token operator">:</span> <span class="token string">"上海"</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ol start="3">
+<li><strong>策略选择（Orchestration &amp; Selection）</strong><br>如果多个工具都“看起来能用”，LLM 会综合描述的专业度、当前对话上下文，以及（在一些实现中）历史成功率、响应速度等信号，选出一个或按顺序编排多个工具调用。</li>
+</ol>
+<blockquote>
+<p>从使用者视角，一个非常重要的实践结论是：<strong>「给工具写好自然语言描述，比堆复杂参数更重要。」</strong> 只要 MCP Server 里的工具描述足够清晰、具体，AI Agent 往往就能做出非常准确的选择。</p>
+</blockquote>
+<h2 id="五、MCP-Server-实际应用场景"><a href="#五、MCP-Server-实际应用场景" class="headerlink" title="五、MCP Server 实际应用场景"></a>五、MCP Server 实际应用场景</h2><p>这一章的重点是：<strong>给你几个可以「马上照抄配置 + 直接开用」的典型场景心智</strong>，方便你把 MCP 真正用到日常工作里。</p>
+<h3 id="5-1-四个最常见的使用场景"><a href="#5-1-四个最常见的使用场景" class="headerlink" title="5.1 四个最常见的使用场景"></a>5.1 四个最常见的使用场景</h3><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>推荐 Server</th>
+<th>主要能力</th>
+<th>典型问题示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>代码库分析</td>
+<td><code>@modelcontextprotocol/server-github</code></td>
+<td>浏览仓库、读文件、看 Issue &#x2F; PR</td>
+<td>「帮我看看这个仓库怎么组织的？」</td>
+</tr>
+<tr>
+<td>数据分析</td>
+<td><code>@modelcontextprotocol/server-postgres</code></td>
+<td>直接在数据库上做查询和聚合</td>
+<td>「最近一个月新增用户趋势怎样？」</td>
+</tr>
+<tr>
+<td>文档 &#x2F; 笔记管理</td>
+<td><code>@modelcontextprotocol/server-filesystem</code></td>
+<td>读取、搜索本地文档和笔记</td>
+<td>「帮我总结一下这周会议纪要的要点」</td>
+</tr>
+<tr>
+<td>团队协作提醒</td>
+<td><code>@modelcontextprotocol/server-slack</code></td>
+<td>读取频道消息、发送提醒</td>
+<td>「帮我给 #tech 发个提醒，周三有分享会」</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>心智上可以简单记为：<strong>代码看 GitHub，数据问 Postgres，文件找 filesystem，提醒交给 Slack</strong>。</p>
+</blockquote>
+<h3 id="5-2-示例：代码库分析助手（GitHub）"><a href="#5-2-示例：代码库分析助手（GitHub）" class="headerlink" title="5.2 示例：代码库分析助手（GitHub）"></a>5.2 示例：代码库分析助手（GitHub）</h3><p><strong>配置示例</strong>：</p>
+<pre class="line-numbers language-json" data-language="json"><code class="language-json"><span class="token punctuation">&#123;</span>
+  <span class="token property">"mcpServers"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+    <span class="token property">"github"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+      <span class="token property">"command"</span><span class="token operator">:</span> <span class="token string">"npx"</span><span class="token punctuation">,</span>
+      <span class="token property">"args"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"-y"</span><span class="token punctuation">,</span> <span class="token string">"@modelcontextprotocol/server-github"</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+      <span class="token property">"env"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+        <span class="token property">"GITHUB_PERSONAL_ACCESS_TOKEN"</span><span class="token operator">:</span> <span class="token string">"your_token"</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><strong>接入完成后，你可以这样用 Claude：</strong></p>
+<ul>
+<li>让它<strong>总览一个仓库</strong>：目录结构、语言构成、Star &#x2F; Issue 概况。  </li>
+<li>让它<strong>帮你读代码</strong>：指定文件、模块，要求用中文解释关键逻辑。  </li>
+<li>让它<strong>筛 Issue &#x2F; PR</strong>：例如「帮我找最近一个月和性能优化相关的 Issue」。</li>
+</ul>
+<p>这样，你不用在浏览器里切来切去，代码阅读和讨论可以直接在聊天窗口完成。</p>
+<h3 id="5-3-示例：业务数据-文档-协作的组合用法"><a href="#5-3-示例：业务数据-文档-协作的组合用法" class="headerlink" title="5.3 示例：业务数据 + 文档 + 协作的组合用法"></a>5.3 示例：业务数据 + 文档 + 协作的组合用法</h3><p>比较有价值的用法，往往不是「单个 Server」，而是<strong>把 2～3 个 Server 组合起来</strong>，完成一条完整的工作闭环。</p>
+<p><strong>配置示例</strong>：</p>
+<pre class="line-numbers language-json" data-language="json"><code class="language-json"><span class="token punctuation">&#123;</span>
+  <span class="token property">"mcpServers"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+    <span class="token property">"postgres"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+      <span class="token property">"command"</span><span class="token operator">:</span> <span class="token string">"npx"</span><span class="token punctuation">,</span>
+      <span class="token property">"args"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"-y"</span><span class="token punctuation">,</span> <span class="token string">"@modelcontextprotocol/server-postgres"</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+      <span class="token property">"env"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+        <span class="token property">"POSTGRES_CONNECTION_STRING"</span><span class="token operator">:</span> <span class="token string">"postgresql://localhost/mydb"</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+    <span class="token property">"filesystem"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+      <span class="token property">"command"</span><span class="token operator">:</span> <span class="token string">"npx"</span><span class="token punctuation">,</span>
+      <span class="token property">"args"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+        <span class="token string">"-y"</span><span class="token punctuation">,</span>
+        <span class="token string">"@modelcontextprotocol/server-filesystem"</span><span class="token punctuation">,</span>
+        <span class="token string">"/Users/username/Documents/Notes"</span>
+      <span class="token punctuation">]</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">,</span>
+    <span class="token property">"slack"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+      <span class="token property">"command"</span><span class="token operator">:</span> <span class="token string">"npx"</span><span class="token punctuation">,</span>
+      <span class="token property">"args"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"-y"</span><span class="token punctuation">,</span> <span class="token string">"@modelcontextprotocol/server-slack"</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+      <span class="token property">"env"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+        <span class="token property">"SLACK_BOT_TOKEN"</span><span class="token operator">:</span> <span class="token string">"xoxb-xxxxxxxxxxxx"</span><span class="token punctuation">,</span>
+        <span class="token property">"SLACK_TEAM_ID"</span><span class="token operator">:</span> <span class="token string">"T1234567890"</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><strong>一个典型的「一条链」长这样：</strong></p>
+<ul>
+<li>第一步：用 <strong>Postgres Server</strong> 让 Claude 做数据分析，例如「帮我看最近 30 天的用户增长和留存」。  </li>
+<li>第二步：用 <strong>Filesystem Server</strong> 让 Claude 把分析结果整理成一份 Markdown 报告，直接存到你的 Notes 目录。  </li>
+<li>第三步：用 <strong>Slack Server</strong> 让 Claude 把报告结论用 2～3 句话发到指定频道，顺带 @ 相关同事。</li>
+</ul>
+<p>你只需要用自然语言驱动，底层的数据查询、文档生成、通知发送都由各个 MCP Server 接管。</p>
+<h2 id="六、MCP-生态与社区资源"><a href="#六、MCP-生态与社区资源" class="headerlink" title="六、MCP 生态与社区资源"></a>六、MCP 生态与社区资源</h2><p>这一节的目标，不是「把所有项目都列一遍」，而是帮你<strong>快速知道去哪看官方信息、挑几个靠谱的现成 Server 用起来</strong>。</p>
+<h3 id="6-1-必看的官方入口"><a href="#6-1-必看的官方入口" class="headerlink" title="6.1 必看的官方入口"></a>6.1 必看的官方入口</h3><table>
+<thead>
+<tr>
+<th>类型</th>
+<th>链接</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>📘 协议与概念</td>
+<td><a target="_blank" rel="noopener" href="https://modelcontextprotocol.io/">modelcontextprotocol.io</a></td>
+<td>查概念、协议细节、设计初衷</td>
+</tr>
+<tr>
+<td>📦 官方 SDK</td>
+<td><a target="_blank" rel="noopener" href="https://github.com/modelcontextprotocol">github.com&#x2F;modelcontextprotocol</a></td>
+<td>TypeScript &#x2F; Python SDK 代码与示例</td>
+</tr>
+<tr>
+<td>📝 官方示例 Server</td>
+<td><a target="_blank" rel="noopener" href="https://github.com/modelcontextprotocol/servers">MCP Servers</a></td>
+<td>文件系统、Postgres、GitHub 等官方实现</td>
+</tr>
+</tbody></table>
+<h3 id="6-2-实际最常用的几个-Server"><a href="#6-2-实际最常用的几个-Server" class="headerlink" title="6.2 实际最常用的几个 Server"></a>6.2 实际最常用的几个 Server</h3><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>Server 名称</th>
+<th>典型用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>本地文件 &#x2F; 笔记</td>
+<td><code>@modelcontextprotocol/server-filesystem</code></td>
+<td>让 AI 读写本地文档、代码、笔记</td>
+</tr>
+<tr>
+<td>代码仓库分析</td>
+<td><code>@modelcontextprotocol/server-github</code></td>
+<td>浏览仓库、看 Issue &#x2F; PR、读文件</td>
+</tr>
+<tr>
+<td>业务数据查询</td>
+<td><code>@modelcontextprotocol/server-postgres</code></td>
+<td>直接在数据库上做分析查询</td>
+</tr>
+<tr>
+<td>团队协作</td>
+<td><code>@modelcontextprotocol/server-slack</code></td>
+<td>读取频道信息、发送提醒消息</td>
+</tr>
+</tbody></table>
+<p><strong>实践建议</strong>：<br>只要你刚开始用 MCP，<strong>先把文件系统 + GitHub + 一个数据库 Server 配起来，就已经覆盖了 80% 的高价值场景</strong>，其他的可以按需再加。</p>
+<h3 id="6-3-想继续挖？用这两个入口就够了"><a href="#6-3-想继续挖？用这两个入口就够了" class="headerlink" title="6.3 想继续挖？用这两个入口就够了"></a>6.3 想继续挖？用这两个入口就够了</h3><ul>
+<li>在 <strong>npm</strong> 搜：<code>@modelcontextprotocol/server</code>（官方 &#x2F; 社区 Server 列表一览）  </li>
+<li>在 <strong>GitHub</strong> 搜：<code>mcp-server</code>（结合 Star 数和 README 判断成熟度）</li>
+</ul>
+<blockquote>
+<p>这一节的重点心智：<strong>先用好少数几个稳定 Server，比一口气接一堆更重要。</strong></p>
+</blockquote>
+<h2 id="七、MCP-在实际工作中的价值"><a href="#七、MCP-在实际工作中的价值" class="headerlink" title="七、MCP 在实际工作中的价值"></a>七、MCP 在实际工作中的价值</h2><p>从工程和业务视角看，可以把 MCP 看成是「给 AI 接系统的标准接口层」，它带来的价值主要体现在三类角色上：</p>
+<ul>
+<li><strong>对业务方</strong>：更快把 AI 接入现有系统（文档、数据库、工单、监控等），不必为每个 AI 厂商单独开发一套插件。  </li>
+<li><strong>对开发者</strong>：一次开发一个 MCP Server，就能被多个支持 MCP 的 AI &#x2F; Agent 复用，大幅减少重复适配工作。  </li>
+<li><strong>对个人使用者</strong>：在 Claude 里统一访问本地文件、云盘、GitHub、协作工具，让 AI 真正成为自己的「个人控制台」。</li>
+</ul>
+<blockquote>
+<p>可以简单理解为：<strong>MCP 是「AI 接入企业 &#x2F; 个人数字世界」的统一适配层。</strong></p>
+</blockquote>
+<h2 id="八、总结：三步用起来，而不是停留在概念"><a href="#八、总结：三步用起来，而不是停留在概念" class="headerlink" title="八、总结：三步用起来，而不是停留在概念"></a>八、总结：三步用起来，而不是停留在概念</h2><h3 id="8-1-记住一张「心智图」"><a href="#8-1-记住一张「心智图」" class="headerlink" title="8.1 记住一张「心智图」"></a>8.1 记住一张「心智图」</h3><ul>
+<li>MCP &#x3D; 标准协议（定义 AI 和外部系统怎么对话）  </li>
+<li>MCP Server &#x3D; 连接某个系统的适配器（文件、DB、GitHub、Slack…）  </li>
+<li>AI Agent &#x3D; 根据你的自然语言，在这些适配器之间做选择和编排</li>
+</ul>
+<h3 id="8-2-立刻可以动手的三件事"><a href="#8-2-立刻可以动手的三件事" class="headerlink" title="8.2 立刻可以动手的三件事"></a>8.2 立刻可以动手的三件事</h3><ol>
+<li>在本机安装 Claude Desktop。  </li>
+<li>先只配置 1–2 个 Server（推荐：filesystem + GitHub 或 filesystem + Postgres）。  </li>
+<li>给这些 Server 里的工具写<strong>清晰的中文描述</strong>，方便 Agent 做准确决策。</li>
+</ol>
+<h3 id="8-3-真正用起来之后再考虑扩展"><a href="#8-3-真正用起来之后再考虑扩展" class="headerlink" title="8.3 真正用起来之后再考虑扩展"></a>8.3 真正用起来之后再考虑扩展</h3><ul>
+<li>用一段时间，看哪些场景最常用，再决定要不要加更多 Server。  </li>
+<li>如果你所在团队有自研系统，可以考虑把它们「包」成内部 MCP Server，让团队所有人都用同一套能力。</li>
+</ul>
+<hr>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>MCP 协议让「AI 连接外部世界」这件事第一次有了统一答案，不再是各家各玩各的插件体系。<br>对你来说，更重要的不是把协议条款背下来，而是<strong>尽快在自己的日常工作流里跑通 1～2 个高价值场景</strong>。</p>
+<p>从今天开始，在 Claude Desktop 中接上第一个 MCP Server，让 AI 真正「接入你的世界」。🚀</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn">逐光</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://www.mpoom.cn/2026/01/08/ai-coding/mcp-server-shen-du-jie-xi/">https://www.mpoom.cn/2026/01/08/ai-coding/mcp-server-shen-du-jie-xi/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://www.mpoom.cn" target="_blank">逐光の博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/AI/">AI</a><a class="post-meta__tags" href="/tags/MCP/">MCP</a><a class="post-meta__tags" href="/tags/Claude/">Claude</a><a class="post-meta__tags" href="/tags/%E5%8D%8F%E8%AE%AE%E6%A0%87%E5%87%86/">协议标准</a></div><div class="post-share"><div class="social-share" data-image="/2026/01/08/ai-coding/mcp-server-shen-du-jie-xi/MCP-Server%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90.jpeg" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2025/12/29/thought/cong-nian-di-ren-cai-pan-dian-ping-wei-xi-kan-da-gong-ren-wei-shi-me-yao-ba-zi-ji-chan-pin-hua/" title="从年底人才盘点评委席，看打工人为什么要把自己&quot;产品化&quot;"><img class="cover" src="/2025/12/29/thought/cong-nian-di-ren-cai-pan-dian-ping-wei-xi-kan-da-gong-ren-wei-shi-me-yao-ba-zi-ji-chan-pin-hua/%E6%8A%8A%E8%87%AA%E5%B7%B1%E4%BA%A7%E5%93%81%E5%8C%96.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">从年底人才盘点评委席，看打工人为什么要把自己"产品化"</div></div><div class="info-2"><div class="info-item-1"> 一个人的一生，最重要的事业就是经营好自己。把“自己”当作一款持续迭代的产品，建立清晰的定位、稳定的价值交付、可规模化的增长与运营体系，你会更快、更稳地抵达想去的地方。   作为公司年底人才盘点的评委，这几年我反复看到同一个画面：有的人在原地踏步，有的人忙得昏天黑地却难有突破，还有的人明明聪明、肯干，却在关键节点一再与机会擦肩而过。更扎心的是，他们中的绝大多数，并不是“不够努力”，而是不知道该往哪里用力。   如果你把自己看成一个“岗位上的螺丝钉”，你自然会习惯性地等任务、做执行、盯考核；但如果你开始把自己当成一款“产品”，你就会倒过来思考：  我到底解决什么问题？ 我相对于同龄人、同岗位的独特价值是什么？ 这些价值，能不能被封装成资产，在我不亲自盯着的时候也能持续发挥作用？  这正是《纳瓦尔宝典》里“把自己产品化”的底层逻辑，而在我一次次的人才评审中，也越来越确定：能把自己产品化的人，几乎都不会被时代轻易淘汰。 一、从评委席看到的打工人困境人才盘点的时候，评委不会只看“你有多辛苦”，而是看“你这两三年到底长成了一个什么样的‘产品’”。在这个视角下，很多职场困境被放大得格外清晰。...</div></div></div></a></nav><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%95%E8%A8%80%EF%BC%9AAI%E5%BA%94%E7%94%A8%E9%9B%86%E6%88%90%E7%9A%84%E5%9B%B0%E5%A2%83%E4%B8%8E%E7%AA%81%E7%A0%B4"><span class="toc-number">1.</span> <span class="toc-text">引言：AI应用集成的困境与突破</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E4%BB%80%E4%B9%88%E6%98%AF-MCP-Server%EF%BC%9F"><span class="toc-number">2.</span> <span class="toc-text">一、什么是 MCP Server？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-MCP-Server-%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9A%E7%BB%99-AI-%E7%9A%84%E3%80%8C%E8%83%BD%E5%8A%9B%E7%BD%91%E5%85%B3%E3%80%8D"><span class="toc-number">2.1.</span> <span class="toc-text">1.1 MCP Server 是什么：给 AI 的「能力网关」</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-MCP%EF%BC%9A%E4%BB%8E%E6%8F%92%E4%BB%B6%E5%9C%B0%E7%8B%B1%E5%88%B0%E6%A0%87%E5%87%86%E5%8D%8F%E8%AE%AE"><span class="toc-number">2.2.</span> <span class="toc-text">1.2 为什么需要 MCP：从插件地狱到标准协议</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81MCP-Server-%E7%9A%84%E4%B8%89%E5%A4%A7%E6%A0%B8%E5%BF%83%E8%83%BD%E5%8A%9B"><span class="toc-number">3.</span> <span class="toc-text">二、MCP Server 的三大核心能力</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-Resources%EF%BC%9A%E8%AE%A9-AI-%E8%AF%BB%E6%87%82%E4%BD%A0%E7%9A%84%E6%95%B0%E6%8D%AE"><span class="toc-number">3.1.</span> <span class="toc-text">2.1 Resources：让 AI 读懂你的数据</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-Tools%EF%BC%9A%E8%AE%A9-AI-%E7%9C%9F%E6%AD%A3%E3%80%8C%E5%8A%A8%E6%89%8B%E3%80%8D"><span class="toc-number">3.2.</span> <span class="toc-text">2.2 Tools：让 AI 真正「动手」</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-Prompts%EF%BC%9A%E6%8A%8A%E9%AB%98%E9%A2%91%E4%BB%BB%E5%8A%A1%E5%9B%BA%E5%8C%96%E6%88%90%E6%A8%A1%E6%9D%BF"><span class="toc-number">3.3.</span> <span class="toc-text">2.3 Prompts：把高频任务固化成模板</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81MCP-Server-%E6%9E%B6%E6%9E%84%E4%B8%8E%E9%80%9A%E4%BF%A1%E6%9C%BA%E5%88%B6"><span class="toc-number">4.</span> <span class="toc-text">三、MCP Server 架构与通信机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84%EF%BC%9AAI-%E2%86%94-MCP-%E2%86%94-%E5%90%84%E7%B1%BB%E7%B3%BB%E7%BB%9F"><span class="toc-number">4.1.</span> <span class="toc-text">3.1 整体架构：AI ↔ MCP ↔ 各类系统</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E9%80%9A%E4%BF%A1%E6%96%B9%E5%BC%8F%EF%BC%9Astdio-%E4%B8%8E-HTTP-SSE"><span class="toc-number">4.2.</span> <span class="toc-text">3.2 通信方式：stdio 与 HTTP&#x2F;SSE</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E5%BF%85%E9%A1%BB%E8%AE%A4%E8%AF%86%E7%9A%84%E5%85%B3%E9%94%AE%E6%B6%88%E6%81%AF%E7%B1%BB%E5%9E%8B"><span class="toc-number">4.3.</span> <span class="toc-text">3.3 必须认识的关键消息类型</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8-MCP-Server"><span class="toc-number">5.</span> <span class="toc-text">四、如何使用 MCP Server</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E5%9C%A8-Claude-Desktop-%E4%B8%AD%E5%BF%AB%E9%80%9F%E6%8E%A5%E5%85%A5-MCP-Server"><span class="toc-number">5.1.</span> <span class="toc-text">4.1 在 Claude Desktop 中快速接入 MCP Server</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E6%9C%80%E5%B0%8F%E5%8F%AF%E8%A1%8C%E9%85%8D%E7%BD%AE%EF%BC%9A%E5%85%88%E4%BB%8E-1%EF%BD%9E2-%E4%B8%AA-Server-%E5%BC%80%E5%A7%8B"><span class="toc-number">5.2.</span> <span class="toc-text">4.2 最小可行配置：先从 1～2 个 Server 开始</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E4%B8%AD%E9%9C%80%E8%A6%81%E5%85%B3%E6%B3%A8%E7%9A%84%E4%B8%89%E4%B8%AA%E5%AD%97%E6%AE%B5"><span class="toc-number">5.3.</span> <span class="toc-text">4.3 配置文件中需要关注的三个字段</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-AI-Agent-%E5%A6%82%E4%BD%95%E5%86%B3%E5%AE%9A%E4%BD%BF%E7%94%A8%E5%93%AA%E4%B8%AA-MCP-Server%EF%BC%9F%EF%BC%88%E5%86%B3%E7%AD%96%E6%9C%BA%E5%88%B6%EF%BC%89"><span class="toc-number">5.4.</span> <span class="toc-text">4.4 AI Agent 如何决定使用哪个 MCP Server？（决策机制）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81MCP-Server-%E5%AE%9E%E9%99%85%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="toc-number">6.</span> <span class="toc-text">五、MCP Server 实际应用场景</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E5%9B%9B%E4%B8%AA%E6%9C%80%E5%B8%B8%E8%A7%81%E7%9A%84%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="toc-number">6.1.</span> <span class="toc-text">5.1 四个最常见的使用场景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E7%A4%BA%E4%BE%8B%EF%BC%9A%E4%BB%A3%E7%A0%81%E5%BA%93%E5%88%86%E6%9E%90%E5%8A%A9%E6%89%8B%EF%BC%88GitHub%EF%BC%89"><span class="toc-number">6.2.</span> <span class="toc-text">5.2 示例：代码库分析助手（GitHub）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-%E7%A4%BA%E4%BE%8B%EF%BC%9A%E4%B8%9A%E5%8A%A1%E6%95%B0%E6%8D%AE-%E6%96%87%E6%A1%A3-%E5%8D%8F%E4%BD%9C%E7%9A%84%E7%BB%84%E5%90%88%E7%94%A8%E6%B3%95"><span class="toc-number">6.3.</span> <span class="toc-text">5.3 示例：业务数据 + 文档 + 协作的组合用法</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81MCP-%E7%94%9F%E6%80%81%E4%B8%8E%E7%A4%BE%E5%8C%BA%E8%B5%84%E6%BA%90"><span class="toc-number">7.</span> <span class="toc-text">六、MCP 生态与社区资源</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E5%BF%85%E7%9C%8B%E7%9A%84%E5%AE%98%E6%96%B9%E5%85%A5%E5%8F%A3"><span class="toc-number">7.1.</span> <span class="toc-text">6.1 必看的官方入口</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-%E5%AE%9E%E9%99%85%E6%9C%80%E5%B8%B8%E7%94%A8%E7%9A%84%E5%87%A0%E4%B8%AA-Server"><span class="toc-number">7.2.</span> <span class="toc-text">6.2 实际最常用的几个 Server</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-%E6%83%B3%E7%BB%A7%E7%BB%AD%E6%8C%96%EF%BC%9F%E7%94%A8%E8%BF%99%E4%B8%A4%E4%B8%AA%E5%85%A5%E5%8F%A3%E5%B0%B1%E5%A4%9F%E4%BA%86"><span class="toc-number">7.3.</span> <span class="toc-text">6.3 想继续挖？用这两个入口就够了</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81MCP-%E5%9C%A8%E5%AE%9E%E9%99%85%E5%B7%A5%E4%BD%9C%E4%B8%AD%E7%9A%84%E4%BB%B7%E5%80%BC"><span class="toc-number">8.</span> <span class="toc-text">七、MCP 在实际工作中的价值</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E6%80%BB%E7%BB%93%EF%BC%9A%E4%B8%89%E6%AD%A5%E7%94%A8%E8%B5%B7%E6%9D%A5%EF%BC%8C%E8%80%8C%E4%B8%8D%E6%98%AF%E5%81%9C%E7%95%99%E5%9C%A8%E6%A6%82%E5%BF%B5"><span class="toc-number">9.</span> <span class="toc-text">八、总结：三步用起来，而不是停留在概念</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#8-1-%E8%AE%B0%E4%BD%8F%E4%B8%80%E5%BC%A0%E3%80%8C%E5%BF%83%E6%99%BA%E5%9B%BE%E3%80%8D"><span class="toc-number">9.1.</span> <span class="toc-text">8.1 记住一张「心智图」</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-2-%E7%AB%8B%E5%88%BB%E5%8F%AF%E4%BB%A5%E5%8A%A8%E6%89%8B%E7%9A%84%E4%B8%89%E4%BB%B6%E4%BA%8B"><span class="toc-number">9.2.</span> <span class="toc-text">8.2 立刻可以动手的三件事</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-3-%E7%9C%9F%E6%AD%A3%E7%94%A8%E8%B5%B7%E6%9D%A5%E4%B9%8B%E5%90%8E%E5%86%8D%E8%80%83%E8%99%91%E6%89%A9%E5%B1%95"><span class="toc-number">9.3.</span> <span class="toc-text">8.3 真正用起来之后再考虑扩展</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E8%AF%AD"><span class="toc-number">10.</span> <span class="toc-text">结语</span></a></li></ol></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2017 - 2026 By 逐光</span></div><div class="footer_custom_text"><div class="icp"><span><img src="/images/theme/icp_icon.png"/><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">陕ICP备19021337号-1</span></a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="前往评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><div class="js-pjax"><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (false) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = null
+
+  const initValine = (el, path) => {
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyValine = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+
+    const valineConfig = {
+      el: '#vcomment',
+      appId: 'f5WSKiyRgMriw1qIicgn1Dbu-gzGzoHsz',
+      appKey: 'c9Jx92rNNJ0RzzaxLNCqu4rR',
+      avatar: 'monsterid',
+      serverURLs: '',
+      emojiMaps: "",
+      visitor: false,
+      ...option,
+      path: isShuoshuo ? path : (option && option.path) || window.location.pathname
+    }
+
+    new Valine(valineConfig)
+  }
+
+  const loadValine = async (el, path) => {
+    if (typeof Valine === 'function') {
+      initValine(el, path)
+    } else {
+      await btf.getScript('https://cdn.jsdelivr.net/npm/valine@1.5.3/dist/Valine.min.js')
+      initValine(el, path)
+    }
+  }
+
+  if (isShuoshuo) {
+    'Valine' === 'Valine'
+      ? window.shuoshuoComment = { loadComment: loadValine }
+      : window.loadOtherComment = loadValine
+    return
+  }
+
+  if ('Valine' === 'Valine' || !true) {
+    if (true) btf.loadComment(document.getElementById('vcomment'),loadValine)
+    else setTimeout(loadValine, 0)
+  } else {
+    window.loadOtherComment = loadValine
+  }
+})()</script></div><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
